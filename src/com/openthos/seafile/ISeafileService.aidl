@@ -13,6 +13,8 @@ interface ISeafileService {
     int updateSync(int userId, String libraryId, String libraryName, int isSync);
     int insertLibrary(int userId, String libraryId, String libraryName);
     String create(String text);
+    void updateAccount();
+    void stopAccount();
     void restoreSettings(boolean wallpaper, boolean wifi, boolean email, boolean appdata,
             boolean startupmenu, boolean browser, boolean appstore);
     void saveSettings(boolean wallpaper, boolean wifi, boolean email, boolean appdata,

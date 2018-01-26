@@ -73,6 +73,14 @@ public class SeafileService extends Service {
             return SeafileUtils.create(text);
         }
 
+        public void updateAccount() {
+            // TODO Re-initializ data
+        }
+
+        public void stopAccount() {
+            SeafileUtils.stop();
+        }
+
         public void restoreSettings(boolean wallpaper, boolean wifi, boolean email, boolean appdata,
                 boolean startupmenu, boolean browser, boolean appstore) {
             if (appstore) {
