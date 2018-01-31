@@ -115,6 +115,8 @@ public class SeafileUtils {
     public static void stop() {
         exec(new String[]{"su", "-c", SEAFILE_COMMAND_PROOT
                 + SEAFILE_BASE_ROOT_PATH + SEAFILE_COMMAND_SEAFILE + "stop"});
+        mUserId = "";
+        mUserPassword = "";
     }
 
 
@@ -166,7 +168,6 @@ public class SeafileUtils {
 
     public static void download(String libraryid, String filePath) {
         filePath = filePath.trim().replace(" ", "\\ ");
-        File f = new File(filePath);
         Process pro;
         BufferedReader in = null;
         try {
@@ -229,7 +230,6 @@ public class SeafileUtils {
 
     public static void sync(String libraryid, String filePath) {
         filePath = filePath.trim().replace(" ", "\\ ");
-        File f = new File(filePath);
         Process pro;
         BufferedReader in = null;
         try {

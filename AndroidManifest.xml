@@ -21,17 +21,15 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <service android:name="com.openthos.seafile.MainSeafileService"
+        <service android:name="com.openthos.seafile.SeafileService"
             android:exported="true">
         </service>
 
-        <service android:name="com.openthos.seafile.SeafileService"
-            android:exported="true">
+        <receiver android:name=".BootBroadcastReceiver">
             <intent-filter>
-                <action android:name="com.openthos.seafile.Seafile_Service" />
-                <category android:name="android.intent.category.DEFAULT" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
-        </service>
+        </receiver>
     </application>
 
 </manifest>
