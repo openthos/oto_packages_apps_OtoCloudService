@@ -35,7 +35,8 @@ public class SeafileService extends Service {
     public String mLibrary;
     private boolean mIsStart = false;
 
-    private static final String APPSTORE_PKGNAME_SEAFILE_PATH = "";
+    private static final String APPSTORE_PKGNAME_SEAFILE_PATH =
+                         "/cloudFolder/appstore/appPkgNames.txt";
 
     @Override
     public void onCreate() {
@@ -129,14 +130,11 @@ public class SeafileService extends Service {
                     }
                 }
             }
-            File settingSeafile = new File(SeafileUtils.SETTING_SEAFILE_PATH);
-            if (!settingSeafile.exists()) {
-                settingSeafile.mkdirs();
-            }
             if (!isExistsSetting) {
                 settingId = SeafileUtils.create(SeafileUtils.SETTING_SEAFILE_NAME);
             }
-            SeafileUtils.sync(settingId, SeafileUtils.SETTING_SEAFILE_PROOT_PATH);
+            SeafileUtils.sync(settingId, "/" + SeafileUtils.mUserId +
+                    SeafileUtils.SETTING_SEAFILE_PROOT_PATH);
             mIsStart = true;
         }
     }
@@ -228,7 +226,8 @@ public class SeafileService extends Service {
                 File file = new File("APPSTORE_PKGNAME_SEAFILE_PATH");
                 try {
                     BufferedReader appReader = new BufferedReader(
-                                               new FileReader(APPSTORE_PKGNAME_SEAFILE_PATH));
+                            new FileReader(SeafileUtils.SEAFILE_DATA_PATH_REAlLY + "/" +
+                                    SeafileUtils.mUserId + APPSTORE_PKGNAME_SEAFILE_PATH));
                     String line = null;
                     while ((line = appReader.readLine()) != null) {
                         pkgNames.add(line);
