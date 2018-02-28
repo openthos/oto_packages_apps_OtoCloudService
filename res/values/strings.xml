@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">OtoSeafile</string>
+    <string name="import_busy_warn">Import is in progress, please try this operation later</string>
+    <string name="export_busy_warn">Export is in progress, please try this operation later</string>
+    <string name="import_reboot_info_warn">If you want all import files full available,you need reboot the device.</string>
 </resources>

@@ -17,8 +17,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 
@@ -481,5 +483,34 @@ public class SeafileUtils {
             e.printStackTrace();
         }
         return "";
+    }
+
+    public static String exec(String cmd) {
+        try {
+            if (cmd != null) {
+                Runtime rt = Runtime.getRuntime();
+                Process process = rt.exec("su");//Root   //Process process = rt.exec("sh");//
+                DataOutputStream dos = new DataOutputStream(process.getOutputStream());
+                dos.writeBytes(cmd + "\n");
+                dos.flush();
+                dos.writeBytes("exit\n");
+                dos.flush();
+                InputStream myin = process.getInputStream();
+                InputStreamReader is = new InputStreamReader(myin);
+                char[] buffer = new char[1024];
+                int bytes_read = is.read(buffer);
+                StringBuffer aOutputBuffer = new StringBuffer();
+                while (bytes_read > 0) {
+                    aOutputBuffer.append(buffer, 0, bytes_read);
+                    bytes_read = is.read(buffer);
+                }
+                return aOutputBuffer.toString();
+            } else {
+                return "please input true cmd";
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "operater err";
+        }
     }
 }
