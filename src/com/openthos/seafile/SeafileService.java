@@ -231,12 +231,12 @@ public class SeafileService extends Service {
     private ISeafileService.Stub mBinder = new ISeafileService.Stub() {
 
         public void sync(String libraryId, String libraryName, String filePath) {
-            mConsole.updateSync(0, libraryId, libraryName, SeafileUtils.SYNC);
+            mConsole.updateSync(mAccount.mUserId, libraryId, libraryName, SeafileUtils.SYNC);
             SeafileUtils.sync(libraryId, filePath);
         }
 
         public void desync(String libraryId, String libraryName, String filePath) {
-            mConsole.updateSync(0, libraryId, libraryName, SeafileUtils.UNSYNC);
+            mConsole.updateSync(mAccount.mUserId, libraryId, libraryName, SeafileUtils.UNSYNC);
             SeafileUtils.desync(filePath);
         }
 
