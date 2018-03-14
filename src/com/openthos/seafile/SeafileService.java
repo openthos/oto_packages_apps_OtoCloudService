@@ -9,16 +9,24 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageParser;
+import android.content.pm.PackageUserState;
+import android.content.res.AssetManager;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.os.IBinder;
+import android.os.Message;
+import android.os.Parcel;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
@@ -30,6 +38,7 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
@@ -40,6 +49,9 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import android.os.Environment;
+import android.os.RemoteException;
+
 public class SeafileService extends Service {
     private StartSeafileThread mStartSeafileThread;
     public SeafileAccount mAccount;
@@ -48,11 +60,12 @@ public class SeafileService extends Service {
     private boolean mIsStart = false;
     private File mCloudFolder;
     private Timer mTimer;
-    private SaveSettingsTask mSettingsTask;
+    private AutoBackupTask mAutoTask;
     private boolean mIsTimer;
     private boolean mWallpaper, mWifi, mEmail, mAppdata, mStartupmenu, mBrowser, mAppstore;
     private boolean mImportBusy, mExportBusy;
     private String mUserPath;
+    private ArrayList<IBinder> mIBinders = new ArrayList();
 
     private static final String SYSTEM_PATH_WALLPAPER = "data/system/users/0/wallpaper";
     private static final String SYSTEM_PATH_WIFI = "data/misc/wifi";
@@ -84,6 +97,7 @@ public class SeafileService extends Service {
     private static final String ROOT_COMMOND = "chmod -R 777 ";
     private static final String TAG = "CloudServiceFragment";
     private boolean DEBUG = false;
+    public static final String DESCRIPTOR = "com.openthos.seafile.ISeafileService";
 
     @Override
     public void onCreate() {
@@ -228,47 +242,89 @@ public class SeafileService extends Service {
         }
     }
 
-    private ISeafileService.Stub mBinder = new ISeafileService.Stub() {
+    private SeafileBinder mBinder = new SeafileBinder();
 
+    private static final int CODE_SEND_INTO = 80000001;
+    private static final int CODE_SEND_OUT = 80000002;
+    private static final int CODE_RESTORE_FINISH = 80000003;
+    private static final int CODE_DOWNLOAD_FINISH = 80000004;
+
+    private class SeafileBinder extends ISeafileService.Stub {
+
+        @Override
+        public boolean onTransact(int code, Parcel data, Parcel reply, int flags)
+                throws RemoteException {
+            switch (code) {
+                case CODE_SEND_INTO:
+                    String info = data.readString();
+                    for (IBinder iBinder : mIBinders) {
+                        Parcel _data = Parcel.obtain();
+                        Parcel _reply = Parcel.obtain();
+                        _data.writeString(
+                                getText(R.string.appstore_download_app) + " " + info);
+                        try {
+                            iBinder.transact(CODE_SEND_OUT, _data, _reply, 0);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        } finally {
+                            _data.recycle();
+                            _reply.recycle();
+                        }
+                        reply.writeNoException();
+                    }
+                    return true;
+               case CODE_DOWNLOAD_FINISH:
+                    new InstallAsyncTask().execute();
+                    reply.writeNoException();
+                    return true;
+            }
+            return super.onTransact(code, data, reply, flags);
+        }
+
+        @Override
         public void sync(String libraryId, String libraryName, String filePath) {
             mConsole.updateSync(mAccount.mUserId, libraryId, libraryName, SeafileUtils.SYNC);
             SeafileUtils.sync(libraryId, filePath);
         }
 
+        @Override
         public void desync(String libraryId, String libraryName, String filePath) {
             mConsole.updateSync(mAccount.mUserId, libraryId, libraryName, SeafileUtils.UNSYNC);
             SeafileUtils.desync(filePath);
         }
 
+        @Override
         public String getLibrary() {
             return mLibrary;
         }
 
+        @Override
         public int getUserId() {
             return mAccount.mUserId;
         }
 
+        @Override
         public String getUserName() {
             return SeafileUtils.mUserId;
         }
 
-        public String getUserPassword() {
-            return SeafileUtils.mUserPassword;
-        }
-
+        @Override
         public int isSync(String libraryId, String libraryName) {
             return mConsole.queryFile(mAccount.mUserId, libraryId, libraryName);
         }
 
+        @Override
         public void updateAccount() {
             initData();
         }
 
+        @Override
         public void stopAccount() {
             SeafileUtils.stop();
             mStartSeafileThread = null;
         }
 
+        @Override
         public void restoreSettings(boolean wallpaper, boolean wifi, boolean email, boolean appdata,
                 boolean startupmenu, boolean browser, boolean appstore) {
             if (mImportBusy || !mCloudFolder.exists()) {
@@ -298,30 +354,37 @@ public class SeafileService extends Service {
             if (appstore) {
                 ArrayList<String> pkgNames = new ArrayList();
                 File file = new File("SEAFILE_PATH_APPSTORE_PKGNAME");
+                BufferedReader appReader = null;
                 try {
-                    BufferedReader appReader = new BufferedReader(
+                    appReader = new BufferedReader(
                             new FileReader(mUserPath + SEAFILE_PATH_APPSTORE_PKGNAME));
                     String line = null;
                     while ((line = appReader.readLine()) != null) {
                         pkgNames.add(line);
                     }
-                    appReader.close();
                 } catch (IOException e) {
                     e.printStackTrace();
+                } finally {
+                    if (appReader != null) {
+                        try {
+                            appReader.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
-
                 // download apps from appstore
                 Intent intent = new Intent();
                 intent.setComponent(new ComponentName("com.openthos.appstore",
                         "com.openthos.appstore.download.DownloadService"));
                 intent.putStringArrayListExtra("packageNames", pkgNames);
                 startService(intent);
+            } else {
+                restoreFinish();
             }
-            mImportBusy = false;
-            Toast.makeText(SeafileService.this, getResources().
-                    getString(R.string.import_reboot_info_warn), Toast.LENGTH_SHORT).show();
         }
 
+        @Override
         public void saveSettings(boolean wallpaper, boolean wifi, boolean email, boolean appdata,
                 boolean startupmenu, boolean browser, boolean appstore) {
             if (mExportBusy) {
@@ -403,7 +466,37 @@ public class SeafileService extends Service {
             mIsTimer = false;
             mExportBusy = false;
         }
-    };
+
+        @Override
+        public void setBinder(IBinder b) {
+            mIBinders.add(b);
+        }
+
+        @Override
+        public void unsetBinder(IBinder b) {
+            mIBinders.remove(b);
+        }
+
+        @Override
+        public int getCodeSendInto() {
+            return CODE_SEND_INTO;
+        }
+
+        @Override
+        public int getCodeSendOut() {
+            return CODE_SEND_OUT;
+        }
+
+        @Override
+        public int getCodeRestoreFinish() {
+            return CODE_RESTORE_FINISH;
+        }
+
+        @Override
+        public int getCodeDownloadFinish() {
+            return CODE_DOWNLOAD_FINISH;
+        }
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -544,8 +637,8 @@ public class SeafileService extends Service {
 
     private void startTimer() {
         mTimer = new Timer();
-        mSettingsTask = new SaveSettingsTask();
-        mTimer.schedule(mSettingsTask, 0, 3600000);
+        mAutoTask = new AutoBackupTask();
+        mTimer.schedule(mAutoTask, 0, 3600000);
     }
 
     private void stopTimer() {
@@ -553,21 +646,161 @@ public class SeafileService extends Service {
             mTimer.cancel();
             mTimer = null;
         }
-        if (mSettingsTask != null) {
-            mSettingsTask.cancel();
-            mSettingsTask = null;
+        if (mAutoTask != null) {
+            mAutoTask.cancel();
+            mAutoTask = null;
         }
     }
 
-    private class SaveSettingsTask extends TimerTask {
+    private class AutoBackupTask extends TimerTask {
         @Override
         public void run() {
             mIsTimer = true;
+            mBinder.saveSettings(mWallpaper, mWifi, mEmail, mAppdata,
+                    mStartupmenu, mBrowser, mAppstore);
+        }
+    }
+
+    private ArrayList<String> mAppNames;
+    private ArrayList<String> mApkPaths;
+    private int mTotalApks, mDownloadApks, mTotal;
+    private final PackageParser parser = new PackageParser();
+    private static final String APPSTORE_DOWNLOAD_PATH
+            = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            .getAbsolutePath() + "/app";
+
+    private void initializeApp() {
+        mAppNames = new ArrayList();
+        mApkPaths = new ArrayList();
+        File file = new File(APPSTORE_DOWNLOAD_PATH);
+        File[] files = file.listFiles();
+        try {
+            for (File apk: files) {
+                String name = getAppName(apk);
+                if (TextUtils.isEmpty(name)) {
+                    continue;
+                }
+                mAppNames.add(name);
+                mApkPaths.add(apk.getAbsolutePath());
+            }
+        } catch (Exception e) {
+        }
+        mTotalApks = mAppNames.size();
+    }
+
+    private String getAppName(File sourceFile) {
+        try {
+            PackageParser.Package pkg = parser.parseMonolithicPackage(sourceFile, 0);
+            parser.collectManifestDigest(pkg);
+            PackageInfo info = PackageParser.generatePackageInfo(pkg, null,
+                     PackageManager.GET_PERMISSIONS, 0, 0, null,
+                     new PackageUserState());
+            Resources pRes = getResources();
+            AssetManager assmgr = new AssetManager();
+            assmgr.addAssetPath(sourceFile.getAbsolutePath());
+            Resources res = new Resources(assmgr,
+                                 pRes.getDisplayMetrics(), pRes.getConfiguration());
+            CharSequence label = null;
+            if (info.applicationInfo.labelRes != 0) {
+                label = res.getText(info.applicationInfo.labelRes);
+            }
+            if (label == null) {
+                label = (info.applicationInfo.nonLocalizedLabel != null) ?
+                      info.applicationInfo.nonLocalizedLabel : info.applicationInfo.packageName;
+            }
+            return label.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    public class InstallAsyncTask extends AsyncTask<Void, Object, Void> {
+        private static final int CURRENT_INDEX = 0;
+        private static final int APPNAME = 1;
+
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            initializeApp();
+            for (int i = 0; i < mTotalApks; i++) {
+                Object[] result = new Object[2];
+                result[CURRENT_INDEX] = i + 1;
+                result[APPNAME] = mAppNames.get(i);
+                publishProgress(result);
+                installSlient(mApkPaths.get(i));
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Object... values) {
+            int index = (int) values[CURRENT_INDEX];
+            String appName = (String) values[APPNAME];
+            for (IBinder iBinder : mIBinders) {
+                Parcel _data = Parcel.obtain();
+                Parcel _reply = Parcel.obtain();
+                _data.writeInterfaceToken(DESCRIPTOR);
+                _data.writeString(getText(R.string.restore_progress) + " " + appName
+                        + " " + index + "/" + mTotalApks);
+                try {
+                    iBinder.transact(CODE_SEND_OUT, _data, _reply, 0);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                } finally {
+                    _data.recycle();
+                    _reply.recycle();
+                }
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Void avoid) {
+             restoreFinish();
+        }
+    }
+
+    private void restoreFinish(){
+        mImportBusy = false;
+        Toast.makeText(SeafileService.this, getResources().
+                getString(R.string.import_reboot_info_warn), Toast.LENGTH_SHORT).show();
+        for (IBinder iBinder : mIBinders) {
+            Parcel _data = Parcel.obtain();
+            Parcel _reply = Parcel.obtain();
+            _data.writeInterfaceToken(DESCRIPTOR);
             try {
-                mBinder.saveSettings(mWallpaper, mWifi, mEmail, mAppdata,
-                                     mStartupmenu, mBrowser, mAppstore);
+                iBinder.transact(CODE_RESTORE_FINISH, _data, _reply, 0);
             } catch (RemoteException e) {
                 e.printStackTrace();
+            } finally {
+                _data.recycle();
+                _reply.recycle();
+            }
+        }
+    }
+
+    private void installSlient(String apkPath) {
+        apkPath = apkPath.replace(Environment.getExternalStorageDirectory().getAbsolutePath(),
+                "/storage/emulated/legacy");
+        String cmd = "pm install " + apkPath;
+        DataOutputStream os = null;
+        try {
+            Process process = Runtime.getRuntime().exec("su");
+            os = new DataOutputStream(process.getOutputStream());
+            os.write(cmd.getBytes());
+            os.writeBytes("\n");
+            os.writeBytes("exit\n");
+            os.flush();
+            process.waitFor();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (os != null) {
+                try {
+                    os.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

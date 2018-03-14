@@ -3,4 +3,6 @@
     <string name="import_busy_warn">正在恢复,请稍候操作</string>
     <string name="export_busy_warn">正在备份,请稍后操作</string>
     <string name="import_reboot_info_warn">恢复完成后,要想所有功能生效,需重启计算机</string>
+    <string name="restore_progress">正在还原</string>
+    <string name="appstore_download_app">正在从应用商店下载</string>
 </resources>

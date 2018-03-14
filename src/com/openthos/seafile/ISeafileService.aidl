@@ -1,7 +1,5 @@
 package com.openthos.seafile;
 
-//import com.openthos.seafile.SeafileLibrary;
-
 interface ISeafileService {
     void sync(String libraryId, String libraryName, String filePath);
     void desync(String libraryId, String libraryName, String filePath);
@@ -15,4 +13,10 @@ interface ISeafileService {
             boolean startupmenu, boolean browser, boolean appstore);
     void saveSettings(boolean wallpaper, boolean wifi, boolean email, boolean appdata,
             boolean startupmenu, boolean browser, boolean appstore);
+    void setBinder(IBinder b);
+    void unsetBinder(IBinder b);
+    int getCodeSendInto();
+    int getCodeSendOut();
+    int getCodeRestoreFinish();
+    int getCodeDownloadFinish();
 }
