@@ -32,6 +32,9 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -53,6 +56,49 @@ import android.os.Environment;
 import android.os.RemoteException;
 
 public class SeafileService extends Service {
+    private static final String SYSTEM_PATH_WALLPAPER = "data/system/users/0/wallpaper";
+    private static final String SYSTEM_PATH_WIFI = "data/misc/wifi";
+    private static final String SYSTEM_PATH_WIFI_INFO = "data/misc/wifi/wpa_supplicant.conf";
+    private static final String SYSTEM_PATH_EMAIL = "data/data/com.android.email";
+    private static final String SYSTEM_PATH_PREFS = SYSTEM_PATH_EMAIL + "/shared_prefs";
+    private static final String SYSTEM_PATH_STATUSBAR_DB =
+                                "data/data/com.android.systemui/databases/Status_bar_database.db";
+    private static final String SYSTEM_PATH_BROWSER = "data/data/org.mozilla.fennec_root/files";
+    private static final String SYSTEM_PATH_BROWSER_INFO =
+                                "data/data/org.mozilla.fennec_root/files/mozilla";
+    private static final String SYSTEM_PATH_APPSTORE = "data/data/com.openthos.appstore/";
+
+    private static final String SEAFILE_PATH_WALLPAPER = "/UserConfig/wallpaper";
+    private static final String SEAFILE_PATH_WIFI = "/UserConfig/wifi";
+    private static final String SEAFILE_PATH_WIFI_INFO = "/UserConfig/wifi/wpa_supplicant.conf";
+    private static final String SEAFILE_PATH_WALLPAPER_IMAGE =
+                                SEAFILE_PATH_WALLPAPER + "/wallpaper";
+    private static final String SEAFILE_PATH_EMAIL = "/UserConfig/email";
+    private static final String SEAFILE_PATH_PREFS = SEAFILE_PATH_EMAIL + "/shared_prefs";
+    private static final String SEAFILE_PATH_STARTUPMENU = "/UserConfig/startupmenu";
+    private static final String SEAFILE_PATH_STATUSBAR_DB =
+                         SEAFILE_PATH_STARTUPMENU + "/Status_bar_database.db";
+    private static final String SEAFILE_PATH_BROWSER = "/UserConfig/browser";
+    private static final String SEAFILE_PATH_BROWSER_INFO = "/UserConfig/browser/mozilla";
+    private static final String SEAFILE_PATH_APPSTORE = "/UserConfig/appstore";
+    private static final String SEAFILE_PATH_APPSTORE_PKGNAME =
+            "/UserConfig/appstore/appPkgNames.txt";
+
+    private static final String ROOT_COMMOND = "chmod -R 777 ";
+    private static final String TAG = "SeafileService";
+    private static final String DESCRIPTOR = "com.openthos.seafile.ISeafileService";
+    private static final String APPSTORE_DOWNLOAD_PATH
+            = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            .getAbsolutePath() + "/app";
+    private static final String URL_REGIEST_ACCOUNT= "https://dev.openthos.org/accounts/register/";
+
+    private static final int CODE_SEND_INTO = 80000001;
+    private static final int CODE_SEND_OUT = 80000002;
+    private static final int CODE_RESTORE_FINISH = 80000003;
+    private static final int CODE_DOWNLOAD_FINISH = 80000004;
+    private static final int CODE_REGIEST_SUCCESS = 80000005;
+    private static final int CODE_REGIEST_FAILED = 80000006;
+
     private StartSeafileThread mStartSeafileThread;
     public SeafileAccount mAccount;
     public SeafileUtils.SeafileSQLConsole mConsole;
@@ -66,42 +112,18 @@ public class SeafileService extends Service {
     private boolean mImportBusy, mExportBusy;
     private String mUserPath;
     private ArrayList<IBinder> mIBinders = new ArrayList();
-
-    private static final String SYSTEM_PATH_WALLPAPER = "data/system/users/0/wallpaper";
-    private static final String SYSTEM_PATH_WIFI = "data/misc/wifi";
-    private static final String SYSTEM_PATH_WIFI_INFO = "data/misc/wifi/wpa_supplicant.conf";
-    private static final String SYSTEM_PATH_EMAIL = "data/data/com.android.email";
-    private static final String SYSTEM_PATH_PREFS = SYSTEM_PATH_EMAIL + "/shared_prefs";
-    private static final String SYSTEM_PATH_STATUSBAR_DB =
-                                "data/data/com.android.systemui/databases/Status_bar_database.db";
-    private static final String SYSTEM_PATH_BROWSER = "data/data/org.mozilla.fennec_root/files";
-    private static final String SYSTEM_PATH_BROWSER_INFO =
-                                "data/data/org.mozilla.fennec_root/files/mozilla";
-    private static final String SYSTEM_PATH_APPSTORE = "data/data/com.openthos.appstore/";
-
-    private static final String SEAFILE_PATH_WALLPAPER = "/cloudFolder/wallpaper";
-    private static final String SEAFILE_PATH_WIFI = "/cloudFolder/wifi";
-    private static final String SEAFILE_PATH_WIFI_INFO = "/cloudFolder/wifi/wpa_supplicant.conf";
-    private static final String SEAFILE_PATH_WALLPAPER_IMAGE =
-                                SEAFILE_PATH_WALLPAPER + "/wallpaper";
-    private static final String SEAFILE_PATH_EMAIL = "/cloudFolder/email";
-    private static final String SEAFILE_PATH_PREFS = SEAFILE_PATH_EMAIL + "/shared_prefs";
-    private static final String SEAFILE_PATH_STARTUPMENU = "/cloudFolder/startupmenu";
-    private static final String SEAFILE_PATH_STATUSBAR_DB =
-                         SEAFILE_PATH_STARTUPMENU + "/Status_bar_database.db";
-    private static final String SEAFILE_PATH_BROWSER = "/cloudFolder/browser";
-    private static final String SEAFILE_PATH_BROWSER_INFO = "/cloudFolder/browser/mozilla";
-    private static final String SEAFILE_PATH_APPSTORE = "/cloudFolder/appstore";
-    private static final String SEAFILE_PATH_APPSTORE_PKGNAME =
-                                "/cloudFolder/appstore/appPkgNames.txt";
-    private static final String ROOT_COMMOND = "chmod -R 777 ";
-    private static final String TAG = "CloudServiceFragment";
+    private ArrayList<String> mAppNames = new ArrayList();
+    private ArrayList<String> mApkPaths = new ArrayList();
+    private int mTotalApks, mDownloadApks, mTotal;
+    private final PackageParser parser = new PackageParser();
+    private SeafileBinder mBinder = new SeafileBinder();
     private boolean DEBUG = false;
-    public static final String DESCRIPTOR = "com.openthos.seafile.ISeafileService";
+    private Handler mHandler;
 
     @Override
     public void onCreate() {
         super.onCreate();
+        mHandler = new SeafileHandler();
         SeafileUtils.init();
     }
 
@@ -242,12 +264,316 @@ public class SeafileService extends Service {
         }
     }
 
-    private SeafileBinder mBinder = new SeafileBinder();
+    @Override
+    public IBinder onBind(Intent intent) {
+        return mBinder;
+    }
 
-    private static final int CODE_SEND_INTO = 80000001;
-    private static final int CODE_SEND_OUT = 80000002;
-    private static final int CODE_RESTORE_FINISH = 80000003;
-    private static final int CODE_DOWNLOAD_FINISH = 80000004;
+    private void importWallpaperFiles() {
+        try {
+            WallpaperManager.getInstance(this).setStream(
+                    new FileInputStream(mUserPath + SEAFILE_PATH_WALLPAPER_IMAGE));
+        } catch (IOException exception) {
+            try {
+                WallpaperManager.getInstance(this).setResource(
+                                  com.android.internal.R.drawable.default_wallpaper);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void importEmailFiles() {
+        File emailFiles = new File(mUserPath + SEAFILE_PATH_EMAIL);
+        if (emailFiles.exists()){
+            File emailNewDevicePrefs = new File(SYSTEM_PATH_PREFS);
+            if (emailNewDevicePrefs.exists()) {
+                SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_PREFS);
+                FileUtils.deleteGeneralFile(SYSTEM_PATH_PREFS);
+            }
+            SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_EMAIL);
+            SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_PREFS);
+            if (FileUtils.copyGeneralFile(mUserPath + SEAFILE_PATH_PREFS, SYSTEM_PATH_EMAIL)) {
+                if (DEBUG) Log.i(TAG,"seafile email sync to new device sucessful!");
+            } else {
+                if (DEBUG) Log.i(TAG,"seafile email sync to new device fail!");
+            }
+        }
+    }
+
+    private void importStatusBarFiles() {
+        File statusbarDbFiles = new File(SEAFILE_PATH_STATUSBAR_DB);
+        if (statusbarDbFiles.exists()) {
+            SQLiteDatabase statusbarDb = SQLiteDatabase.openDatabase(
+                          SEAFILE_PATH_STATUSBAR_DB, null, SQLiteDatabase.OPEN_READWRITE);
+            Cursor cursor = statusbarDb.rawQuery("select * from status_bar_tb", null);
+            if (cursor != null) {
+                List<PackageInfo> pkgInfos = getPackageManager().getInstalledPackages(0);
+                ArrayList<String> pkgNameLists = new ArrayList();
+                while(cursor.moveToNext()) {
+                    String pkgName = cursor.getString(cursor.getColumnIndex("pkgname"));
+                    for (PackageInfo pkgInfo : pkgInfos) {
+                        if (pkgInfo.packageName.equals(pkgName)) {
+                            pkgNameLists.add(pkgName);
+                        }
+                    }
+                }
+                Intent intent = new Intent(Intent.STATUS_BAR_SEAFILE);
+                intent.putStringArrayListExtra("pkgname", pkgNameLists);
+                sendBroadcast(intent);
+            }
+        }
+    }
+
+    private void importWifiFiles() {
+        SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_WIFI_INFO);
+        SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_WIFI);
+        SeafileUtils.exec("cp -f " + mUserPath + SEAFILE_PATH_WIFI_INFO +
+                          " " + SYSTEM_PATH_WIFI);
+    }
+
+    private void importBrowserFiles() {
+        SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_BROWSER);
+        SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_BROWSER_INFO);
+        SeafileUtils.exec("cp -rf " + mUserPath + SEAFILE_PATH_BROWSER_INFO +
+                " " + SYSTEM_PATH_BROWSER);
+    }
+
+    private void exportWallpaperFiles() {
+        SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_WALLPAPER);
+        SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_WALLPAPER);
+        SeafileUtils.exec("cp -f " + SYSTEM_PATH_WALLPAPER + " " + mUserPath + SEAFILE_PATH_WALLPAPER);
+    }
+
+    private void exportStartupmenuFiles() {
+        File statusbarDb = new File(SYSTEM_PATH_STATUSBAR_DB);
+        if (statusbarDb.exists()) {
+            SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_STATUSBAR_DB);
+            if (FileUtils.copyGeneralFile(SYSTEM_PATH_STATUSBAR_DB,
+                    mUserPath + SEAFILE_PATH_STARTUPMENU)) {
+                if (DEBUG) Log.i(TAG,"statusbar sync to seafile sucessful!");
+            } else {
+                if (DEBUG) Log.i(TAG,"statusbar sync to seafile fail!");
+            }
+        }
+    }
+
+    private void exportEmailFiles() {
+        File emailSharedPrefs = new File(SYSTEM_PATH_PREFS);
+        if (emailSharedPrefs.exists()) {
+            SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_PREFS);
+            SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_EMAIL);
+            if (FileUtils.copyGeneralFile(SYSTEM_PATH_PREFS, mUserPath + SEAFILE_PATH_EMAIL)) {
+                if (DEBUG) Log.i(TAG,"email sync to seafile sucessful!");
+            } else {
+                if (DEBUG) Log.i(TAG,"email sync to seafile fail!");
+            }
+        }
+    }
+
+    private void exportWifiFiles() {
+        SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_WIFI_INFO);
+        SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_WIFI);
+        SeafileUtils.exec("cp -f " + SYSTEM_PATH_WIFI_INFO + " " +
+                mUserPath + SEAFILE_PATH_WIFI);
+    }
+
+    private void exportBrowserFiles() {
+        SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_BROWSER_INFO);
+        SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_BROWSER);
+        SeafileUtils.exec("cp -rf "+SYSTEM_PATH_BROWSER_INFO + " " +
+                mUserPath + SEAFILE_PATH_BROWSER);
+    }
+
+    private void exportAppstoreFiles() {
+        List<PackageInfo> pkgInfos = getPackageManager().getInstalledPackages(0);
+        try {
+            BufferedWriter appWriter = new BufferedWriter(
+                    new FileWriter(mUserPath + SEAFILE_PATH_APPSTORE_PKGNAME));
+            for (PackageInfo pkgInfo : pkgInfos) {
+                appWriter.write(pkgInfo.packageName);
+                appWriter.newLine();
+                appWriter.flush();
+            }
+            appWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void getCsrf(String user, String password) {
+        List<NameValuePair> list = new ArrayList<>();
+        list.add(new BasicNameValuePair("email", user));
+        list.add(new BasicNameValuePair("password1", password));
+        list.add(new BasicNameValuePair("password2", password));
+        RequestThread thread = new RequestThread(mHandler, URL_REGIEST_ACCOUNT, list);
+        thread.start();
+    }
+
+    private void registSeafile(String openthosID, String password) {
+    }
+
+    private void startTimer() {
+        mTimer = new Timer();
+        mAutoTask = new AutoBackupTask();
+        mTimer.schedule(mAutoTask, 0, 3600000);
+    }
+
+    private void stopTimer() {
+        if (mTimer != null) {
+            mTimer.cancel();
+            mTimer = null;
+        }
+        if (mAutoTask != null) {
+            mAutoTask.cancel();
+            mAutoTask = null;
+        }
+    }
+
+    private class AutoBackupTask extends TimerTask {
+        @Override
+        public void run() {
+            mIsTimer = true;
+            mBinder.saveSettings(mWallpaper, mWifi, mEmail, mAppdata,
+                    mStartupmenu, mBrowser, mAppstore);
+        }
+    }
+
+    private void initializeApp() {
+        mAppNames.clear();
+        mApkPaths.clear();
+        File file = new File(APPSTORE_DOWNLOAD_PATH);
+        File[] files = file.listFiles();
+        try {
+            for (File apk: files) {
+                String name = getAppName(apk);
+                if (TextUtils.isEmpty(name)) {
+                    continue;
+                }
+                mAppNames.add(name);
+                mApkPaths.add(apk.getAbsolutePath());
+            }
+        } catch (Exception e) {
+        }
+        mTotalApks = mAppNames.size();
+    }
+
+    private String getAppName(File sourceFile) {
+        try {
+            PackageParser.Package pkg = parser.parseMonolithicPackage(sourceFile, 0);
+            parser.collectManifestDigest(pkg);
+            PackageInfo info = PackageParser.generatePackageInfo(pkg, null,
+                     PackageManager.GET_PERMISSIONS, 0, 0, null,
+                     new PackageUserState());
+            Resources pRes = getResources();
+            AssetManager assmgr = new AssetManager();
+            assmgr.addAssetPath(sourceFile.getAbsolutePath());
+            Resources res = new Resources(assmgr,
+                                 pRes.getDisplayMetrics(), pRes.getConfiguration());
+            CharSequence label = null;
+            if (info.applicationInfo.labelRes != 0) {
+                label = res.getText(info.applicationInfo.labelRes);
+            }
+            if (label == null) {
+                label = (info.applicationInfo.nonLocalizedLabel != null) ?
+                      info.applicationInfo.nonLocalizedLabel : info.applicationInfo.packageName;
+            }
+            return label.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    public class InstallAsyncTask extends AsyncTask<Void, Object, Void> {
+        private static final int CURRENT_INDEX = 0;
+        private static final int APPNAME = 1;
+
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            initializeApp();
+            for (int i = 0; i < mTotalApks; i++) {
+                Object[] result = new Object[2];
+                result[CURRENT_INDEX] = i + 1;
+                result[APPNAME] = mAppNames.get(i);
+                publishProgress(result);
+                installSlient(mApkPaths.get(i));
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Object... values) {
+            int index = (int) values[CURRENT_INDEX];
+            String appName = (String) values[APPNAME];
+            for (IBinder iBinder : mIBinders) {
+                Parcel _data = Parcel.obtain();
+                Parcel _reply = Parcel.obtain();
+                _data.writeInterfaceToken(DESCRIPTOR);
+                _data.writeString(getText(R.string.restore_progress) + " " + appName
+                        + " " + index + "/" + mTotalApks);
+                try {
+                    iBinder.transact(CODE_SEND_OUT, _data, _reply, 0);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                } finally {
+                    _data.recycle();
+                    _reply.recycle();
+                }
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Void avoid) {
+             restoreFinish();
+        }
+    }
+
+    private void restoreFinish(){
+        mImportBusy = false;
+        Toast.makeText(SeafileService.this, getResources().
+                getString(R.string.import_reboot_info_warn), Toast.LENGTH_SHORT).show();
+        for (IBinder iBinder : mIBinders) {
+            Parcel _data = Parcel.obtain();
+            Parcel _reply = Parcel.obtain();
+            _data.writeInterfaceToken(DESCRIPTOR);
+            try {
+                iBinder.transact(CODE_RESTORE_FINISH, _data, _reply, 0);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            } finally {
+                _data.recycle();
+                _reply.recycle();
+            }
+        }
+    }
+
+    private void installSlient(String apkPath) {
+        apkPath = apkPath.replace(Environment.getExternalStorageDirectory().getAbsolutePath(),
+                "/storage/emulated/legacy");
+        String cmd = "pm install " + apkPath;
+        DataOutputStream os = null;
+        try {
+            Process process = Runtime.getRuntime().exec("su");
+            os = new DataOutputStream(process.getOutputStream());
+            os.write(cmd.getBytes());
+            os.writeBytes("\n");
+            os.writeBytes("exit\n");
+            os.flush();
+            process.waitFor();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (os != null) {
+                try {
+                    os.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 
     private class SeafileBinder extends ISeafileService.Stub {
 
@@ -468,6 +794,11 @@ public class SeafileService extends Service {
         }
 
         @Override
+        public void regiestAccount(String userName, String password) {
+            getCsrf(userName, password);
+        }
+
+        @Override
         public void setBinder(IBinder b) {
             mIBinders.add(b);
         }
@@ -496,311 +827,53 @@ public class SeafileService extends Service {
         public int getCodeDownloadFinish() {
             return CODE_DOWNLOAD_FINISH;
         }
-    }
 
-    @Override
-    public IBinder onBind(Intent intent) {
-        return mBinder;
-    }
+        @Override
+        public int getCodeRegiestSuccess() {
+            return CODE_REGIEST_SUCCESS;
+        }
 
-    private void importWallpaperFiles() {
-        try {
-            WallpaperManager.getInstance(this).setStream(
-                    new FileInputStream(mUserPath + SEAFILE_PATH_WALLPAPER_IMAGE));
-        } catch (IOException exception) {
-            try {
-                WallpaperManager.getInstance(this).setResource(
-                                  com.android.internal.R.drawable.default_wallpaper);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        @Override
+        public int getCodeRegiestFailed() {
+            return CODE_REGIEST_FAILED;
         }
     }
 
-    private void importEmailFiles() {
-        File emailFiles = new File(mUserPath + SEAFILE_PATH_EMAIL);
-        if (emailFiles.exists()){
-            File emailNewDevicePrefs = new File(SYSTEM_PATH_PREFS);
-            if (emailNewDevicePrefs.exists()) {
-                SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_PREFS);
-                FileUtils.deleteGeneralFile(SYSTEM_PATH_PREFS);
-            }
-            SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_EMAIL);
-            SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_PREFS);
-            if (FileUtils.copyGeneralFile(mUserPath + SEAFILE_PATH_PREFS, SYSTEM_PATH_EMAIL)) {
-                if (DEBUG) Log.i(TAG,"seafile email sync to new device sucessful!");
-            } else {
-                if (DEBUG) Log.i(TAG,"seafile email sync to new device fail!");
-            }
-        }
-    }
-
-    private void importStatusBarFiles() {
-        File statusbarDbFiles = new File(SEAFILE_PATH_STATUSBAR_DB);
-        if (statusbarDbFiles.exists()) {
-            SQLiteDatabase statusbarDb = SQLiteDatabase.openDatabase(
-                          SEAFILE_PATH_STATUSBAR_DB, null, SQLiteDatabase.OPEN_READWRITE);
-            Cursor cursor = statusbarDb.rawQuery("select * from status_bar_tb", null);
-            if (cursor != null) {
-                List<PackageInfo> pkgInfos = getPackageManager().getInstalledPackages(0);
-                ArrayList<String> pkgNameLists = new ArrayList();
-                while(cursor.moveToNext()) {
-                    String pkgName = cursor.getString(cursor.getColumnIndex("pkgname"));
-                    for (PackageInfo pkgInfo : pkgInfos) {
-                        if (pkgInfo.packageName.equals(pkgName)) {
-                            pkgNameLists.add(pkgName);
+    private class SeafileHandler extends Handler {
+        @Override
+        public void handleMessage (Message msg) {
+            switch (msg.what) {
+                case RequestThread.MSG_REGIST_SEAFILE_OK:
+                    mBinder.updateAccount();
+                    for (IBinder iBinder : mIBinders) {
+                        Parcel _data = Parcel.obtain();
+                        Parcel _reply = Parcel.obtain();
+                        _data.writeInterfaceToken(DESCRIPTOR);
+                        try {
+                            iBinder.transact(CODE_REGIEST_SUCCESS, _data, _reply, 0);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        } finally {
+                            _data.recycle();
+                            _reply.recycle();
                         }
                     }
-                }
-                Intent intent = new Intent(Intent.STATUS_BAR_SEAFILE);
-                intent.putStringArrayListExtra("pkgname", pkgNameLists);
-                sendBroadcast(intent);
-            }
-        }
-    }
-
-    private void importWifiFiles() {
-        SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_WIFI_INFO);
-        SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_WIFI);
-        SeafileUtils.exec("cp -f " + mUserPath + SEAFILE_PATH_WIFI_INFO +
-                          " " + SYSTEM_PATH_WIFI);
-    }
-
-    private void importBrowserFiles() {
-        SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_BROWSER);
-        SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_BROWSER_INFO);
-        SeafileUtils.exec("cp -rf " + mUserPath + SEAFILE_PATH_BROWSER_INFO +
-                " " + SYSTEM_PATH_BROWSER);
-    }
-
-    private void exportWallpaperFiles() {
-        SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_WALLPAPER);
-        SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_WALLPAPER);
-        SeafileUtils.exec("cp -f " + SYSTEM_PATH_WALLPAPER + " " + mUserPath + SEAFILE_PATH_WALLPAPER);
-    }
-
-    private void exportStartupmenuFiles() {
-        File statusbarDb = new File(SYSTEM_PATH_STATUSBAR_DB);
-        if (statusbarDb.exists()) {
-            SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_STATUSBAR_DB);
-            if (FileUtils.copyGeneralFile(SYSTEM_PATH_STATUSBAR_DB,
-                    mUserPath + SEAFILE_PATH_STARTUPMENU)) {
-                if (DEBUG) Log.i(TAG,"statusbar sync to seafile sucessful!");
-            } else {
-                if (DEBUG) Log.i(TAG,"statusbar sync to seafile fail!");
-            }
-        }
-    }
-
-    private void exportEmailFiles() {
-        File emailSharedPrefs = new File(SYSTEM_PATH_PREFS);
-        if (emailSharedPrefs.exists()) {
-            SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_PREFS);
-            SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_EMAIL);
-            if (FileUtils.copyGeneralFile(SYSTEM_PATH_PREFS, mUserPath + SEAFILE_PATH_EMAIL)) {
-                if (DEBUG) Log.i(TAG,"email sync to seafile sucessful!");
-            } else {
-                if (DEBUG) Log.i(TAG,"email sync to seafile fail!");
-            }
-        }
-    }
-
-    private void exportWifiFiles() {
-        SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_WIFI_INFO);
-        SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_WIFI);
-        SeafileUtils.exec("cp -f " + SYSTEM_PATH_WIFI_INFO + " " +
-                mUserPath + SEAFILE_PATH_WIFI);
-    }
-
-    private void exportBrowserFiles() {
-        SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_BROWSER_INFO);
-        SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_BROWSER);
-        SeafileUtils.exec("cp -rf "+SYSTEM_PATH_BROWSER_INFO + " " +
-                mUserPath + SEAFILE_PATH_BROWSER);
-    }
-
-    private void exportAppstoreFiles() {
-        List<PackageInfo> pkgInfos = getPackageManager().getInstalledPackages(0);
-        try {
-            BufferedWriter appWriter = new BufferedWriter(
-                    new FileWriter(mUserPath + SEAFILE_PATH_APPSTORE_PKGNAME));
-            for (PackageInfo pkgInfo : pkgInfos) {
-                appWriter.write(pkgInfo.packageName);
-                appWriter.newLine();
-                appWriter.flush();
-            }
-            appWriter.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void startTimer() {
-        mTimer = new Timer();
-        mAutoTask = new AutoBackupTask();
-        mTimer.schedule(mAutoTask, 0, 3600000);
-    }
-
-    private void stopTimer() {
-        if (mTimer != null) {
-            mTimer.cancel();
-            mTimer = null;
-        }
-        if (mAutoTask != null) {
-            mAutoTask.cancel();
-            mAutoTask = null;
-        }
-    }
-
-    private class AutoBackupTask extends TimerTask {
-        @Override
-        public void run() {
-            mIsTimer = true;
-            mBinder.saveSettings(mWallpaper, mWifi, mEmail, mAppdata,
-                    mStartupmenu, mBrowser, mAppstore);
-        }
-    }
-
-    private ArrayList<String> mAppNames;
-    private ArrayList<String> mApkPaths;
-    private int mTotalApks, mDownloadApks, mTotal;
-    private final PackageParser parser = new PackageParser();
-    private static final String APPSTORE_DOWNLOAD_PATH
-            = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            .getAbsolutePath() + "/app";
-
-    private void initializeApp() {
-        mAppNames = new ArrayList();
-        mApkPaths = new ArrayList();
-        File file = new File(APPSTORE_DOWNLOAD_PATH);
-        File[] files = file.listFiles();
-        try {
-            for (File apk: files) {
-                String name = getAppName(apk);
-                if (TextUtils.isEmpty(name)) {
-                    continue;
-                }
-                mAppNames.add(name);
-                mApkPaths.add(apk.getAbsolutePath());
-            }
-        } catch (Exception e) {
-        }
-        mTotalApks = mAppNames.size();
-    }
-
-    private String getAppName(File sourceFile) {
-        try {
-            PackageParser.Package pkg = parser.parseMonolithicPackage(sourceFile, 0);
-            parser.collectManifestDigest(pkg);
-            PackageInfo info = PackageParser.generatePackageInfo(pkg, null,
-                     PackageManager.GET_PERMISSIONS, 0, 0, null,
-                     new PackageUserState());
-            Resources pRes = getResources();
-            AssetManager assmgr = new AssetManager();
-            assmgr.addAssetPath(sourceFile.getAbsolutePath());
-            Resources res = new Resources(assmgr,
-                                 pRes.getDisplayMetrics(), pRes.getConfiguration());
-            CharSequence label = null;
-            if (info.applicationInfo.labelRes != 0) {
-                label = res.getText(info.applicationInfo.labelRes);
-            }
-            if (label == null) {
-                label = (info.applicationInfo.nonLocalizedLabel != null) ?
-                      info.applicationInfo.nonLocalizedLabel : info.applicationInfo.packageName;
-            }
-            return label.toString();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "";
-    }
-
-    public class InstallAsyncTask extends AsyncTask<Void, Object, Void> {
-        private static final int CURRENT_INDEX = 0;
-        private static final int APPNAME = 1;
-
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            initializeApp();
-            for (int i = 0; i < mTotalApks; i++) {
-                Object[] result = new Object[2];
-                result[CURRENT_INDEX] = i + 1;
-                result[APPNAME] = mAppNames.get(i);
-                publishProgress(result);
-                installSlient(mApkPaths.get(i));
-            }
-            return null;
-        }
-
-        @Override
-        protected void onProgressUpdate(Object... values) {
-            int index = (int) values[CURRENT_INDEX];
-            String appName = (String) values[APPNAME];
-            for (IBinder iBinder : mIBinders) {
-                Parcel _data = Parcel.obtain();
-                Parcel _reply = Parcel.obtain();
-                _data.writeInterfaceToken(DESCRIPTOR);
-                _data.writeString(getText(R.string.restore_progress) + " " + appName
-                        + " " + index + "/" + mTotalApks);
-                try {
-                    iBinder.transact(CODE_SEND_OUT, _data, _reply, 0);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                } finally {
-                    _data.recycle();
-                    _reply.recycle();
-                }
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Void avoid) {
-             restoreFinish();
-        }
-    }
-
-    private void restoreFinish(){
-        mImportBusy = false;
-        Toast.makeText(SeafileService.this, getResources().
-                getString(R.string.import_reboot_info_warn), Toast.LENGTH_SHORT).show();
-        for (IBinder iBinder : mIBinders) {
-            Parcel _data = Parcel.obtain();
-            Parcel _reply = Parcel.obtain();
-            _data.writeInterfaceToken(DESCRIPTOR);
-            try {
-                iBinder.transact(CODE_RESTORE_FINISH, _data, _reply, 0);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            } finally {
-                _data.recycle();
-                _reply.recycle();
-            }
-        }
-    }
-
-    private void installSlient(String apkPath) {
-        apkPath = apkPath.replace(Environment.getExternalStorageDirectory().getAbsolutePath(),
-                "/storage/emulated/legacy");
-        String cmd = "pm install " + apkPath;
-        DataOutputStream os = null;
-        try {
-            Process process = Runtime.getRuntime().exec("su");
-            os = new DataOutputStream(process.getOutputStream());
-            os.write(cmd.getBytes());
-            os.writeBytes("\n");
-            os.writeBytes("exit\n");
-            os.flush();
-            process.waitFor();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                    break;
+                case RequestThread.MSG_REGIST_SEAFILE_FAILED:
+                    for (IBinder iBinder : mIBinders) {
+                        Parcel _data = Parcel.obtain();
+                        Parcel _reply = Parcel.obtain();
+                        _data.writeInterfaceToken(DESCRIPTOR);
+                        try {
+                            iBinder.transact(CODE_REGIEST_FAILED, _data, _reply, 0);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        } finally {
+                            _data.recycle();
+                            _reply.recycle();
+                        }
+                    }
+                    break;
             }
         }
     }

@@ -13,10 +13,13 @@ interface ISeafileService {
             boolean startupmenu, boolean browser, boolean appstore);
     void saveSettings(boolean wallpaper, boolean wifi, boolean email, boolean appdata,
             boolean startupmenu, boolean browser, boolean appstore);
+    void regiestAccount(String userName, String password);
     void setBinder(IBinder b);
     void unsetBinder(IBinder b);
     int getCodeSendInto();
     int getCodeSendOut();
     int getCodeRestoreFinish();
     int getCodeDownloadFinish();
+    int getCodeRegiestSuccess();
+    int getCodeRegiestFailed();
 }

@@ -1,6 +1,5 @@
 package com.openthos.seafile;
 
-
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -55,8 +54,8 @@ public class SeafileUtils {
     public static final int UNSYNC = 0;
     public static final int SYNC = 1;
     public static final String SEAFILE_DATA = "seeafile_data";
-    public static final String SETTING_SEAFILE_PROOT_PATH = "/cloudFolder";
-    public static final String SETTING_SEAFILE_NAME = "cloudFolder";
+    public static final String SETTING_SEAFILE_PROOT_PATH = "/UserConfig";
+    public static final String SETTING_SEAFILE_NAME = "UserConfig";
     public static final String FILEMANAGER_SEAFILE_NAME = "DATA";
 
     public static String getUserAccount() {
