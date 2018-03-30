@@ -66,7 +66,7 @@ public class SeafileUtils {
         return !TextUtils.isEmpty(mUserId) || !TextUtils.isEmpty(mUserPassword);
     }
 
-    private static void exec(String[] commands) {
+    public static void exec(String[] commands) {
         Process pro;
         BufferedReader in = null;
         try {

@@ -56,6 +56,7 @@ import android.os.Environment;
 import android.os.RemoteException;
 
 public class SeafileService extends Service {
+    private static final String SYSTEM_PATH_DATA = "/data/data/";
     private static final String SYSTEM_PATH_WALLPAPER = "data/system/users/0/wallpaper";
     private static final String SYSTEM_PATH_WIFI = "data/misc/wifi";
     private static final String SYSTEM_PATH_WIFI_INFO = "data/misc/wifi/wpa_supplicant.conf";
@@ -78,7 +79,7 @@ public class SeafileService extends Service {
     private static final String SEAFILE_PATH_STARTUPMENU = "/UserConfig/startupmenu";
     private static final String SEAFILE_PATH_STATUSBAR_DB =
                          SEAFILE_PATH_STARTUPMENU + "/Status_bar_database.db";
-    private static final String SEAFILE_PATH_BROWSER = "/UserConfig/browser";
+    private static final String SEAFILE_PATH_BROWSER = "/UserConfig/browser/";
     private static final String SEAFILE_PATH_BROWSER_INFO = "/UserConfig/browser/mozilla";
     private static final String SEAFILE_PATH_APPSTORE = "/UserConfig/appstore";
     private static final String SEAFILE_PATH_APPSTORE_PKGNAME =
@@ -109,6 +110,7 @@ public class SeafileService extends Service {
     private AutoBackupTask mAutoTask;
     private boolean mIsTimer;
     private boolean mWallpaper, mWifi, mEmail, mAppdata, mStartupmenu, mBrowser, mAppstore;
+    private List<String> mSyncBrowsers = new ArrayList();
     private boolean mImportBusy, mExportBusy;
     private String mUserPath;
     private ArrayList<IBinder> mIBinders = new ArrayList();
@@ -332,11 +334,11 @@ public class SeafileService extends Service {
                           " " + SYSTEM_PATH_WIFI);
     }
 
-    private void importBrowserFiles() {
-        SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_BROWSER);
-        SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_BROWSER_INFO);
-        SeafileUtils.exec("cp -rf " + mUserPath + SEAFILE_PATH_BROWSER_INFO +
-                " " + SYSTEM_PATH_BROWSER);
+    private void importBrowserFiles(List<String> syncBrowsers) {
+        for (int i = 0; i < syncBrowsers.size(); i++) {
+            SeafileUtils.exec(new String[]{"su", "-c", "tar -xzvpf " + mUserPath +
+                    SEAFILE_PATH_BROWSER + syncBrowsers.get(i) + ".tar.gz"});
+        }
     }
 
     private void exportWallpaperFiles() {
@@ -378,11 +380,12 @@ public class SeafileService extends Service {
                 mUserPath + SEAFILE_PATH_WIFI);
     }
 
-    private void exportBrowserFiles() {
-        SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_BROWSER_INFO);
-        SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_BROWSER);
-        SeafileUtils.exec("cp -rf "+SYSTEM_PATH_BROWSER_INFO + " " +
-                mUserPath + SEAFILE_PATH_BROWSER);
+    private void exportBrowserFiles(List<String> syncBrowsers) {
+        for (int i = 0; i < syncBrowsers.size(); i++) {
+            SeafileUtils.exec(new String[]{"su", "-c", "tar -czpf " + mUserPath +
+                    SEAFILE_PATH_BROWSER + syncBrowsers.get(i) + ".tar.gz " +
+                    SYSTEM_PATH_DATA + syncBrowsers.get(i)});
+        }
     }
 
     private void exportAppstoreFiles() {
@@ -435,7 +438,7 @@ public class SeafileService extends Service {
         public void run() {
             mIsTimer = true;
             mBinder.saveSettings(mWallpaper, mWifi, mEmail, mAppdata,
-                    mStartupmenu, mBrowser, mAppstore);
+                    mStartupmenu, mBrowser, mSyncBrowsers, mAppstore);
         }
     }
 
@@ -652,7 +655,7 @@ public class SeafileService extends Service {
 
         @Override
         public void restoreSettings(boolean wallpaper, boolean wifi, boolean email, boolean appdata,
-                boolean startupmenu, boolean browser, boolean appstore) {
+                boolean startupmenu, boolean browser, List<String> syncBrowsers, boolean appstore) {
             if (mImportBusy || !mCloudFolder.exists()) {
                 return;
             }
@@ -675,7 +678,7 @@ public class SeafileService extends Service {
                 importStatusBarFiles();
             }
             if (browser) {
-                importBrowserFiles();
+                importBrowserFiles(syncBrowsers);
             }
             if (appstore) {
                 ArrayList<String> pkgNames = new ArrayList();
@@ -712,7 +715,7 @@ public class SeafileService extends Service {
 
         @Override
         public void saveSettings(boolean wallpaper, boolean wifi, boolean email, boolean appdata,
-                boolean startupmenu, boolean browser, boolean appstore) {
+                boolean startupmenu, boolean browser, List<String> syncBrowsers, boolean appstore) {
             if (mExportBusy) {
                 return;
             }
@@ -729,6 +732,7 @@ public class SeafileService extends Service {
             mStartupmenu = startupmenu;
             mBrowser = browser;
             mAppstore = appstore;
+            mSyncBrowsers = syncBrowsers;
             if (mIsTimer) {
                 if (!mCloudFolder.exists()) {
                     mCloudFolder.mkdirs();
@@ -768,7 +772,7 @@ public class SeafileService extends Service {
                     if (!browserInfoSeafile.exists()) {
                         browserInfoSeafile.mkdirs();
                     }
-                    exportBrowserFiles();
+                    exportBrowserFiles(syncBrowsers);
                 }
                 if (appstore) {
                     File appstoreDirSeafile = new File(mUserPath + SEAFILE_PATH_APPSTORE);
