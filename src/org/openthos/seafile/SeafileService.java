@@ -1,4 +1,4 @@
-package com.openthos.seafile;
+package org.openthos.seafile;
 
 import android.app.Activity;
 import android.app.Service;
@@ -67,7 +67,7 @@ public class SeafileService extends Service {
     private static final String SYSTEM_PATH_BROWSER = "data/data/org.mozilla.fennec_root/files";
     private static final String SYSTEM_PATH_BROWSER_INFO =
                                 "data/data/org.mozilla.fennec_root/files/mozilla";
-    private static final String SYSTEM_PATH_APPSTORE = "data/data/com.openthos.appstore/";
+    private static final String SYSTEM_PATH_APPSTORE = "data/data/org.openthos.appstore/";
 
     private static final String SEAFILE_PATH_WALLPAPER = "/UserConfig/wallpaper";
     private static final String SEAFILE_PATH_WIFI = "/UserConfig/wifi";
@@ -87,7 +87,7 @@ public class SeafileService extends Service {
 
     private static final String ROOT_COMMOND = "chmod -R 777 ";
     private static final String TAG = "SeafileService";
-    private static final String DESCRIPTOR = "com.openthos.seafile.ISeafileService";
+    private static final String DESCRIPTOR = "org.openthos.seafile.ISeafileService";
     private static final String APPSTORE_DOWNLOAD_PATH
             = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             .getAbsolutePath() + "/app";
@@ -704,8 +704,8 @@ public class SeafileService extends Service {
                 }
                 // download apps from appstore
                 Intent intent = new Intent();
-                intent.setComponent(new ComponentName("com.openthos.appstore",
-                        "com.openthos.appstore.download.DownloadService"));
+                intent.setComponent(new ComponentName("org.openthos.appstore",
+                        "org.openthos.appstore.download.DownloadService"));
                 intent.putStringArrayListExtra("packageNames", pkgNames);
                 startService(intent);
             } else {

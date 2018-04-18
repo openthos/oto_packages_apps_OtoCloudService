@@ -1,4 +1,4 @@
-package com.openthos.seafile;
+package org.openthos.seafile;
 
 interface ISeafileService {
     void sync(String libraryId, String libraryName, String filePath);

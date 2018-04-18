@@ -8,7 +8,7 @@ LOCAL_STATIC_JAVA_LIBRARIES := android-support-v4
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-v7-appcompat
 
 LOCAL_SRC_FILES := $(call all-java-files-under, src) \
-                   src/com/openthos/seafile/ISeafileService.aidl
+                   src/org/openthos/seafile/ISeafileService.aidl
 
 LOCAL_RESOURCE_DIR := $(LOCAL_PATH)/res
 

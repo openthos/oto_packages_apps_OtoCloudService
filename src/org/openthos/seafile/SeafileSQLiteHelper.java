@@ -1,4 +1,4 @@
-package com.openthos.seafile;
+package org.openthos.seafile;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.openthos.seafile"
-    android:sharedUserId="android.uid.system">
+    android:sharedUserId="android.uid.system"
+    package="org.openthos.seafile">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE">
@@ -14,6 +14,10 @@
     </uses-permission>
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <permission android:name="android.permission.ACCESS_SUPERUSER"
+        android:permissionGroup="android.permission-group.SUPERUSER"
+        android:protectionLevel="dangerous" />
 
     <application
         android:allowBackup="true"
@@ -21,7 +25,7 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <service android:name="com.openthos.seafile.SeafileService"
+        <service android:name="org.openthos.seafile.SeafileService"
             android:exported="true">
         </service>
 

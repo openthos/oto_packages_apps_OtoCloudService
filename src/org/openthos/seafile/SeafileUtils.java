@@ -1,4 +1,4 @@
-package com.openthos.seafile;
+package org.openthos.seafile;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -93,14 +93,12 @@ public class SeafileUtils {
 
     public static void init() {
         File seafile = new File("/data/sea/proot.sh");
+        File config = new File(SEAFILE_CONFIG_PATH);
         if (!seafile.exists()){
             exec(new String[]{"su", "-c", "rm -r /data/sea"});
-            exec(new String[]{"tar", "xvf", SEAFILE_PATH, "-C", "/data"});
+            exec(new String[]{"su", "-c", "tar xvf " + SEAFILE_PATH + " -C /data"});
             exec(new String[]{"su", "-c", "chmod -R 777 /data/sea"});
-        }
-        File config = new File(SEAFILE_CONFIG_PATH);
-        if (!config.exists()) {
-            config.mkdirs();
+            exec(new String[]{"su", "-c", "busybox mkdir -m 777 /data/seafile-config"});
         }
         exec(new String[]{"su", "-c", SEAFILE_COMMAND_PROOT
                 + SEAFILE_BASE_ROOT_PATH + SEAFILE_COMMAND_SEAFILE + "init -d "

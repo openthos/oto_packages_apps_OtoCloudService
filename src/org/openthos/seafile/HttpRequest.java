@@ -1,4 +1,4 @@
-package com.openthos.seafile;
+package org.openthos.seafile;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;

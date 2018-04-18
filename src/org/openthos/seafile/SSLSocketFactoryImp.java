@@ -1,4 +1,4 @@
-package com.openthos.seafile;
+package org.openthos.seafile;
 
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import java.io.IOException;

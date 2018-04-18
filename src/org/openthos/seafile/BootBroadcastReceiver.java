@@ -1,4 +1,4 @@
-package com.openthos.seafile;
+package org.openthos.seafile;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -10,7 +10,7 @@ public class BootBroadcastReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent i) {
         if (i.getAction().equals(Intent.ACTION_BOOT_COMPLETED)){
             Intent intent = new Intent();
-            intent.setClassName("com.openthos.seafile", "com.openthos.seafile.SeafileService");
+            intent.setClassName("org.openthos.seafile", "org.openthos.seafile.SeafileService");
             context.startService(intent);
         }
     }

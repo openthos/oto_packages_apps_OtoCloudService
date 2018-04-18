@@ -1,4 +1,4 @@
-package com.openthos.seafile;
+package org.openthos.seafile;
 
 /**
  * Created by Wang Zhixu on 01/19/17.

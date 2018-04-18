@@ -1,4 +1,4 @@
-package com.openthos.seafile;
+package org.openthos.seafile;
 
 import android.os.Handler;
 import android.os.Message;
@@ -33,7 +33,7 @@ import java.security.KeyStore;
 import java.util.List;
 import android.util.Log;
 
-import com.openthos.seafile.CookieUtils;
+import org.openthos.seafile.CookieUtils;
 
 public class RequestThread extends Thread {
     public static final int MSG_REGIST_SEAFILE_OK = 0x1001;
