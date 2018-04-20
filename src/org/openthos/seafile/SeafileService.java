@@ -147,8 +147,9 @@ public class SeafileService extends Service {
                 || TextUtils.isEmpty(SeafileUtils.mUserPassword)) {
             return;
         }
-        mUserPath = SeafileUtils.SEAFILE_DATA_PATH_REAlLY + "/" + SeafileUtils.mUserId;
-        mCloudFolder = new File(mUserPath + SeafileUtils.SETTING_SEAFILE_PROOT_PATH);
+        mUserPath = SeafileUtils.SEAFILE_PROOT_PATH + SeafileUtils.SEAFILE_DATA_ROOT_PATH
+                + "/" + SeafileUtils.mUserId;
+        mCloudFolder = new File(mUserPath, SeafileUtils.SETTING_SEAFILE_NAME);
         mStartSeafileThread = new StartSeafileThread();
         mStartSeafileThread.start();
         startTimer();
@@ -187,7 +188,7 @@ public class SeafileService extends Service {
                         settingId = seafileLibrary.libraryId;
                         continue;
                     }
-                    if (!seafileLibrary.libraryName.equals(SeafileUtils.FILEMANAGER_SEAFILE_NAME)) {
+                    if (!seafileLibrary.libraryName.equals(SeafileUtils.DATA_SEAFILE_NAME)) {
                         continue;
                     }
                     isExistsFileManager = true;
@@ -199,13 +200,13 @@ public class SeafileService extends Service {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-            SeafileUtils.sync(settingId, "/" + SeafileUtils.mUserId +
-                    SeafileUtils.SETTING_SEAFILE_PROOT_PATH);
+            //SeafileUtils.sync(settingId, SeafileUtils.SEAFILE_DATA_ROOT_PATH + "/"
+            //        + SeafileUtils.mUserId + "/" + SeafileUtils.SETTING_SEAFILE_NAME);
             if (!isExistsFileManager) {
                 SeafileLibrary seafileLibrary = new SeafileLibrary();
-                seafileLibrary.libraryName = SeafileUtils.FILEMANAGER_SEAFILE_NAME;
+                seafileLibrary.libraryName = SeafileUtils.DATA_SEAFILE_NAME;
                 seafileLibrary.libraryId
-                        = SeafileUtils.create(SeafileUtils.FILEMANAGER_SEAFILE_NAME);
+                        = SeafileUtils.create(SeafileUtils.DATA_SEAFILE_NAME);
                 mAccount.mLibrarys.add(seafileLibrary);
             }
             if (mAccount.mLibrarys.size() > 0) {
@@ -215,8 +216,8 @@ public class SeafileService extends Service {
                             seafileLibrary.libraryId, seafileLibrary.libraryName);
                     seafileLibrary.isSync = isSync;
                     if (isSync == SeafileUtils.SYNC) {
-                        SeafileUtils.sync(seafileLibrary.libraryId,
-                                "/" + SeafileUtils.mUserId + "/" + seafileLibrary.libraryName);
+                        SeafileUtils.sync(seafileLibrary.libraryId, SeafileUtils.SEAFILE_DATA_ROOT_PATH 
+                                + "/" + SeafileUtils.mUserId + "/" + seafileLibrary.libraryName);
                     }
                 }
             }

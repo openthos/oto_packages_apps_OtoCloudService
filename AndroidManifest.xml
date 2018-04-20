@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    android:sharedUserId="android.uid.system"
     package="org.openthos.seafile">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
@@ -15,7 +14,21 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <permission android:name="android.permission.ACCESS_SUPERUSER"
+
+    <permission
+        android:name="android.permission.REQUEST_SUPERUSER"
+        android:protectionLevel="signature" />
+
+    <permission
+        android:name="android.permission.REPORT_SUPERUSER"
+        android:protectionLevel="signature" />
+
+    <permission-group
+        android:name="android.permission-group.SUPERUSER"
+        android:priority="10000" />
+
+    <permission
+        android:name="android.permission.ACCESS_SUPERUSER"
         android:permissionGroup="android.permission-group.SUPERUSER"
         android:protectionLevel="dangerous" />
 

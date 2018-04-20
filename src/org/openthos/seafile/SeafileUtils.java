@@ -30,37 +30,31 @@ import java.io.UnsupportedEncodingException;
 public class SeafileUtils {
     public static final String OPENTHOS_URI = "content://com.otosoft.tools.myprovider/openthosID";
 
-    public static final String SEAFILE_PROOT_BASEPATH = "/data";
+    public static final String SEAFILE_SOURCECODE_PATH = "/system/opt/sea.tar.bz";
     public static final String SEAFILE_CONFIG_PATH = "/data/seafile-config";
-    public static final String SEAFILE_DATA_PATH = "/sdcard/.seafile-data";
-    public static final String SEAFILE_PATH = "/system/opt/sea.tar.bz";
-    public static final String SEAFILE_DATA_PATH_REAlLY = "/data/sea/data";
+    public static final String SEAFILE_PROOT_PATH = "/data/sea";
+    public static final String SEAFILE_PROOT_BASEPATH = "/data";
+    public static final String SEAFILE_DATA_ROOT_PATH = "/sdcard/seafile";
 
-    public static final String SEAFILE_NET_NAME = ".ccnet";
+    public static final String SEAFILE_COMMAND_SEAFILE = "seaf-cli";
+    public static final String SEAFILE_COMMAND_BASE
+            = "./data/sea/proot.sh -b /data/seafile-config:/data/seafile-config seaf-cli ";
 
-    public static final String SEAFILE_COMMAND_SEAFILE = "seaf-cli ";
-    public static final String SEAFILE_COMMAND_PROOT = "./data/sea/proot.sh -b ";
-    public static final String SEAFILE_COMMAND_PROOT_BASE = "./data/sea/proot.sh ";
+    public static final String SETTING_SEAFILE_NAME = "UserConfig";
+    public static final String DATA_SEAFILE_NAME = "DATA";
 
-    public static final String SEAFILE_BASE_ARG = "-b";
     public static final String SEAFILE_BASE_URL = "-s https://dev.openthos.org/ ";
-    public static String SEAFILE_BASE_ROOT_PATH = "/data/seafile-config:/data/seafile-config ";
-
-    public static final int SEAFILE_ID_LENGTH = 36;
-
     public static String mUserId = "";
     public static String mUserPassword = "";
-
-    public static final int UNSYNC = 0;
-    public static final int SYNC = 1;
-    public static final String SEAFILE_DATA = "seeafile_data";
-    public static final String SETTING_SEAFILE_PROOT_PATH = "/UserConfig";
-    public static final String SETTING_SEAFILE_NAME = "UserConfig";
-    public static final String FILEMANAGER_SEAFILE_NAME = "DATA";
-
     public static String getUserAccount() {
         return "-u " + mUserId + " -p " + mUserPassword;
     }
+
+    public static final int SEAFILE_ID_LENGTH = 36;
+    public static final int UNSYNC = 0;
+    public static final int SYNC = 1;
+
+    public static final String SEAFILE_DATA = "seeafile_data";
 
     public static boolean isExistsAccount() {
         return !TextUtils.isEmpty(mUserId) || !TextUtils.isEmpty(mUserPassword);
@@ -92,95 +86,48 @@ public class SeafileUtils {
     }
 
     public static void init() {
+        File seafileAtDisk = new File(SEAFILE_DATA_ROOT_PATH);
+        if (!seafileAtDisk.exists()) {
+            seafileAtDisk.mkdir();
+        }
         File seafile = new File("/data/sea/proot.sh");
         File config = new File(SEAFILE_CONFIG_PATH);
         if (!seafile.exists()){
-            exec(new String[]{"su", "-c", "rm -r /data/sea"});
-            exec(new String[]{"su", "-c", "tar xvf " + SEAFILE_PATH + " -C /data"});
-            exec(new String[]{"su", "-c", "chmod -R 777 /data/sea"});
-            exec(new String[]{"su", "-c", "busybox mkdir -m 777 /data/seafile-config"});
+            exec(new String[]{"su", "-c", "busybox mkdir -m 777 " + SEAFILE_CONFIG_PATH
+                    + ";" + "rm -r /data/sea"
+                    + ";" + "tar xvf " + SEAFILE_SOURCECODE_PATH + " -C /data"
+                    + ";" + "chmod -R 777 /data/sea"
+                    + ";" + "busybox mkdir -m 777 -p /data/sea/sdcard/seafile"});
         }
-        exec(new String[]{"su", "-c", SEAFILE_COMMAND_PROOT
-                + SEAFILE_BASE_ROOT_PATH + SEAFILE_COMMAND_SEAFILE + "init -d "
-                + config.getAbsolutePath()});
+        exec(new String[]{"su", "-c", "busybox mount --bind " + seafileAtDisk.getAbsolutePath()
+                + " /data/sea/sdcard/seafile"
+                + " ;" + SEAFILE_COMMAND_BASE + "init -d " + config.getAbsolutePath()});
     }
 
     public static void start() {
-        exec(new String[]{"su", "-c", SEAFILE_COMMAND_PROOT
-                + SEAFILE_BASE_ROOT_PATH + SEAFILE_COMMAND_SEAFILE + "start"});
+        exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE + "start"});
     }
 
     public static void stop() {
-        exec(new String[]{"su", "-c", SEAFILE_COMMAND_PROOT
-                + SEAFILE_BASE_ROOT_PATH + SEAFILE_COMMAND_SEAFILE + "stop"});
+        exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE + "stop"});
         mUserId = "";
         mUserPassword = "";
     }
 
-
-    public static String listRemote() {
-        Process pro;
-        BufferedReader in = null;
-        StringBuffer sb = new StringBuffer();
-        try {
-            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_PROOT
-                    + SEAFILE_BASE_ROOT_PATH + SEAFILE_COMMAND_SEAFILE + "list-remote "
-                    + SEAFILE_BASE_URL + getUserAccount()});
-            in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
-            String line;
-            sb.append("[");
-            boolean isOut = false;
-            while ((line = in.readLine()) != null) {
-                if (line.contains("Name") && line.contains("ID")) {
-                    isOut = true;
-                    continue;
-                }
-                if (line.contains("ISO(ota)")) {
-                    isOut = false;
-                    continue;
-                }
-                if (isOut) {
-                    if (line.length() > SEAFILE_ID_LENGTH) {
-                        String id = line.substring(line.length() - SEAFILE_ID_LENGTH);
-                        sb.append("{\"id\":\"" + id);
-                        String name = line.replace(" " + id, "");
-                        sb.append("\",\"name\":\"" + name + "\"},");
-                    }
-                }
-            }
-            sb.delete(sb.length() - 1, sb.length());
-            sb.append("]");
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return sb.toString();
-    }
-
     public static void download(String libraryid, String filePath) {
-        filePath = filePath.trim().replace(" ", "\\ ");
+        filePath = filePath.replace(" ", "\\ ");
         Process pro;
         BufferedReader in = null;
         try {
-            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_PROOT_BASE
-                    + "mkdir -p " + SEAFILE_PROOT_BASEPATH + filePath});
+            File f = new File(filePath);
+            if (!f.exists()) {
+                f.mkdirs();
+            }
+            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE
+                    + "download -l " + libraryid + " -d "
+                    + filePath + " " + SEAFILE_BASE_URL + getUserAccount()});
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
-            while ((line = in.readLine()) != null) {
-            }
-            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_PROOT +
-                    SEAFILE_BASE_ROOT_PATH
-                    + SEAFILE_COMMAND_SEAFILE + "download -l " + libraryid + " -d "
-                    + SEAFILE_PROOT_BASEPATH + filePath + " "
-                    + SEAFILE_BASE_URL + getUserAccount()});
-            in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             while ((line = in.readLine()) != null) {
             }
         } catch (IOException e) {
@@ -197,20 +144,17 @@ public class SeafileUtils {
     }
 
     public static String create(String fileName) {
-        fileName = fileName.trim().replace(" ", "\\ ");
+        fileName = fileName.replace(" ", "\\ ");
         Process pro;
         BufferedReader in = null;
         String id = "";
         try {
-            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_PROOT +
-                    SEAFILE_BASE_ROOT_PATH
-                    + SEAFILE_COMMAND_SEAFILE + "create -n " + fileName +  " "
-                    + SEAFILE_BASE_URL + getUserAccount()});
+            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE
+                    + "create -n " + fileName +  " " + SEAFILE_BASE_URL + getUserAccount()});
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
             while ((line = in.readLine()) != null) {
                 id = line;
-                Log.i("iddidid",id);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -227,22 +171,22 @@ public class SeafileUtils {
     }
 
     public static void sync(String libraryid, String filePath) {
-        filePath = filePath.trim().replace(" ", "\\ ");
+        filePath = filePath.replace(" ", "\\ ");
         Process pro;
         BufferedReader in = null;
         try {
-            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_PROOT_BASE
-                    + "mkdir -p " + SEAFILE_PROOT_BASEPATH + filePath});
+            File f = new File(filePath);
+            if (!f.exists()) {
+                f.mkdirs();
+            }
+            Log.i("wwww", SEAFILE_COMMAND_BASE
+                     + "sync -l " + libraryid + " -d "
+                     + filePath + " " + SEAFILE_BASE_URL + getUserAccount());
+            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE
+                    + "sync -l " + libraryid + " -d "
+                    + filePath + " " + SEAFILE_BASE_URL + getUserAccount()});
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
-            while ((line = in.readLine()) != null) {
-            }
-            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_PROOT +
-                    SEAFILE_BASE_ROOT_PATH
-                    + SEAFILE_COMMAND_SEAFILE + "sync -l " + libraryid + " -d "
-                    + SEAFILE_PROOT_BASEPATH + filePath + " "
-                    + SEAFILE_BASE_URL + getUserAccount()});
-            in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             while ((line = in.readLine()) != null) {
             }
         } catch (IOException e) {
@@ -259,13 +203,12 @@ public class SeafileUtils {
     }
 
     public static void desync(String filePath) {
-        filePath = filePath.trim().replace(" ", "\\ ");
+        filePath = filePath.replace(" ", "\\ ");
         Process pro;
         BufferedReader in = null;
         try {
-            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_PROOT +
-                    SEAFILE_BASE_ROOT_PATH
-                    + SEAFILE_COMMAND_SEAFILE + "desync -d " + SEAFILE_PROOT_BASEPATH + filePath});
+            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE
+                    + "desync -d " + filePath});
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
             while ((line = in.readLine()) != null) {
@@ -279,51 +222,6 @@ public class SeafileUtils {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }
-        }
-    }
-
-
-    public static void status() {
-        String arg0 = "status";
-        Runtime runtime = Runtime.getRuntime();
-        Process pro;
-        BufferedReader in = null;
-        try {
-            pro = Runtime.getRuntime().exec(new String[]{SEAFILE_COMMAND_PROOT, SEAFILE_BASE_ARG,
-                    "", SEAFILE_COMMAND_SEAFILE, arg0});
-            in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
-            String line;
-            while ((line = in.readLine()) != null) {
-                System.out.println(line);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    public static void delete(File file) {
-        if (file.exists()) {
-            String command = "rm";
-            String arg = "";
-            if (file.isFile()) {
-                arg = "-v";
-            } else if (file.isDirectory()) {
-                arg = "-rv";
-            }
-            Runtime runtime = Runtime.getRuntime();
-            try {
-                runtime.exec(new String[]{command, arg, file.getAbsolutePath()});
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
     }
@@ -486,7 +384,7 @@ public class SeafileUtils {
         try {
             if (cmd != null) {
                 Runtime rt = Runtime.getRuntime();
-                Process process = rt.exec("su");//Root   //Process process = rt.exec("sh");//
+                Process process = rt.exec("su");//Root
                 DataOutputStream dos = new DataOutputStream(process.getOutputStream());
                 dos.writeBytes(cmd + "\n");
                 dos.flush();
@@ -507,7 +405,7 @@ public class SeafileUtils {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            return "operater err";
+            return "operater error";
         }
     }
 }
