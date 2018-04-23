@@ -9,10 +9,10 @@ interface ISeafileService {
     int isSync(String libraryId, String libraryName);
     void updateAccount();
     void stopAccount();
-    void restoreSettings(boolean wallpaper, boolean wifi, boolean email, boolean appdata,
-            boolean startupmenu, boolean browser, in List<String> syncBrowsers, boolean appstore);
-    void saveSettings(boolean wallpaper, boolean wifi, boolean email, boolean appdata,
-            boolean startupmenu, boolean browser, in List<String> syncBrowsers, boolean appstore);
+    void restoreSettings(boolean wallpaper, boolean wifi, boolean appdata, boolean startupmenu,
+            boolean browser, in List<String> syncBrowsers, boolean appstore);
+    void saveSettings(boolean wallpaper, boolean wifi, boolean appdata, boolean startupmenu,
+            boolean browser, in List<String> syncBrowsers, boolean appstore);
     void regiestAccount(String userName, String password);
     void setBinder(IBinder b);
     void unsetBinder(IBinder b);

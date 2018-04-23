@@ -408,4 +408,58 @@ public class SeafileUtils {
             return "operater error";
         }
     }
+
+    /*
+     * eg:
+     *     from : /data/temp
+     *     to   : /dev/tmp/temp.tar.gz
+     */
+    public static void tarFile(String from, String to) {
+        if (TextUtils.isEmpty(from) || TextUtils.isEmpty(to)) {
+            return;
+        }
+        try {
+            File f = new File(to);
+            Runtime rt = Runtime.getRuntime();
+            Process process = rt.exec("su");//Root
+            DataOutputStream dos = new DataOutputStream(process.getOutputStream());
+            dos.writeBytes("mkdirs -p " + f.getParent().replace(" ", "\\ ") + "\n");
+            dos.writeBytes("tar -czpf " + to.replace(" ", "\\ ") + " "
+                    + from.replace(" ", "\\ ") + "\n");
+            dos.writeBytes("exit\n");
+            dos.flush();
+            process.waitFor();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /*
+     * eg:
+     *     from : /dev/tmp/temp.tar.gz
+     *     to   : /data/temp
+     */
+    public static void untarFile(String from, String to) {
+        if (TextUtils.isEmpty(from) || TextUtils.isEmpty(to)) {
+            return;
+        }
+        try {
+            File f = new File(to);
+            Runtime rt = Runtime.getRuntime();
+            Process process = rt.exec("su");//Root
+            DataOutputStream dos = new DataOutputStream(process.getOutputStream());
+            dos.writeBytes("mkdirs -p " + f.getParent().replace(" ", "\\ ") + "\n");
+            dos.writeBytes("tar -xzpf " + from.replace(" ", "\\ ") + " -C "
+                    + to.replace(" ", "\\ ") + "\n");
+            dos.writeBytes("exit\n");
+            dos.flush();
+            process.waitFor();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

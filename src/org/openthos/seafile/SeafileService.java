@@ -57,25 +57,17 @@ import android.os.RemoteException;
 
 public class SeafileService extends Service {
     private static final String SYSTEM_PATH_DATA = "/data/data/";
-    private static final String SYSTEM_PATH_WALLPAPER = "data/system/users/0/wallpaper";
-    private static final String SYSTEM_PATH_WIFI = "data/misc/wifi";
-    private static final String SYSTEM_PATH_WIFI_INFO = "data/misc/wifi/wpa_supplicant.conf";
-    private static final String SYSTEM_PATH_EMAIL = "data/data/com.android.email";
-    private static final String SYSTEM_PATH_PREFS = SYSTEM_PATH_EMAIL + "/shared_prefs";
+    private static final String SYSTEM_PATH_WALLPAPER = "/data/system/users/0/wallpaper";
+    private static final String SYSTEM_PATH_WIFI = "/data/misc/wifi";
+    private static final String SYSTEM_PATH_WIFI_INFO = "/data/misc/wifi/wpa_supplicant.conf";
     private static final String SYSTEM_PATH_STATUSBAR_DB =
-                                "data/data/com.android.systemui/databases/Status_bar_database.db";
-    private static final String SYSTEM_PATH_BROWSER = "data/data/org.mozilla.fennec_root/files";
-    private static final String SYSTEM_PATH_BROWSER_INFO =
-                                "data/data/org.mozilla.fennec_root/files/mozilla";
-    private static final String SYSTEM_PATH_APPSTORE = "data/data/org.openthos.appstore/";
+                                "/data/data/com.android.systemui/databases/Status_bar_database.db";
 
     private static final String SEAFILE_PATH_WALLPAPER = "/UserConfig/wallpaper";
     private static final String SEAFILE_PATH_WIFI = "/UserConfig/wifi";
     private static final String SEAFILE_PATH_WIFI_INFO = "/UserConfig/wifi/wpa_supplicant.conf";
     private static final String SEAFILE_PATH_WALLPAPER_IMAGE =
                                 SEAFILE_PATH_WALLPAPER + "/wallpaper";
-    private static final String SEAFILE_PATH_EMAIL = "/UserConfig/email";
-    private static final String SEAFILE_PATH_PREFS = SEAFILE_PATH_EMAIL + "/shared_prefs";
     private static final String SEAFILE_PATH_STARTUPMENU = "/UserConfig/startupmenu";
     private static final String SEAFILE_PATH_STATUSBAR_DB =
                          SEAFILE_PATH_STARTUPMENU + "/Status_bar_database.db";
@@ -105,11 +97,11 @@ public class SeafileService extends Service {
     public SeafileUtils.SeafileSQLConsole mConsole;
     public String mLibrary;
     private boolean mIsStart = false;
-    private File mCloudFolder;
+    private File mConfigPath;
     private Timer mTimer;
     private AutoBackupTask mAutoTask;
     private boolean mIsTimer;
-    private boolean mWallpaper, mWifi, mEmail, mAppdata, mStartupmenu, mBrowser, mAppstore;
+    private boolean mWallpaper, mWifi, mAppdata, mStartupmenu, mBrowser, mAppstore;
     private List<String> mSyncBrowsers = new ArrayList();
     private boolean mImportBusy, mExportBusy;
     private String mUserPath;
@@ -135,7 +127,6 @@ public class SeafileService extends Service {
         Cursor cursor = mResolver.query(uriQuery, null, null, null, null);
         if (cursor != null) {
             while (cursor.moveToNext()) {
-                //current openthos id and password
                 SeafileUtils.mUserId = cursor.getString(cursor.getColumnIndex("openthosID"));
                 SeafileUtils.mUserPassword =
                         cursor.getString(cursor.getColumnIndex("password"));
@@ -149,7 +140,9 @@ public class SeafileService extends Service {
         }
         mUserPath = SeafileUtils.SEAFILE_PROOT_PATH + SeafileUtils.SEAFILE_DATA_ROOT_PATH
                 + "/" + SeafileUtils.mUserId;
-        mCloudFolder = new File(mUserPath, SeafileUtils.SETTING_SEAFILE_NAME);
+        mConfigPath = new File(SeafileUtils.SEAFILE_PROOT_PATH,
+                SeafileUtils.mUserId + "/" + SeafileUtils.SETTING_SEAFILE_NAME);
+        SeafileUtils.exec(new String[]{"su", "-c", "mkdir -m 777 -p " + mConfigPath.getAbsolutePath()});
         mStartSeafileThread = new StartSeafileThread();
         mStartSeafileThread.start();
         startTimer();
@@ -200,8 +193,8 @@ public class SeafileService extends Service {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-            //SeafileUtils.sync(settingId, SeafileUtils.SEAFILE_DATA_ROOT_PATH + "/"
-            //        + SeafileUtils.mUserId + "/" + SeafileUtils.SETTING_SEAFILE_NAME);
+            SeafileUtils.sync(settingId, "/"
+                   + SeafileUtils.mUserId + "/" + SeafileUtils.SETTING_SEAFILE_NAME);
             if (!isExistsFileManager) {
                 SeafileLibrary seafileLibrary = new SeafileLibrary();
                 seafileLibrary.libraryName = SeafileUtils.DATA_SEAFILE_NAME;
@@ -286,24 +279,6 @@ public class SeafileService extends Service {
         }
     }
 
-    private void importEmailFiles() {
-        File emailFiles = new File(mUserPath + SEAFILE_PATH_EMAIL);
-        if (emailFiles.exists()){
-            File emailNewDevicePrefs = new File(SYSTEM_PATH_PREFS);
-            if (emailNewDevicePrefs.exists()) {
-                SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_PREFS);
-                FileUtils.deleteGeneralFile(SYSTEM_PATH_PREFS);
-            }
-            SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_EMAIL);
-            SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_PREFS);
-            if (FileUtils.copyGeneralFile(mUserPath + SEAFILE_PATH_PREFS, SYSTEM_PATH_EMAIL)) {
-                if (DEBUG) Log.i(TAG,"seafile email sync to new device sucessful!");
-            } else {
-                if (DEBUG) Log.i(TAG,"seafile email sync to new device fail!");
-            }
-        }
-    }
-
     private void importStatusBarFiles() {
         File statusbarDbFiles = new File(SEAFILE_PATH_STATUSBAR_DB);
         if (statusbarDbFiles.exists()) {
@@ -361,24 +336,8 @@ public class SeafileService extends Service {
         }
     }
 
-    private void exportEmailFiles() {
-        File emailSharedPrefs = new File(SYSTEM_PATH_PREFS);
-        if (emailSharedPrefs.exists()) {
-            SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_PREFS);
-            SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_EMAIL);
-            if (FileUtils.copyGeneralFile(SYSTEM_PATH_PREFS, mUserPath + SEAFILE_PATH_EMAIL)) {
-                if (DEBUG) Log.i(TAG,"email sync to seafile sucessful!");
-            } else {
-                if (DEBUG) Log.i(TAG,"email sync to seafile fail!");
-            }
-        }
-    }
-
     private void exportWifiFiles() {
-        SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_WIFI_INFO);
-        SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_WIFI);
-        SeafileUtils.exec("cp -f " + SYSTEM_PATH_WIFI_INFO + " " +
-                mUserPath + SEAFILE_PATH_WIFI);
+        SeafileUtils.tarFile(SYSTEM_PATH_WIFI_INFO, "/data/data/sss/wifi.tar.gz");
     }
 
     private void exportBrowserFiles(List<String> syncBrowsers) {
@@ -438,7 +397,7 @@ public class SeafileService extends Service {
         @Override
         public void run() {
             mIsTimer = true;
-            mBinder.saveSettings(mWallpaper, mWifi, mEmail, mAppdata,
+            mBinder.saveSettings(mWallpaper, mWifi, mAppdata,
                     mStartupmenu, mBrowser, mSyncBrowsers, mAppstore);
         }
     }
@@ -655,9 +614,9 @@ public class SeafileService extends Service {
         }
 
         @Override
-        public void restoreSettings(boolean wallpaper, boolean wifi, boolean email, boolean appdata,
+        public void restoreSettings(boolean wallpaper, boolean wifi, boolean appdata,
                 boolean startupmenu, boolean browser, List<String> syncBrowsers, boolean appstore) {
-            if (mImportBusy || !mCloudFolder.exists()) {
+            if (mImportBusy || !mConfigPath.exists()) {
                 return;
             }
             if (mExportBusy) {
@@ -671,9 +630,6 @@ public class SeafileService extends Service {
             }
             if (wifi) {
                 importWifiFiles();
-            }
-            if (email) {
-                importEmailFiles();
             }
             if (startupmenu) {
                 importStatusBarFiles();
@@ -715,7 +671,7 @@ public class SeafileService extends Service {
         }
 
         @Override
-        public void saveSettings(boolean wallpaper, boolean wifi, boolean email, boolean appdata,
+        public void saveSettings(boolean wallpaper, boolean wifi, boolean appdata,
                 boolean startupmenu, boolean browser, List<String> syncBrowsers, boolean appstore) {
             if (mExportBusy) {
                 return;
@@ -728,16 +684,12 @@ public class SeafileService extends Service {
             mExportBusy = true;
             mWallpaper = wallpaper;
             mWifi = wifi;
-            mEmail = email;
             mAppdata = appdata;
             mStartupmenu = startupmenu;
             mBrowser = browser;
             mAppstore = appstore;
             mSyncBrowsers = syncBrowsers;
             if (mIsTimer) {
-                if (!mCloudFolder.exists()) {
-                    mCloudFolder.mkdirs();
-                }
                 if (wallpaper) {
                     File wallpaperSeafile = new File(mUserPath + SEAFILE_PATH_WALLPAPER);
                     if (!wallpaperSeafile.exists()) {
@@ -751,14 +703,6 @@ public class SeafileService extends Service {
                         wifiInfoSeafile.mkdirs();
                     }
                     exportWifiFiles();
-                }
-                if (email) {
-                    File emailFile = new File (mUserPath + SEAFILE_PATH_EMAIL);
-                    if (emailFile.exists()) {
-                        FileUtils.deleteGeneralFile(mUserPath + SEAFILE_PATH_EMAIL);
-                    }
-                    emailFile.mkdirs();
-                    exportEmailFiles();
                 }
                 if (startupmenu) {
                     File startupMenuFile = new File (mUserPath + SEAFILE_PATH_STARTUPMENU);
