@@ -63,19 +63,15 @@ public class SeafileService extends Service {
     private static final String SYSTEM_PATH_STATUSBAR_DB =
                                 "/data/data/com.android.systemui/databases/Status_bar_database.db";
 
-    private static final String SEAFILE_PATH_WALLPAPER = "/UserConfig/wallpaper";
-    private static final String SEAFILE_PATH_WIFI = "/UserConfig/wifi";
-    private static final String SEAFILE_PATH_WIFI_INFO = "/UserConfig/wifi/wpa_supplicant.conf";
-    private static final String SEAFILE_PATH_WALLPAPER_IMAGE =
-                                SEAFILE_PATH_WALLPAPER + "/wallpaper";
+    private static final String SEAFILE_PATH_WALLPAPER = "/wallpaper";
+    private static final String SEAFILE_PATH_WIFI = "/wifi.tar.gz";
+    private static final String SEAFILE_PATH_WIFI_INFO = "/wifi/wpa_supplicant.conf";
+    private static final String SEAFILE_PATH_APPSTORE = "/appstore";
+    private static final String SEAFILE_PATH_APPSTORE_INFO = "/appstore/app_pkg_names";
     private static final String SEAFILE_PATH_STARTUPMENU = "/UserConfig/startupmenu";
     private static final String SEAFILE_PATH_STATUSBAR_DB =
                          SEAFILE_PATH_STARTUPMENU + "/Status_bar_database.db";
     private static final String SEAFILE_PATH_BROWSER = "/UserConfig/browser/";
-    private static final String SEAFILE_PATH_BROWSER_INFO = "/UserConfig/browser/mozilla";
-    private static final String SEAFILE_PATH_APPSTORE = "/UserConfig/appstore";
-    private static final String SEAFILE_PATH_APPSTORE_PKGNAME =
-            "/UserConfig/appstore/appPkgNames.txt";
 
     private static final String ROOT_COMMOND = "chmod -R 777 ";
     private static final String TAG = "SeafileService";
@@ -142,7 +138,6 @@ public class SeafileService extends Service {
                 + "/" + SeafileUtils.mUserId;
         mConfigPath = new File(SeafileUtils.SEAFILE_PROOT_PATH,
                 SeafileUtils.mUserId + "/" + SeafileUtils.SETTING_SEAFILE_NAME);
-        SeafileUtils.exec(new String[]{"su", "-c", "mkdir -m 777 -p " + mConfigPath.getAbsolutePath()});
         mStartSeafileThread = new StartSeafileThread();
         mStartSeafileThread.start();
         startTimer();
@@ -192,6 +187,9 @@ public class SeafileService extends Service {
                         .putString(SeafileUtils.SEAFILE_DATA, mLibrary).commit();
             } catch (JSONException e) {
                 e.printStackTrace();
+            }
+            if (!mConfigPath.exists()) {
+                mConfigPath.mkdirs();
             }
             SeafileUtils.sync(settingId, "/"
                    + SeafileUtils.mUserId + "/" + SeafileUtils.SETTING_SEAFILE_NAME);
@@ -265,17 +263,44 @@ public class SeafileService extends Service {
         return mBinder;
     }
 
+    private void exportWallpaperFiles() {
+        SeafileUtils.exec("cp -f " + SYSTEM_PATH_WALLPAPER + " "
+                + mConfigPath.getAbsolutePath() + SEAFILE_PATH_WALLPAPER);
+    }
+
     private void importWallpaperFiles() {
-        try {
-            WallpaperManager.getInstance(this).setStream(
-                    new FileInputStream(mUserPath + SEAFILE_PATH_WALLPAPER_IMAGE));
-        } catch (IOException exception) {
+        String path =  mConfigPath.getAbsolutePath()  + SEAFILE_PATH_WALLPAPER;
+        if (SeafileUtils.checkFile(path)) {
+            SeafileUtils.exec("busybox chmod 777 " + path);
+            try {
+                WallpaperManager.getInstance(this).setStream(new FileInputStream(path));
+            } catch (IOException exception) {
+                exception.printStackTrace();
+                try {
+                    WallpaperManager.getInstance(this).setResource(
+                                      com.android.internal.R.drawable.default_wallpaper);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
             try {
                 WallpaperManager.getInstance(this).setResource(
                                   com.android.internal.R.drawable.default_wallpaper);
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private void importWifiFiles() {
+        SeafileUtils.untarFile(mConfigPath.getAbsolutePath() + SEAFILE_PATH_WIFI, SYSTEM_PATH_WIFI_INFO);
+    }
+
+    private void exportWifiFiles() {
+        String path = mConfigPath.getAbsolutePath() + SEAFILE_PATH_WIFI;
+        if (SeafileUtils.checkFile(path)) {
+            SeafileUtils.tarFile(SYSTEM_PATH_WIFI_INFO, path);
         }
     }
 
@@ -303,24 +328,11 @@ public class SeafileService extends Service {
         }
     }
 
-    private void importWifiFiles() {
-        SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_WIFI_INFO);
-        SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_WIFI);
-        SeafileUtils.exec("cp -f " + mUserPath + SEAFILE_PATH_WIFI_INFO +
-                          " " + SYSTEM_PATH_WIFI);
-    }
-
     private void importBrowserFiles(List<String> syncBrowsers) {
         for (int i = 0; i < syncBrowsers.size(); i++) {
             SeafileUtils.exec(new String[]{"su", "-c", "tar -xzvpf " + mUserPath +
                     SEAFILE_PATH_BROWSER + syncBrowsers.get(i) + ".tar.gz"});
         }
-    }
-
-    private void exportWallpaperFiles() {
-        SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_WALLPAPER);
-        SeafileUtils.exec(ROOT_COMMOND + mUserPath + SEAFILE_PATH_WALLPAPER);
-        SeafileUtils.exec("cp -f " + SYSTEM_PATH_WALLPAPER + " " + mUserPath + SEAFILE_PATH_WALLPAPER);
     }
 
     private void exportStartupmenuFiles() {
@@ -336,10 +348,6 @@ public class SeafileService extends Service {
         }
     }
 
-    private void exportWifiFiles() {
-        SeafileUtils.tarFile(SYSTEM_PATH_WIFI_INFO, "/data/data/sss/wifi.tar.gz");
-    }
-
     private void exportBrowserFiles(List<String> syncBrowsers) {
         for (int i = 0; i < syncBrowsers.size(); i++) {
             SeafileUtils.exec(new String[]{"su", "-c", "tar -czpf " + mUserPath +
@@ -352,7 +360,7 @@ public class SeafileService extends Service {
         List<PackageInfo> pkgInfos = getPackageManager().getInstalledPackages(0);
         try {
             BufferedWriter appWriter = new BufferedWriter(
-                    new FileWriter(mUserPath + SEAFILE_PATH_APPSTORE_PKGNAME));
+                    new FileWriter(mConfigPath.getAbsolutePath() + SEAFILE_PATH_APPSTORE_INFO));
             for (PackageInfo pkgInfo : pkgInfos) {
                 appWriter.write(pkgInfo.packageName);
                 appWriter.newLine();
@@ -495,8 +503,7 @@ public class SeafileService extends Service {
 
     private void restoreFinish(){
         mImportBusy = false;
-        Toast.makeText(SeafileService.this, getResources().
-                getString(R.string.import_reboot_info_warn), Toast.LENGTH_SHORT).show();
+        Log.i("seafile", "restoreFinish" + mIBinders.size());
         for (IBinder iBinder : mIBinders) {
             Parcel _data = Parcel.obtain();
             Parcel _reply = Parcel.obtain();
@@ -616,12 +623,10 @@ public class SeafileService extends Service {
         @Override
         public void restoreSettings(boolean wallpaper, boolean wifi, boolean appdata,
                 boolean startupmenu, boolean browser, List<String> syncBrowsers, boolean appstore) {
-            if (mImportBusy || !mConfigPath.exists()) {
+            if (mImportBusy) {
                 return;
             }
             if (mExportBusy) {
-                Toast.makeText(SeafileService.this, getResources().
-                        getString(R.string.export_busy_warn), Toast.LENGTH_SHORT).show();
                 return;
             }
             mImportBusy = true;
@@ -643,7 +648,7 @@ public class SeafileService extends Service {
                 BufferedReader appReader = null;
                 try {
                     appReader = new BufferedReader(
-                            new FileReader(mUserPath + SEAFILE_PATH_APPSTORE_PKGNAME));
+                            new FileReader(mConfigPath.getAbsolutePath() + SEAFILE_PATH_APPSTORE_INFO));
                     String line = null;
                     while ((line = appReader.readLine()) != null) {
                         pkgNames.add(line);
@@ -677,8 +682,6 @@ public class SeafileService extends Service {
                 return;
             }
             if (mImportBusy) {
-                Toast.makeText(SeafileService.this, getResources().
-                        getString(R.string.import_busy_warn), Toast.LENGTH_SHORT).show();
                 return;
             }
             mExportBusy = true;
@@ -691,40 +694,33 @@ public class SeafileService extends Service {
             mSyncBrowsers = syncBrowsers;
             if (mIsTimer) {
                 if (wallpaper) {
-                    File wallpaperSeafile = new File(mUserPath + SEAFILE_PATH_WALLPAPER);
-                    if (!wallpaperSeafile.exists()) {
-                        wallpaperSeafile.mkdirs();
-                    }
                     exportWallpaperFiles();
                 }
                 if (wifi) {
-                    File wifiInfoSeafile = new File(mUserPath + SEAFILE_PATH_WIFI);
-                    if (!wifiInfoSeafile.exists()) {
-                        wifiInfoSeafile.mkdirs();
-                    }
                     exportWifiFiles();
                 }
                 if (startupmenu) {
-                    File startupMenuFile = new File (mUserPath + SEAFILE_PATH_STARTUPMENU);
+                    File startupMenuFile = new File (mConfigPath + SEAFILE_PATH_STARTUPMENU);
                     if (startupMenuFile.exists()) {
-                        FileUtils.deleteGeneralFile(mUserPath + SEAFILE_PATH_STARTUPMENU);
+                        FileUtils.deleteGeneralFile(mConfigPath + SEAFILE_PATH_STARTUPMENU);
                     }
                     startupMenuFile.mkdirs();
                     exportStartupmenuFiles();
                 }
                 if (browser) {
-                    File browserInfoSeafile = new File(mUserPath + SEAFILE_PATH_BROWSER);
+                    File browserInfoSeafile = new File(mConfigPath + SEAFILE_PATH_BROWSER);
                     if (!browserInfoSeafile.exists()) {
                         browserInfoSeafile.mkdirs();
                     }
                     exportBrowserFiles(syncBrowsers);
                 }
                 if (appstore) {
-                    File appstoreDirSeafile = new File(mUserPath + SEAFILE_PATH_APPSTORE);
+                    File appstoreDirSeafile = new File(mConfigPath + SEAFILE_PATH_APPSTORE);
                     if (!appstoreDirSeafile.exists()) {
                         appstoreDirSeafile.mkdirs();
                     }
-                    File appstoreSeafile = new File(mUserPath + SEAFILE_PATH_APPSTORE_PKGNAME);
+                    File appstoreSeafile
+                            = new File(mConfigPath.getAbsolutePath() + SEAFILE_PATH_APPSTORE_INFO);
                     if (!appstoreSeafile.exists()) {
                         try {
                             appstoreSeafile.createNewFile();

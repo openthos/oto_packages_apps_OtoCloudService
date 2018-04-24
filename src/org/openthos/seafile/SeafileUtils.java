@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 
 /**
  * Created by Wang Zhixu on 12/23/16.
@@ -59,31 +60,8 @@ public class SeafileUtils {
     public static boolean isExistsAccount() {
         return !TextUtils.isEmpty(mUserId) || !TextUtils.isEmpty(mUserPassword);
     }
-
-    public static void exec(String[] commands) {
-        Process pro;
-        BufferedReader in = null;
-        try {
-            pro = Runtime.getRuntime().exec(commands);
-            in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
-            String line;
-            while ((line = in.readLine()) != null) {
-                if (line.contains("Started: seafile daemon")) {
-                    break;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
+                  // "mkdir -m 777 " + SEAFILE_CONFIG_PATH
+                  //  + ";" + "chmod 777 " + SEAFILE_CONFIG_PATH
 
     public static void init() {
         File seafileAtDisk = new File(SEAFILE_DATA_ROOT_PATH);
@@ -92,16 +70,18 @@ public class SeafileUtils {
         }
         File seafile = new File("/data/sea/proot.sh");
         File config = new File(SEAFILE_CONFIG_PATH);
-        if (!seafile.exists()){
-            exec(new String[]{"su", "-c", "busybox mkdir -m 777 " + SEAFILE_CONFIG_PATH
-                    + ";" + "rm -r /data/sea"
+        int i = 0;
+        while (!seafile.exists()) {
+            i++;
+            exec(new String[]{"su", "-c", "rm -r /data/sea"
                     + ";" + "tar xvf " + SEAFILE_SOURCECODE_PATH + " -C /data"
                     + ";" + "chmod -R 777 /data/sea"
                     + ";" + "busybox mkdir -m 777 -p /data/sea/sdcard/seafile"});
         }
+        Log.i("wwww", i+"");
         exec(new String[]{"su", "-c", "busybox mount --bind " + seafileAtDisk.getAbsolutePath()
-                + " /data/sea/sdcard/seafile"
-                + " ;" + SEAFILE_COMMAND_BASE + "init -d " + config.getAbsolutePath()});
+                + " /data/sea/sdcard/seafile" + ";" + "busybox mkdir -m 777 " + SEAFILE_CONFIG_PATH
+                + ";" + SEAFILE_COMMAND_BASE + "init -d " + config.getAbsolutePath()});
     }
 
     public static void start() {
@@ -380,32 +360,64 @@ public class SeafileUtils {
         return "";
     }
 
-    public static String exec(String cmd) {
+    public static void exec(String[] commands) {
+        Process pro = null;
+        BufferedReader in = null;
         try {
-            if (cmd != null) {
-                Runtime rt = Runtime.getRuntime();
-                Process process = rt.exec("su");//Root
-                DataOutputStream dos = new DataOutputStream(process.getOutputStream());
-                dos.writeBytes(cmd + "\n");
-                dos.flush();
-                dos.writeBytes("exit\n");
-                dos.flush();
-                InputStream myin = process.getInputStream();
-                InputStreamReader is = new InputStreamReader(myin);
-                char[] buffer = new char[1024];
-                int bytes_read = is.read(buffer);
-                StringBuffer aOutputBuffer = new StringBuffer();
-                while (bytes_read > 0) {
-                    aOutputBuffer.append(buffer, 0, bytes_read);
-                    bytes_read = is.read(buffer);
+            pro = Runtime.getRuntime().exec(commands);
+            in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
+            String line;
+            while ((line = in.readLine()) != null) {
+                if (line.contains("Started: seafile daemon")) {
+                    break;
                 }
-                return aOutputBuffer.toString();
-            } else {
-                return "please input true cmd";
             }
         } catch (IOException e) {
             e.printStackTrace();
-            return "operater error";
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (pro != null) {
+                pro.destroy();
+            }
+        }
+    }
+
+    public static void exec(String cmd) {
+        if (TextUtils.isEmpty(cmd)) {
+            return;
+        }
+        Process pro = null;
+        DataOutputStream dos = null;
+        try {
+            Runtime rt = Runtime.getRuntime();
+            pro = rt.exec("su");
+            dos = new DataOutputStream(pro.getOutputStream());
+            dos.writeBytes(cmd + "\n");
+            dos.flush();
+            dos.writeBytes("exit\n");
+            dos.flush();
+            pro.waitFor();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (dos != null) {
+                try {
+                    dos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (pro != null) {
+                pro.destroy();
+            }
         }
     }
 
@@ -418,21 +430,36 @@ public class SeafileUtils {
         if (TextUtils.isEmpty(from) || TextUtils.isEmpty(to)) {
             return;
         }
+        Process pro = null;
+        DataOutputStream dos = null;
         try {
             File f = new File(to);
             Runtime rt = Runtime.getRuntime();
-            Process process = rt.exec("su");//Root
-            DataOutputStream dos = new DataOutputStream(process.getOutputStream());
+            pro = rt.exec("su");//Root
+            dos = new DataOutputStream(pro.getOutputStream());
             dos.writeBytes("mkdirs -p " + f.getParent().replace(" ", "\\ ") + "\n");
             dos.writeBytes("tar -czpf " + to.replace(" ", "\\ ") + " "
                     + from.replace(" ", "\\ ") + "\n");
+            Log.i("wwww", "tar -czpf " + to.replace(" ", "\\ ") + " " + from.replace(" ", "\\ ") + "\n");
+            dos.flush();
             dos.writeBytes("exit\n");
             dos.flush();
-            process.waitFor();
+            pro.waitFor();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            if (dos != null) {
+                try {
+                    dos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (pro != null) {
+                pro.destroy();
+            }
         }
     }
 
@@ -445,21 +472,105 @@ public class SeafileUtils {
         if (TextUtils.isEmpty(from) || TextUtils.isEmpty(to)) {
             return;
         }
+        Process pro = null;
+        DataOutputStream dos = null;
         try {
             File f = new File(to);
             Runtime rt = Runtime.getRuntime();
-            Process process = rt.exec("su");//Root
-            DataOutputStream dos = new DataOutputStream(process.getOutputStream());
+            pro= rt.exec("su");//Root
+            dos = new DataOutputStream(pro.getOutputStream());
             dos.writeBytes("mkdirs -p " + f.getParent().replace(" ", "\\ ") + "\n");
             dos.writeBytes("tar -xzpf " + from.replace(" ", "\\ ") + " -C "
                     + to.replace(" ", "\\ ") + "\n");
+            dos.flush();
             dos.writeBytes("exit\n");
             dos.flush();
-            process.waitFor();
+            pro.waitFor();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            if (dos != null) {
+                try {
+                    dos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (pro != null) {
+                pro.destroy();
+            }
         }
+    }
+
+    public static boolean checkFile(String path) {
+        if (TextUtils.isEmpty(path)) {
+            return false;
+        }
+        Process pro = null;
+        BufferedReader in = null;
+        try {
+            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", "ls "
+                    + path.replace(" ", "\\ ")});
+            in = new BufferedReader(new InputStreamReader(pro.getErrorStream()));
+            String line;
+            while ((line = in.readLine()) != null) {
+                return false;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+
+                }
+            }
+            if (pro != null) {
+                pro.destroy();
+            }
+        }
+        return true;
+    }
+
+    public static String[] listFiles(String path) {
+        if (TextUtils.isEmpty(path)) {
+            return new String[]{};
+        }
+        Process pro = null;
+        BufferedReader in = null;
+        String[] files = null;
+        try {
+            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", "ls "
+                    + path.replace(" ", "\\ ")});
+            in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
+            String line;
+            ArrayList<String> temp = new ArrayList();
+            while ((line = in.readLine()) != null) {
+                temp.add(line);
+            }
+            files = (String[]) temp.toArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+
+                }
+            }
+            if (pro != null) {
+                pro.destroy();
+            }
+        }
+        return files;
     }
 }

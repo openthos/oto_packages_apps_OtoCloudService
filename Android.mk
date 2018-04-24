@@ -13,6 +13,7 @@ LOCAL_SRC_FILES := $(call all-java-files-under, src) \
 LOCAL_RESOURCE_DIR := $(LOCAL_PATH)/res
 
 LOCAL_PACKAGE_NAME := OtoCloudService
+LOCAL_PRIVILEGED_MODULE := true
 
 LOCAL_CERTIFICATE := platform
 
