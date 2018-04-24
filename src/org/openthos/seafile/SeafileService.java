@@ -21,6 +21,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -59,15 +60,14 @@ public class SeafileService extends Service {
     private static final String SYSTEM_PATH_DATA = "/data/data/";
     private static final String SYSTEM_PATH_WALLPAPER = "/data/system/users/0/wallpaper";
     private static final String SYSTEM_PATH_WIFI = "/data/misc/wifi";
-    private static final String SYSTEM_PATH_WIFI_INFO = "/data/misc/wifi/wpa_supplicant.conf";
+    private static final String SYSTEM_PATH_WIFI_INFO = "/data/misc/wifi";
     private static final String SYSTEM_PATH_STATUSBAR_DB =
                                 "/data/data/com.android.systemui/databases/Status_bar_database.db";
 
     private static final String SEAFILE_PATH_WALLPAPER = "/wallpaper";
     private static final String SEAFILE_PATH_WIFI = "/wifi.tar.gz";
     private static final String SEAFILE_PATH_WIFI_INFO = "/wifi/wpa_supplicant.conf";
-    private static final String SEAFILE_PATH_APPSTORE = "/appstore";
-    private static final String SEAFILE_PATH_APPSTORE_INFO = "/appstore/app_pkg_names";
+    private static final String SEAFILE_PATH_APPSTORE = "/app_pkg_names";
     private static final String SEAFILE_PATH_STARTUPMENU = "/UserConfig/startupmenu";
     private static final String SEAFILE_PATH_STATUSBAR_DB =
                          SEAFILE_PATH_STARTUPMENU + "/Status_bar_database.db";
@@ -264,8 +264,13 @@ public class SeafileService extends Service {
     }
 
     private void exportWallpaperFiles() {
-        SeafileUtils.exec("cp -f " + SYSTEM_PATH_WALLPAPER + " "
-                + mConfigPath.getAbsolutePath() + SEAFILE_PATH_WALLPAPER);
+        String path =  mConfigPath.getAbsolutePath()  + SEAFILE_PATH_WALLPAPER;
+        if (SeafileUtils.checkFile(SYSTEM_PATH_WALLPAPER)) {
+            SeafileUtils.exec("cp -f " + SYSTEM_PATH_WALLPAPER + " "
+                    + mConfigPath.getAbsolutePath() + SEAFILE_PATH_WALLPAPER);
+        } else {
+            SeafileUtils.exec("rm -r " + mConfigPath.getAbsolutePath() + SEAFILE_PATH_WALLPAPER);
+        }
     }
 
     private void importWallpaperFiles() {
@@ -294,14 +299,32 @@ public class SeafileService extends Service {
     }
 
     private void importWifiFiles() {
-        SeafileUtils.untarFile(mConfigPath.getAbsolutePath() + SEAFILE_PATH_WIFI, SYSTEM_PATH_WIFI_INFO);
+        String path = mConfigPath.getAbsolutePath() + SEAFILE_PATH_WIFI;
+        if (SeafileUtils.checkFile(path)) {
+            WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+            if (wifiManager.isWifiEnabled()) {
+                wifiManager.setWifiEnabled(false);
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            SeafileUtils.untarFile(path);
+            if (!wifiManager.isWifiEnabled()) {
+                wifiManager.setWifiEnabled(true);
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     private void exportWifiFiles() {
-        String path = mConfigPath.getAbsolutePath() + SEAFILE_PATH_WIFI;
-        if (SeafileUtils.checkFile(path)) {
-            SeafileUtils.tarFile(SYSTEM_PATH_WIFI_INFO, path);
-        }
+        SeafileUtils.tarFile(SYSTEM_PATH_WIFI_INFO,
+                mConfigPath.getAbsolutePath() + SEAFILE_PATH_WIFI);
     }
 
     private void importStatusBarFiles() {
@@ -357,18 +380,36 @@ public class SeafileService extends Service {
     }
 
     private void exportAppstoreFiles() {
-        List<PackageInfo> pkgInfos = getPackageManager().getInstalledPackages(0);
+        List<PackageInfo> tempInfos = getPackageManager().getInstalledPackages(0);
+        List<PackageInfo> packageInfos = new ArrayList<>();
+        for (PackageInfo f : tempInfos) {
+            if ((f.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
+                packageInfos.add(f);
+            }
+        }
+        BufferedWriter appWriter = null;
         try {
-            BufferedWriter appWriter = new BufferedWriter(
-                    new FileWriter(mConfigPath.getAbsolutePath() + SEAFILE_PATH_APPSTORE_INFO));
-            for (PackageInfo pkgInfo : pkgInfos) {
-                appWriter.write(pkgInfo.packageName);
-                appWriter.newLine();
-                appWriter.flush();
+            String path = mConfigPath.getAbsolutePath() + SEAFILE_PATH_APPSTORE;
+            if (packageInfos.size() > 0) {
+                SeafileUtils.exec("echo > " + path + ";busybox chmod 777 " + path);
+                appWriter = new BufferedWriter(new FileWriter(path));
+                for (PackageInfo f :packageInfos){
+                    appWriter.write(f.packageName);
+                    appWriter.newLine();
+                    appWriter.flush();
+                }
             }
             appWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            if (appWriter != null) {
+                try {
+                    appWriter.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -647,8 +688,9 @@ public class SeafileService extends Service {
                 File file = new File("SEAFILE_PATH_APPSTORE_PKGNAME");
                 BufferedReader appReader = null;
                 try {
-                    appReader = new BufferedReader(
-                            new FileReader(mConfigPath.getAbsolutePath() + SEAFILE_PATH_APPSTORE_INFO));
+                    String path = mConfigPath.getAbsolutePath() + SEAFILE_PATH_APPSTORE;
+                    SeafileUtils.exec("busybox chmod 777 " + path);
+                    appReader = new BufferedReader(new FileReader(path));
                     String line = null;
                     while ((line = appReader.readLine()) != null) {
                         pkgNames.add(line);
@@ -715,18 +757,9 @@ public class SeafileService extends Service {
                     exportBrowserFiles(syncBrowsers);
                 }
                 if (appstore) {
-                    File appstoreDirSeafile = new File(mConfigPath + SEAFILE_PATH_APPSTORE);
-                    if (!appstoreDirSeafile.exists()) {
-                        appstoreDirSeafile.mkdirs();
-                    }
-                    File appstoreSeafile
-                            = new File(mConfigPath.getAbsolutePath() + SEAFILE_PATH_APPSTORE_INFO);
-                    if (!appstoreSeafile.exists()) {
-                        try {
-                            appstoreSeafile.createNewFile();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                    String path = mConfigPath.getAbsolutePath() + SEAFILE_PATH_APPSTORE;
+                    if (SeafileUtils.checkFile(path)) {
+                        SeafileUtils.exec("rm " + path);
                     }
                     exportAppstoreFiles();
                 }

@@ -466,22 +466,18 @@ public class SeafileUtils {
     /*
      * eg:
      *     from : /dev/tmp/temp.tar.gz
-     *     to   : /data/temp
      */
-    public static void untarFile(String from, String to) {
-        if (TextUtils.isEmpty(from) || TextUtils.isEmpty(to)) {
+    public static void untarFile(String from) {
+        if (TextUtils.isEmpty(from)) {
             return;
         }
         Process pro = null;
         DataOutputStream dos = null;
         try {
-            File f = new File(to);
             Runtime rt = Runtime.getRuntime();
             pro= rt.exec("su");//Root
             dos = new DataOutputStream(pro.getOutputStream());
-            dos.writeBytes("mkdirs -p " + f.getParent().replace(" ", "\\ ") + "\n");
-            dos.writeBytes("tar -xzpf " + from.replace(" ", "\\ ") + " -C "
-                    + to.replace(" ", "\\ ") + "\n");
+            dos.writeBytes("tar -xzpf " + from.replace(" ", "\\ ") + "\n");
             dos.flush();
             dos.writeBytes("exit\n");
             dos.flush();
