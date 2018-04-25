@@ -839,10 +839,12 @@ public class SeafileService extends Service {
                     mAllAppdataList.removeAll(mAllBrowserList);
                     return mAllAppdataList;
                 case  SeafileUtils.TAG_APPDATA_IMPORT:
+                    String appName = null;
                     for (String name : SeafileUtils.listFiles(
                             mConfigPath.getAbsolutePath() + SEAFILE_PATH_APPDATA)) {
+                        appName = name.replace(".tar.gz", "");
                         for (ResolveInfo info : mAllAppdataList) {
-                            if (name.equals(info.activityInfo.packageName)) {
+                            if (appName.equals(info.activityInfo.packageName)) {
                                 mImportList.add(info);
                                 break;
                             }
@@ -852,10 +854,12 @@ public class SeafileService extends Service {
                 case  SeafileUtils.TAG_BROWSER_EXPORT:
                     return mAllBrowserList;
                 case  SeafileUtils.TAG_BROWSER_IMPORT:
+                    String browserName = null;
                     for (String name : SeafileUtils.listFiles(
                             mConfigPath.getAbsolutePath() + SEAFILE_PATH_BROWSER)) {
+                        browserName = name.replace(".tar.gz", "");
                         for (ResolveInfo info : mAllBrowserList) {
-                            if (name.equals(info.activityInfo.packageName)) {
+                            if (browserName.equals(info.activityInfo.packageName)) {
                                 mImportList.add(info);
                                 break;
                             }
