@@ -555,7 +555,7 @@ public class SeafileUtils {
             while ((line = in.readLine()) != null) {
                 temp.add(line);
             }
-            files = (String[]) temp.toArray();
+            files = temp.toArray(new String[]{});
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
