@@ -14,6 +14,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageParser;
 import android.content.pm.PackageUserState;
+import android.content.pm.ResolveInfo;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -61,8 +62,7 @@ public class SeafileService extends Service {
     private static final String SYSTEM_PATH_WALLPAPER = "/data/system/users/0/wallpaper";
     private static final String SYSTEM_PATH_WIFI = "/data/misc/wifi";
     private static final String SYSTEM_PATH_WIFI_INFO = "/data/misc/wifi";
-    private static final String SYSTEM_PATH_STATUSBAR_DB =
-                                "/data/data/com.android.systemui/databases/Status_bar_database.db";
+    private static final String SYSTEM_PATH_STATUSBAR = "com.android.systemui";
 
     private static final String SEAFILE_PATH_WALLPAPER = "/wallpaper";
     private static final String SEAFILE_PATH_WIFI = "/wifi.tar.gz";
@@ -71,7 +71,8 @@ public class SeafileService extends Service {
     private static final String SEAFILE_PATH_STARTUPMENU = "/UserConfig/startupmenu";
     private static final String SEAFILE_PATH_STATUSBAR_DB =
                          SEAFILE_PATH_STARTUPMENU + "/Status_bar_database.db";
-    private static final String SEAFILE_PATH_BROWSER = "/UserConfig/browser/";
+    private static final String SEAFILE_PATH_BROWSER = "/browser/";
+    private static final String SEAFILE_PATH_APPDATA = "/appdata/";
 
     private static final String ROOT_COMMOND = "chmod -R 777 ";
     private static final String TAG = "SeafileService";
@@ -97,7 +98,12 @@ public class SeafileService extends Service {
     private Timer mTimer;
     private AutoBackupTask mAutoTask;
     private boolean mIsTimer;
+    private PackageManager mPackageManager;
     private boolean mWallpaper, mWifi, mAppdata, mStartupmenu, mBrowser, mAppstore;
+    private List<String> mSyncAppdata = new ArrayList();
+    private List<ResolveInfo> mAllAppdataList = new ArrayList();
+    private List<ResolveInfo> mAllBrowserList = new ArrayList();
+    private List<ResolveInfo> mImportList = new ArrayList();
     private List<String> mSyncBrowsers = new ArrayList();
     private boolean mImportBusy, mExportBusy;
     private String mUserPath;
@@ -118,6 +124,7 @@ public class SeafileService extends Service {
     }
 
     private void initData() {
+        mPackageManager = getPackageManager();
         ContentResolver mResolver = SeafileService.this.getContentResolver();
         Uri uriQuery = Uri.parse(SeafileUtils.OPENTHOS_URI);
         Cursor cursor = mResolver.query(uriQuery, null, null, null, null);
@@ -327,58 +334,6 @@ public class SeafileService extends Service {
                 mConfigPath.getAbsolutePath() + SEAFILE_PATH_WIFI);
     }
 
-    private void importStatusBarFiles() {
-        File statusbarDbFiles = new File(SEAFILE_PATH_STATUSBAR_DB);
-        if (statusbarDbFiles.exists()) {
-            SQLiteDatabase statusbarDb = SQLiteDatabase.openDatabase(
-                          SEAFILE_PATH_STATUSBAR_DB, null, SQLiteDatabase.OPEN_READWRITE);
-            Cursor cursor = statusbarDb.rawQuery("select * from status_bar_tb", null);
-            if (cursor != null) {
-                List<PackageInfo> pkgInfos = getPackageManager().getInstalledPackages(0);
-                ArrayList<String> pkgNameLists = new ArrayList();
-                while(cursor.moveToNext()) {
-                    String pkgName = cursor.getString(cursor.getColumnIndex("pkgname"));
-                    for (PackageInfo pkgInfo : pkgInfos) {
-                        if (pkgInfo.packageName.equals(pkgName)) {
-                            pkgNameLists.add(pkgName);
-                        }
-                    }
-                }
-                Intent intent = new Intent(Intent.STATUS_BAR_SEAFILE);
-                intent.putStringArrayListExtra("pkgname", pkgNameLists);
-                sendBroadcast(intent);
-            }
-        }
-    }
-
-    private void importBrowserFiles(List<String> syncBrowsers) {
-        for (int i = 0; i < syncBrowsers.size(); i++) {
-            SeafileUtils.exec(new String[]{"su", "-c", "tar -xzvpf " + mUserPath +
-                    SEAFILE_PATH_BROWSER + syncBrowsers.get(i) + ".tar.gz"});
-        }
-    }
-
-    private void exportStartupmenuFiles() {
-        File statusbarDb = new File(SYSTEM_PATH_STATUSBAR_DB);
-        if (statusbarDb.exists()) {
-            SeafileUtils.exec(ROOT_COMMOND + SYSTEM_PATH_STATUSBAR_DB);
-            if (FileUtils.copyGeneralFile(SYSTEM_PATH_STATUSBAR_DB,
-                    mUserPath + SEAFILE_PATH_STARTUPMENU)) {
-                if (DEBUG) Log.i(TAG,"statusbar sync to seafile sucessful!");
-            } else {
-                if (DEBUG) Log.i(TAG,"statusbar sync to seafile fail!");
-            }
-        }
-    }
-
-    private void exportBrowserFiles(List<String> syncBrowsers) {
-        for (int i = 0; i < syncBrowsers.size(); i++) {
-            SeafileUtils.exec(new String[]{"su", "-c", "tar -czpf " + mUserPath +
-                    SEAFILE_PATH_BROWSER + syncBrowsers.get(i) + ".tar.gz " +
-                    SYSTEM_PATH_DATA + syncBrowsers.get(i)});
-        }
-    }
-
     private void exportAppstoreFiles() {
         List<PackageInfo> tempInfos = getPackageManager().getInstalledPackages(0);
         List<PackageInfo> packageInfos = new ArrayList<>();
@@ -413,6 +368,33 @@ public class SeafileService extends Service {
         }
     }
 
+    private void importFiles(List<String> packages, String configPath) {
+        for (int i = 0; i < packages.size(); i++) {
+            try {
+                int uid = mPackageManager.getApplicationInfo(
+                         packages.get(i), PackageManager.GET_ACTIVITIES).uid;
+                SeafileUtils.untarFile(mConfigPath.getAbsolutePath() +
+                        configPath + packages.get(i) + ".tar.gz");
+                SeafileUtils.chownFile(mConfigPath.getAbsolutePath() +
+                        configPath + packages.get(i), uid);
+            } catch (PackageManager.NameNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void exportFiles(List<String> packages, String configPath) {
+        for (int i = 0; i < packages.size(); i++) {
+            File configFile = new File(mConfigPath.getAbsolutePath() + configPath);
+            if (!configFile.exists()) {
+                configFile.mkdirs();
+            }
+            SeafileUtils.tarFile(SYSTEM_PATH_DATA + packages.get(i),
+                    configFile.getAbsolutePath() + "/" + packages.get(i) + ".tar.gz");
+        }
+    }
+
+
     private void getCsrf(String user, String password) {
         List<NameValuePair> list = new ArrayList<>();
         list.add(new BasicNameValuePair("email", user));
@@ -446,7 +428,7 @@ public class SeafileService extends Service {
         @Override
         public void run() {
             mIsTimer = true;
-            mBinder.saveSettings(mWallpaper, mWifi, mAppdata,
+            mBinder.saveSettings(mWallpaper, mWifi, mAppdata, mSyncAppdata,
                     mStartupmenu, mBrowser, mSyncBrowsers, mAppstore);
         }
     }
@@ -662,8 +644,9 @@ public class SeafileService extends Service {
         }
 
         @Override
-        public void restoreSettings(boolean wallpaper, boolean wifi, boolean appdata,
-                boolean startupmenu, boolean browser, List<String> syncBrowsers, boolean appstore) {
+        public void restoreSettings(boolean wallpaper, boolean wifi,
+                boolean appdata, List<String> syncAppdata, boolean startupmenu,
+                boolean browser, List<String> syncBrowsers, boolean appstore) {
             if (mImportBusy) {
                 return;
             }
@@ -677,11 +660,16 @@ public class SeafileService extends Service {
             if (wifi) {
                 importWifiFiles();
             }
+            if (appdata) {
+                importFiles(syncAppdata,  SEAFILE_PATH_APPDATA);
+           }
             if (startupmenu) {
-                importStatusBarFiles();
+                List<String> packages = new ArrayList();
+                packages.add(SYSTEM_PATH_STATUSBAR);
+                importFiles(packages, "/");
             }
             if (browser) {
-                importBrowserFiles(syncBrowsers);
+                importFiles(syncBrowsers, SEAFILE_PATH_BROWSER);
             }
             if (appstore) {
                 ArrayList<String> pkgNames = new ArrayList();
@@ -718,8 +706,9 @@ public class SeafileService extends Service {
         }
 
         @Override
-        public void saveSettings(boolean wallpaper, boolean wifi, boolean appdata,
-                boolean startupmenu, boolean browser, List<String> syncBrowsers, boolean appstore) {
+        public void saveSettings(boolean wallpaper, boolean wifi,
+                boolean appdata, List<String> syncAppdata, boolean startupmenu,
+                boolean browser, List<String> syncBrowsers, boolean appstore) {
             if (mExportBusy) {
                 return;
             }
@@ -734,6 +723,7 @@ public class SeafileService extends Service {
             mBrowser = browser;
             mAppstore = appstore;
             mSyncBrowsers = syncBrowsers;
+            mSyncAppdata = syncAppdata;
             if (mIsTimer) {
                 if (wallpaper) {
                     exportWallpaperFiles();
@@ -741,20 +731,16 @@ public class SeafileService extends Service {
                 if (wifi) {
                     exportWifiFiles();
                 }
+                if (appdata) {
+                    exportFiles(syncAppdata, SEAFILE_PATH_APPDATA);
+                }
                 if (startupmenu) {
-                    File startupMenuFile = new File (mConfigPath + SEAFILE_PATH_STARTUPMENU);
-                    if (startupMenuFile.exists()) {
-                        FileUtils.deleteGeneralFile(mConfigPath + SEAFILE_PATH_STARTUPMENU);
-                    }
-                    startupMenuFile.mkdirs();
-                    exportStartupmenuFiles();
+                    List<String> packages = new ArrayList();
+                    packages.add(SYSTEM_PATH_STATUSBAR);
+                    exportFiles(packages, "/");
                 }
                 if (browser) {
-                    File browserInfoSeafile = new File(mConfigPath + SEAFILE_PATH_BROWSER);
-                    if (!browserInfoSeafile.exists()) {
-                        browserInfoSeafile.mkdirs();
-                    }
-                    exportBrowserFiles(syncBrowsers);
+                    exportFiles(syncBrowsers, SEAFILE_PATH_BROWSER);
                 }
                 if (appstore) {
                     String path = mConfigPath.getAbsolutePath() + SEAFILE_PATH_APPSTORE;
@@ -814,6 +800,70 @@ public class SeafileService extends Service {
         @Override
         public int getCodeRegiestFailed() {
             return CODE_REGIEST_FAILED;
+        }
+
+        @Override
+        public int getTagAppdataImport() {
+            return SeafileUtils.TAG_APPDATA_IMPORT;
+        }
+
+        @Override
+        public int getTagAppdataExport() {
+            return SeafileUtils.TAG_APPDATA_EXPORT;
+        }
+
+        @Override
+        public int getTagBrowserImport() {
+            return SeafileUtils.TAG_BROWSER_IMPORT;
+        }
+
+        @Override
+        public int getTagBrowserExport() {
+            return SeafileUtils.TAG_BROWSER_EXPORT;
+        }
+
+        @Override
+        public List<ResolveInfo> getAppsInfo(int tag) {
+            Intent intents = new Intent(Intent.ACTION_VIEW);
+            intents.addCategory(Intent.CATEGORY_BROWSABLE);
+            Uri uri = Uri.parse("https://");
+            intents.setData(uri);
+            mAllBrowserList = mPackageManager.queryIntentActivities(
+                    intents, PackageManager.GET_INTENT_FILTERS);
+            mImportList.clear();
+            switch (tag) {
+                case SeafileUtils.TAG_APPDATA_EXPORT:
+                    Intent intent = new Intent(Intent.ACTION_MAIN, null);
+                    intent.addCategory(Intent.CATEGORY_LAUNCHER);
+                    mAllAppdataList = mPackageManager.queryIntentActivities(intent, 0);
+                    mAllAppdataList.removeAll(mAllBrowserList);
+                    return mAllAppdataList;
+                case  SeafileUtils.TAG_APPDATA_IMPORT:
+                    for (String name : SeafileUtils.listFiles(
+                            mConfigPath.getAbsolutePath() + SEAFILE_PATH_APPDATA)) {
+                        for (ResolveInfo info : mAllAppdataList) {
+                            if (name.equals(info.activityInfo.packageName)) {
+                                mImportList.add(info);
+                                break;
+                            }
+                        }
+                    }
+                    return mImportList;
+                case  SeafileUtils.TAG_BROWSER_EXPORT:
+                    return mAllBrowserList;
+                case  SeafileUtils.TAG_BROWSER_IMPORT:
+                    for (String name : SeafileUtils.listFiles(
+                            mConfigPath.getAbsolutePath() + SEAFILE_PATH_BROWSER)) {
+                        for (ResolveInfo info : mAllBrowserList) {
+                            if (name.equals(info.activityInfo.packageName)) {
+                                mImportList.add(info);
+                                break;
+                            }
+                        }
+                    }
+                    return mImportList;
+            }
+            return null;
         }
     }
 

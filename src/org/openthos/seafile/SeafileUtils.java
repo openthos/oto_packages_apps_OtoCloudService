@@ -57,6 +57,11 @@ public class SeafileUtils {
 
     public static final String SEAFILE_DATA = "seeafile_data";
 
+    public static final int TAG_APPDATA_IMPORT = 0;
+    public static final int TAG_APPDATA_EXPORT = 1;
+    public static final int TAG_BROWSER_IMPORT = 2;
+    public static final int TAG_BROWSER_EXPORT = 3;
+
     public static boolean isExistsAccount() {
         return !TextUtils.isEmpty(mUserId) || !TextUtils.isEmpty(mUserPassword);
     }
@@ -568,5 +573,38 @@ public class SeafileUtils {
             }
         }
         return files;
+    }
+
+    public static void chownFile(String path, int uid) {
+        if (TextUtils.isEmpty(path)) {
+            return;
+        }
+        Process pro = null;
+        DataOutputStream dos = null;
+        try {
+            Runtime rt = Runtime.getRuntime();
+            pro = rt.exec("su");
+            dos = new DataOutputStream(pro.getOutputStream());
+            dos.writeBytes("chown -R " + uid + ":" + uid + " " + path + "\n");
+            dos.flush();
+            dos.writeBytes("exit\n");
+            dos.flush();
+            pro.waitFor();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (dos != null) {
+                try {
+                    dos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (pro != null) {
+                pro.destroy();
+            }
+        }
     }
 }

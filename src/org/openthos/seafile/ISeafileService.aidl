@@ -1,5 +1,7 @@
 package org.openthos.seafile;
 
+import android.content.pm.ResolveInfo;
+
 interface ISeafileService {
     void sync(String libraryId, String libraryName, String filePath);
     void desync(String libraryId, String libraryName, String filePath);
@@ -9,9 +11,11 @@ interface ISeafileService {
     int isSync(String libraryId, String libraryName);
     void updateAccount();
     void stopAccount();
-    void restoreSettings(boolean wallpaper, boolean wifi, boolean appdata, boolean startupmenu,
+    void restoreSettings(boolean wallpaper, boolean wifi,
+            boolean appdata, in List<String> syncAppdata, boolean startupmenu,
             boolean browser, in List<String> syncBrowsers, boolean appstore);
-    void saveSettings(boolean wallpaper, boolean wifi, boolean appdata, boolean startupmenu,
+    void saveSettings(boolean wallpaper, boolean wifi,
+            boolean appdata, in List<String> syncAppdata, boolean startupmenu,
             boolean browser, in List<String> syncBrowsers, boolean appstore);
     void regiestAccount(String userName, String password);
     void setBinder(IBinder b);
@@ -22,4 +26,9 @@ interface ISeafileService {
     int getCodeDownloadFinish();
     int getCodeRegiestSuccess();
     int getCodeRegiestFailed();
+    int getTagAppdataImport();
+    int getTagAppdataExport();
+    int getTagBrowserImport();
+    int getTagBrowserExport();
+    List<ResolveInfo> getAppsInfo(int tag);
 }
