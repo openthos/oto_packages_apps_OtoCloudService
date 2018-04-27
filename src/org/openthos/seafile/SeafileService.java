@@ -20,6 +20,7 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
+import android.net.EthernetManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
@@ -27,6 +28,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.os.Parcel;
 import android.os.RemoteException;
@@ -49,6 +51,7 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -115,11 +118,12 @@ public class SeafileService extends Service {
     private SeafileBinder mBinder = new SeafileBinder();
     private boolean DEBUG = false;
     private Handler mHandler;
+    private boolean mTempStartupMenu = false;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        mHandler = new SeafileHandler();
+        mHandler = new SeafileHandler(Looper.getMainLooper());
         SeafileUtils.init();
     }
 
@@ -525,6 +529,46 @@ public class SeafileService extends Service {
     }
 
     private void restoreFinish(){
+        if (mTempStartupMenu) {
+            List<String> packages = new ArrayList();
+            packages.add(SYSTEM_PATH_STATUSBAR);
+            importFiles(packages, "/");
+            mHandler.post(new Runnable() {
+                public void run(){
+                    Process pro = null;
+                    BufferedReader in = null;
+                    ArrayList<String> temp = new ArrayList();
+                    try {
+                        pro = Runtime.getRuntime().exec(new String[]{"su", "-c", "netcfg"});
+                        in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
+                        String line;
+
+                        while ((line = in.readLine()) != null) {
+                            String tempStr = line.split("\\s+")[0];
+                            if (tempStr.startsWith("eth")) {
+                                temp.add(tempStr);
+                            }
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } finally {
+                        if (in != null) {
+                            try {
+                                in.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                    StringBuffer sb = new StringBuffer();
+                    for (String str : temp) {
+                        sb.append("netcfg ").append(str).append(" down;");
+                    }
+                    SeafileUtils.exec(new String[]{"su", "-c",
+                            sb.toString() + "kill " + Jni.nativeKillPid()});
+                }
+            });
+        }
         mImportBusy = false;
         Log.i("seafile", "restoreFinish" + mIBinders.size());
         for (IBinder iBinder : mIBinders) {
@@ -654,6 +698,7 @@ public class SeafileService extends Service {
                 return;
             }
             mImportBusy = true;
+            mTempStartupMenu = startupmenu;
             if (wallpaper) {
                 importWallpaperFiles();
             }
@@ -662,11 +707,6 @@ public class SeafileService extends Service {
             }
             if (appdata) {
                 importFiles(syncAppdata,  SEAFILE_PATH_APPDATA);
-           }
-            if (startupmenu) {
-                List<String> packages = new ArrayList();
-                packages.add(SYSTEM_PATH_STATUSBAR);
-                importFiles(packages, "/");
             }
             if (browser) {
                 importFiles(syncBrowsers, SEAFILE_PATH_BROWSER);
@@ -872,6 +912,11 @@ public class SeafileService extends Service {
     }
 
     private class SeafileHandler extends Handler {
+
+        public SeafileHandler (Looper looper) {
+            super(looper);
+        }
+
         @Override
         public void handleMessage (Message msg) {
             switch (msg.what) {

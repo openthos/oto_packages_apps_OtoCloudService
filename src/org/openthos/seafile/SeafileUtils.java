@@ -388,7 +388,8 @@ public class SeafileUtils {
                 }
             }
             if (pro != null) {
-                pro.destroy();
+                processDestroy(pro);
+                pro = null;
             }
         }
     }
@@ -421,7 +422,8 @@ public class SeafileUtils {
                 }
             }
             if (pro != null) {
-                pro.destroy();
+                processDestroy(pro);
+                pro = null;
             }
         }
     }
@@ -463,7 +465,8 @@ public class SeafileUtils {
                 }
             }
             if (pro != null) {
-                pro.destroy();
+                processDestroy(pro);
+                pro = null;
             }
         }
     }
@@ -499,9 +502,6 @@ public class SeafileUtils {
                     e.printStackTrace();
                 }
             }
-            if (pro != null) {
-                pro.destroy();
-            }
         }
     }
 
@@ -533,7 +533,8 @@ public class SeafileUtils {
                 }
             }
             if (pro != null) {
-                pro.destroy();
+                processDestroy(pro);
+                pro = null;
             }
         }
         return true;
@@ -569,7 +570,8 @@ public class SeafileUtils {
                 }
             }
             if (pro != null) {
-                pro.destroy();
+                processDestroy(pro);
+                pro = null;
             }
         }
         return files;
@@ -603,8 +605,49 @@ public class SeafileUtils {
                 }
             }
             if (pro != null) {
-                pro.destroy();
+                processDestroy(pro);
+                pro = null;
             }
+        }
+    }
+
+    private static void processDestroy(Process process) {
+        if (process != null) {
+            try {
+                if (process.exitValue() != 0) {
+                    killProcess(process);
+                }
+            } catch (IllegalThreadStateException e) {
+                killProcess(process);
+            }
+        }
+    }
+
+    private static void killProcess(Process process) {
+        int pid = getProcessId(process);
+        if (pid != 0) {
+            try {
+                //android kill process
+                android.os.Process.killProcess(pid);
+            } catch (Exception e) {
+                try {
+                    process.destroy();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private static int getProcessId(Process process) {
+        String str = process.toString();
+        try {
+            int i = str.indexOf("=") + 1;
+            int j = str.indexOf("]");
+            str = str.substring(i, j);
+            return Integer.parseInt(str);
+        } catch (Exception e) {
+            return 0;
         }
     }
 }
