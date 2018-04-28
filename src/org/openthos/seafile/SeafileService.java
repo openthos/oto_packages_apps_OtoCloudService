@@ -292,19 +292,6 @@ public class SeafileService extends Service {
                 WallpaperManager.getInstance(this).setStream(new FileInputStream(path));
             } catch (IOException exception) {
                 exception.printStackTrace();
-                try {
-                    WallpaperManager.getInstance(this).setResource(
-                                      com.android.internal.R.drawable.default_wallpaper);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        } else {
-            try {
-                WallpaperManager.getInstance(this).setResource(
-                                  com.android.internal.R.drawable.default_wallpaper);
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
     }
