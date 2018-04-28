@@ -17,7 +17,8 @@ interface ISeafileService {
     void saveSettings(boolean wallpaper, boolean wifi,
             boolean appdata, in List<String> syncAppdata, boolean startupmenu,
             boolean browser, in List<String> syncBrowsers, boolean appstore);
-    void regiestAccount(String userName, String password);
+    void regiestAccount(String userName,  String email, String password);
+    void loginAccount(String userName, String password);
     void setBinder(IBinder b);
     void unsetBinder(IBinder b);
     int getCodeSendInto();
@@ -26,6 +27,8 @@ interface ISeafileService {
     int getCodeDownloadFinish();
     int getCodeRegiestSuccess();
     int getCodeRegiestFailed();
+    int getCodeLoginSuccess();
+    int getCodeLoginFailed();
     int getTagAppdataImport();
     int getTagAppdataExport();
     int getTagBrowserImport();

@@ -5,4 +5,5 @@
     <string name="import_reboot_info_warn">If you want all import files full available,you need reboot the device.</string>
     <string name="restore_progress">Restoring</string>
     <string name="appstore_download_app">Downloading apps from appstore:</string>
+    <string name="registe_success_info">注册成功！</string>
 </resources>

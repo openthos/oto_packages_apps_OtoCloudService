@@ -96,6 +96,8 @@ public class SeafileService extends Service {
     private static final int CODE_DOWNLOAD_FINISH = 80000004;
     private static final int CODE_REGIEST_SUCCESS = 80000005;
     private static final int CODE_REGIEST_FAILED = 80000006;
+    private static final int CODE_LOGIN_SUCCESS = 80000007;
+    private static final int CODE_LOGIN_FAILED = 80000008;
 
     private StartSeafileThread mStartSeafileThread;
     public SeafileAccount mAccount;
@@ -820,8 +822,18 @@ public class SeafileService extends Service {
         }
 
         @Override
-        public void regiestAccount(String userName, String password) {
-            getCsrf(userName, password);
+        public void regiestAccount(String userName, String email, String password) {
+            //getCsrf(userName, password);
+            NetRequestThread registeThread = new NetRequestThread(mHandler, SeafileService.this,
+                    userName, email, password, NetRequestThread.Mark.REGISTE);
+            registeThread.start();
+        }
+
+        @Override
+        public void loginAccount(String userName, String password) {
+            NetRequestThread loginThread = new NetRequestThread(
+                    mHandler, SeafileService.this, userName, password, NetRequestThread.Mark.LOGIN);
+            loginThread.start();
         }
 
         @Override
@@ -862,6 +874,16 @@ public class SeafileService extends Service {
         @Override
         public int getCodeRegiestFailed() {
             return CODE_REGIEST_FAILED;
+        }
+
+        @Override
+        public int getCodeLoginSuccess() {
+            return CODE_LOGIN_SUCCESS;
+        }
+
+        @Override
+        public int getCodeLoginFailed() {
+            return CODE_LOGIN_FAILED;
         }
 
         @Override
@@ -937,7 +959,7 @@ public class SeafileService extends Service {
         @Override
         public void handleMessage (Message msg) {
             switch (msg.what) {
-                case RequestThread.MSG_REGIST_SEAFILE_OK:
+                case NetRequestThread.MSG_REGIST_SEAFILE_OK:
                     mBinder.updateAccount();
                     for (IBinder iBinder : mIBinders) {
                         Parcel _data = Parcel.obtain();
@@ -953,7 +975,7 @@ public class SeafileService extends Service {
                         }
                     }
                     break;
-                case RequestThread.MSG_REGIST_SEAFILE_FAILED:
+                case NetRequestThread.MSG_REGIST_SEAFILE_FAILED:
                     for (IBinder iBinder : mIBinders) {
                         Parcel _data = Parcel.obtain();
                         Parcel _reply = Parcel.obtain();
@@ -967,6 +989,38 @@ public class SeafileService extends Service {
                             _reply.recycle();
                         }
                     }
+                    break;
+                case NetRequestThread.MSG_LOGIN_SEAFILE_OK:
+                    for (IBinder iBinder : mIBinders) {
+                        Parcel _data = Parcel.obtain();
+                        Parcel _reply = Parcel.obtain();
+                        _data.writeInterfaceToken(DESCRIPTOR);
+                        try {
+                            iBinder.transact(CODE_LOGIN_SUCCESS, _data, _reply, 0);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        } finally {
+                            _data.recycle();
+                            _reply.recycle();
+                        }
+                    }
+
+                    break;
+                case NetRequestThread.MSG_LOGIN_SEAFILE_FAILED:
+                    for (IBinder iBinder : mIBinders) {
+                        Parcel _data = Parcel.obtain();
+                        Parcel _reply = Parcel.obtain();
+                        _data.writeInterfaceToken(DESCRIPTOR);
+                        try {
+                            iBinder.transact(CODE_LOGIN_FAILED, _data, _reply, 0);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        } finally {
+                            _data.recycle();
+                            _reply.recycle();
+                        }
+                    }
+
                     break;
             }
         }
