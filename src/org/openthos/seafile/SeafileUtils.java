@@ -44,7 +44,7 @@ public class SeafileUtils {
     public static final String SETTING_SEAFILE_NAME = "UserConfig";
     public static final String DATA_SEAFILE_NAME = "DATA";
 
-    public static final String SEAFILE_BASE_URL = "-s https://dev.openthos.org/ ";
+    public static final String SEAFILE_BASE_URL = "-s http://166.111.120.235/ ";
     public static String mUserId = "";
     public static String mUserPassword = "";
     public static String getUserAccount() {
@@ -309,60 +309,47 @@ public class SeafileUtils {
         return false;
     }
 
-    public static String getResult(String token) {
+    public static String getResult(String token)
+            throws UnsupportedEncodingException, HttpRequest.HttpRequestException {
         HttpRequest ret = null;
-        try {
-            ret = HttpRequest.get("https://dev.openthos.org/api2/repos/", null, false);
-            ret.readTimeout(30000)
-                    .connectTimeout(15000)
-                    .followRedirects(false)
-                    .header("Authorization", "Token " + token);
-            try {
-                return new String(ret.bytes(), "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
-        } catch (HttpRequest.HttpRequestException e) {
-            e.printStackTrace();
+        ret = HttpRequest.get("http://166.111.120.235/api2/repos/", null, false);
+        ret.readTimeout(5000)
+                .connectTimeout(5000)
+                .followRedirects(false)
+                .header("Authorization", "Token " + token);
+        if (ret.ok()) {
+            return new String(ret.bytes(), "UTF-8");
+        } else {
+            throw new UnsupportedEncodingException();
         }
-        return "";
     }
 
-    public static String getToken(Context context) {
+    public static String getToken(Context context)
+            throws UnsupportedEncodingException, JSONException,
+            HttpRequest.HttpRequestException, PackageManager.NameNotFoundException {
         HttpRequest rep = null;
-        try {
-            rep = HttpRequest.post("https://dev.openthos.org/api2/auth-token/", null, false)
-                    .followRedirects(true)
-                    .connectTimeout(15000);
-            rep.form("username", mUserId);
-            rep.form("password", mUserPassword);
-            PackageInfo packageInfo = null;
-            try {
-                packageInfo = context.getPackageManager().
-                        getPackageInfo(context.getPackageName(), 0);
-            } catch (PackageManager.NameNotFoundException e) {
-                e.printStackTrace();
-            }
-            String deviceId = Settings.Secure.getString(context.getContentResolver(),
-                                                        Settings.Secure.ANDROID_ID);
-            rep.form("platform", "android");
-            rep.form("device_id", deviceId);
-            rep.form("device_name", Build.MODEL);
-            rep.form("client_version", packageInfo.versionName);
-            rep.form("platform_version", Build.VERSION.RELEASE);
-            String contentAsString = null;
-            try {
-                contentAsString = new String(rep.bytes(), "UTF-8");
-                return new JSONObject(contentAsString).getString("token");
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        } catch (HttpRequest.HttpRequestException e) {
-            e.printStackTrace();
+        rep = HttpRequest.post("http://166.111.120.235/api2/auth-token/", null, false)
+                .followRedirects(true)
+                .connectTimeout(5000);
+        rep.form("username", mUserId);
+        rep.form("password", mUserPassword);
+        PackageInfo packageInfo = null;
+        packageInfo = context.getPackageManager().
+                getPackageInfo(context.getPackageName(), 0);
+        String deviceId = Settings.Secure.getString(context.getContentResolver(),
+                Settings.Secure.ANDROID_ID);
+        rep.form("platform", "android");
+        rep.form("device_id", deviceId);
+        rep.form("device_name", Build.MODEL);
+        rep.form("client_version", packageInfo.versionName);
+        rep.form("platform_version", Build.VERSION.RELEASE);
+        String contentAsString = null;
+        if (rep.ok()){
+            contentAsString = new String(rep.bytes(), "UTF-8");
+            return new JSONObject(contentAsString).getString("token");
+        } else {
+            throw new UnsupportedEncodingException();
         }
-        return "";
     }
 
     public static void exec(String[] commands) {

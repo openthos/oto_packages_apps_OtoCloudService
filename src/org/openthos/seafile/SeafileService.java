@@ -52,10 +52,15 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Date;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import android.os.Environment;
 import android.os.RemoteException;
@@ -95,8 +100,7 @@ public class SeafileService extends Service {
     private StartSeafileThread mStartSeafileThread;
     public SeafileAccount mAccount;
     public SeafileUtils.SeafileSQLConsole mConsole;
-    public String mLibrary;
-    private boolean mIsStart = false;
+    public String mLibrary = "";
     private File mConfigPath;
     private Timer mTimer;
     private AutoBackupTask mAutoTask;
@@ -119,6 +123,9 @@ public class SeafileService extends Service {
     private boolean DEBUG = false;
     private Handler mHandler;
     private boolean mTempStartupMenu = false;
+    private Intent mAppdataIntent;
+    private Intent mBrowserIntent;
+    private ScheduledExecutorService mScheduledService;
 
     @Override
     public void onCreate() {
@@ -128,13 +135,15 @@ public class SeafileService extends Service {
     }
 
     private void initData() {
+        mScheduledService = Executors.newScheduledThreadPool(1);
         mPackageManager = getPackageManager();
         ContentResolver mResolver = SeafileService.this.getContentResolver();
         Uri uriQuery = Uri.parse(SeafileUtils.OPENTHOS_URI);
         Cursor cursor = mResolver.query(uriQuery, null, null, null, null);
         if (cursor != null) {
             while (cursor.moveToNext()) {
-                SeafileUtils.mUserId = cursor.getString(cursor.getColumnIndex("openthosID"));
+                SeafileUtils.mUserId
+                        = cursor.getString(cursor.getColumnIndex("openthosID")) + "@opentos.org";
                 SeafileUtils.mUserPassword =
                         cursor.getString(cursor.getColumnIndex("password"));
                 break;
@@ -164,7 +173,15 @@ public class SeafileService extends Service {
         public void run() {
             super.run();
             SeafileUtils.start();
-            mLibrary = getLibrarys();
+            initAppIntent();
+            if (!SeafileUtils.isNetworkOn(SeafileService.this)) {
+                mStartSeafileThread = null;
+                return;
+            }
+            if (!getLibrarysSuccess()) {
+                postDelayedThread();
+                return;
+            }
             mAccount = new SeafileAccount();
             mAccount.mUserName = SeafileUtils.mUserId;
             mConsole = new SeafileUtils.SeafileSQLConsole(SeafileService.this);
@@ -202,6 +219,9 @@ public class SeafileService extends Service {
             if (!mConfigPath.exists()) {
                 mConfigPath.mkdirs();
             }
+            if (!isExistsSetting) {
+                settingId = SeafileUtils.create(SeafileUtils.SETTING_SEAFILE_NAME);
+            }
             SeafileUtils.sync(settingId, "/"
                    + SeafileUtils.mUserId + "/" + SeafileUtils.SETTING_SEAFILE_NAME);
             if (!isExistsFileManager) {
@@ -223,22 +243,37 @@ public class SeafileService extends Service {
                     }
                 }
             }
-            if (!isExistsSetting) {
-                settingId = SeafileUtils.create(SeafileUtils.SETTING_SEAFILE_NAME);
-            }
-            mIsStart = true;
+            mLibrary = mAccount.toString();
         }
     }
+    private void postDelayedThread () {
+        mStartSeafileThread = null;
+        mStartSeafileThread = new StartSeafileThread();
+        mScheduledService.schedule(mStartSeafileThread, 60, TimeUnit.SECONDS);
+    }
 
-    private String getLibrarys() {
-        if (!SeafileUtils.isNetworkOn(this)) {
-            return "";
+    private void initAppIntent() {
+        mBrowserIntent = new Intent(Intent.ACTION_VIEW);
+        mBrowserIntent.addCategory(Intent.CATEGORY_BROWSABLE);
+        Uri uri = Uri.parse("http://");
+        mBrowserIntent.setData(uri);
+
+        mAppdataIntent = new Intent(Intent.ACTION_MAIN, null);
+        mAppdataIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+    }
+
+    private boolean getLibrarysSuccess() {
+        try {
+            String token = SeafileUtils.getToken(SeafileService.this);
+            mLibrary =  SeafileUtils.getResult(token);
+        } catch (UnsupportedEncodingException
+                | HttpRequest.HttpRequestException
+                | PackageManager.NameNotFoundException
+                | JSONException e) {
+            e.printStackTrace();
+            return false;
         }
-        String token = SeafileUtils.getToken(this);
-        if (token == null || TextUtils.isEmpty(token)) {
-            return "";
-        }
-        return SeafileUtils.getResult(token);
+        return true;
     }
 
     @Override
@@ -260,7 +295,7 @@ public class SeafileService extends Service {
                             .getSystemService(Context.CONNECTIVITY_SERVICE);
                     NetworkInfo activeNetwork = manager.getActiveNetworkInfo();
                     if (activeNetwork != null) {
-                        if (activeNetwork.isConnected() && !mIsStart) {
+                        if (activeNetwork.isConnected() && TextUtils.isEmpty(mLibrary)) {
                             initData();
                         }
                     }
@@ -851,18 +886,13 @@ public class SeafileService extends Service {
 
         @Override
         public List<ResolveInfo> getAppsInfo(int tag) {
-            Intent intents = new Intent(Intent.ACTION_VIEW);
-            intents.addCategory(Intent.CATEGORY_BROWSABLE);
-            Uri uri = Uri.parse("https://");
-            intents.setData(uri);
             mAllBrowserList = mPackageManager.queryIntentActivities(
-                    intents, PackageManager.GET_INTENT_FILTERS);
+                    mBrowserIntent, PackageManager.GET_INTENT_FILTERS);
+            mAllAppdataList = mPackageManager.queryIntentActivities(mAppdataIntent, 0);
+            mAllAppdataList.removeAll(mAllBrowserList);
             mImportList.clear();
             switch (tag) {
                 case SeafileUtils.TAG_APPDATA_EXPORT:
-                    Intent intent = new Intent(Intent.ACTION_MAIN, null);
-                    intent.addCategory(Intent.CATEGORY_LAUNCHER);
-                    mAllAppdataList = mPackageManager.queryIntentActivities(intent, 0);
                     mAllAppdataList.removeAll(mAllBrowserList);
                     return mAllAppdataList;
                 case  SeafileUtils.TAG_APPDATA_IMPORT:
