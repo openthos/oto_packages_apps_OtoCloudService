@@ -9,7 +9,7 @@ interface ISeafileService {
     int getUserId();
     String getUserName();
     int isSync(String libraryId, String libraryName);
-    void updateAccount();
+    void updateAccount(String name, String password);
     void stopAccount();
     void restoreSettings(boolean wallpaper, boolean wifi,
             boolean appdata, in List<String> syncAppdata, boolean startupmenu,

@@ -2,7 +2,9 @@ package org.openthos.seafile;
 
 import android.widget.Toast;
 import android.content.Context;
+import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -291,7 +293,15 @@ public class NetRequestThread extends Thread {
                         return;
                     }
                 }
-                handler.sendEmptyMessage(MSG_LOGIN_SEAFILE_OK);
+                SeafileService.mSp.edit()
+                        .putString("user", name).putString("password", pass).commit();
+                Message msg = new Message();
+                msg.what = MSG_LOGIN_SEAFILE_OK;
+                Bundle bundle = new Bundle();
+                bundle.putString("user", name);
+                bundle.putString("password", pass);
+                msg.setData(bundle);
+                handler.sendMessage(msg);
             } catch (IOException e) {
                 System.out.println("Error=" + e.toString());
             } finally {
