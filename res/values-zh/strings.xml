@@ -5,4 +5,9 @@
     <string name="import_reboot_info_warn">恢复完成后,要想所有功能生效,需重启计算机</string>
     <string name="restore_progress">正在还原</string>
     <string name="appstore_download_app">正在从应用商店下载</string>
+    <string name="data_seafile_name">数据</string>
+    <string name="userconfig_seafile_name">配置</string>
+    <string name="seafile_status_title">云服务状态：</string>
+    <string name="seafile_uploading">上传中</string>
+    <string name="seafile_downloading">下载中</string>
 </resources>

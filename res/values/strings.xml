@@ -6,4 +6,9 @@
     <string name="restore_progress">Restoring</string>
     <string name="appstore_download_app">Downloading apps from appstore:</string>
     <string name="registe_success_info">注册成功！</string>
+    <string name="data_seafile_name">DATA</string>
+    <string name="userconfig_seafile_name">UserConfig</string>
+    <string name="seafile_status_title">CloudService Status:</string>
+    <string name="seafile_uploading">Uploading</string>
+    <string name="seafile_downloading">Downloading</string>
 </resources>

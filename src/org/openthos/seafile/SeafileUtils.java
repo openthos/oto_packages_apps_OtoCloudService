@@ -527,33 +527,25 @@ public class SeafileUtils {
         return true;
     }
 
-    public static String[] listFiles(String path) {
-        if (TextUtils.isEmpty(path)) {
-            return new String[]{};
-        }
+    public static ArrayList<String> execCommand(String command) {
         Process pro = null;
         BufferedReader in = null;
-        String[] files = null;
+        ArrayList<String> result = new ArrayList();
         try {
-            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", "ls "
-                    + path.replace(" ", "\\ ")});
+            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", command});
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
-            ArrayList<String> temp = new ArrayList();
             while ((line = in.readLine()) != null) {
-                temp.add(line);
+                result.add(line);
             }
-            files = temp.toArray(new String[]{});
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
             if (in != null) {
                 try {
                     in.close();
-
                 } catch (IOException e) {
                     e.printStackTrace();
-
                 }
             }
             if (pro != null) {
@@ -561,7 +553,7 @@ public class SeafileUtils {
                 pro = null;
             }
         }
-        return files;
+        return result;
     }
 
     public static void chownFile(String path, int uid) {

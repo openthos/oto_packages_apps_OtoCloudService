@@ -1,6 +1,8 @@
 package org.openthos.seafile;
 
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.app.WallpaperManager;
 import android.content.BroadcastReceiver;
@@ -27,6 +29,7 @@ import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.FileObserver;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -36,6 +39,7 @@ import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
+import android.support.v4.app.NotificationCompat;
 
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.HttpStatus;
@@ -100,6 +104,12 @@ public class SeafileService extends Service {
     private static final int CODE_LOGIN_SUCCESS = 80000007;
     private static final int CODE_LOGIN_FAILED = 80000008;
 
+    private static final long TIMER_SHORT = 1000;
+    private static final long TIMER_LONG = 1000 * 60;
+    private static final long TIMER_MEDIUM= 1000 * 10;
+    private static final String SEAFILE_STATUS_DOWNLOADING = "downloading";
+    private static final String SEAFILE_STATUS_UPLOADING = "uploading";
+
     private StartSeafileThread mStartSeafileThread;
     public SeafileAccount mAccount;
     public SeafileUtils.SeafileSQLConsole mConsole;
@@ -131,6 +141,16 @@ public class SeafileService extends Service {
     private ScheduledExecutorService mScheduledService;
     public static SharedPreferences mSp;
 
+    private Timer mStatusTimer;
+    private StatusTask mStatusTask;
+    private StatusObserver mDataObserver;
+    private StatusObserver mUserConfigObserver;
+    private NotificationManager mNotificationManager;
+    private NotificationCompat.Builder mBuilder;
+    private Notification mNotification;
+    private NotificationCompat.BigTextStyle mStyle;
+    private boolean mIsNotificationShown = false;
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -142,11 +162,21 @@ public class SeafileService extends Service {
         initAccount(mSp.getString("user","")  + "@openthos.org", mSp.getString("password",""));
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (mDataObserver != null) {
+            mDataObserver.stopWatching();
+        }
+        if (mUserConfigObserver != null) {
+            mUserConfigObserver.stopWatching();
+        }
+    }
+
     private void initAccount(String userName, String password) {
 	SeafileUtils.mUserId = userName;
         SeafileUtils.mUserPassword = password;
-        mUserPath = SeafileUtils.SEAFILE_PROOT_PATH + SeafileUtils.SEAFILE_DATA_ROOT_PATH
-                + "/" + SeafileUtils.mUserId;
+        mUserPath = SeafileUtils.SEAFILE_DATA_ROOT_PATH + "/" + SeafileUtils.mUserId;
         mConfigPath = new File(SeafileUtils.SEAFILE_PROOT_PATH,
                 SeafileUtils.mUserId + "/" + SeafileUtils.SETTING_SEAFILE_NAME);
         if (TextUtils.isEmpty(SeafileUtils.mUserId)
@@ -239,8 +269,110 @@ public class SeafileService extends Service {
                 }
             }
             mLibrary = mAccount.toString();
+            initNotification();
         }
     }
+
+    private void initNotification() {
+        mStatusTimer = new Timer();
+        mStatusTask = new StatusTask();
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mBuilder = new NotificationCompat.Builder(this);
+        mBuilder.setContentTitle(getString(R.string.seafile_status_title));
+        mBuilder.setSmallIcon(R.mipmap.ic_launcher);
+        mBuilder.setDefaults(NotificationCompat.DEFAULT_ALL);
+        mBuilder.setAutoCancel(false);
+        mStatusTimer.schedule(mStatusTask, 0, TIMER_LONG);
+        mDataObserver = new StatusObserver(mUserPath + "/" + SeafileUtils.DATA_SEAFILE_NAME);
+        mUserConfigObserver = new StatusObserver(mConfigPath.getAbsolutePath() +
+                "/" + SeafileUtils.SETTING_SEAFILE_NAME);
+        mDataObserver.startWatching();
+        mUserConfigObserver.startWatching();
+    }
+
+    private class StatusTask extends TimerTask {
+        @Override
+        public void run() {
+            String notice = "";
+            ArrayList<String> result = SeafileUtils.
+                    execCommand(SeafileUtils.SEAFILE_COMMAND_BASE + "status");
+            for (String s : result) {
+                if (s.contains(SEAFILE_STATUS_UPLOADING)
+                        || s.contains(SEAFILE_STATUS_DOWNLOADING)) {
+                    s = s.replace(SEAFILE_STATUS_UPLOADING,
+                            getString(R.string.seafile_uploading));
+                    s = s.replace(SEAFILE_STATUS_DOWNLOADING,
+                            getString(R.string.seafile_downloading));
+                    s = s.replace(SeafileUtils.DATA_SEAFILE_NAME,
+                            getString(R.string.data_seafile_name));
+                    s = s.replace((SeafileUtils.SETTING_SEAFILE_NAME,
+                            getString(R.string.userconfig_seafile_name));
+                }
+            }
+            if (!TextUtils.isEmpty(notice)) {
+                showNotification(notice);
+                if (!mIsNotificationShown) {
+                    mIsNotificationShown = true;
+                    restartTimer(TIMER_SHORT);
+                }
+            } else {
+                if (mIsNotificationShown) {
+                    mIsNotificationShown = false;
+                    mNotificationManager.cancel(0);
+                    restartTimer(TIMER_LONG);
+                }
+            }
+        }
+    }
+
+    private void restartTimer(long period) {
+        if (period == TIMER_LONG) {
+            mDataObserver.startWatching();
+            mUserConfigObserver.startWatching();
+        } else {
+            mDataObserver.stopWatching();
+            mUserConfigObserver.stopWatching();
+        }
+        mStatusTask.cancel();
+        mStatusTimer.cancel();
+        mStatusTask = new StatusTask();
+        mStatusTimer = new Timer();
+        mStatusTimer.schedule(mStatusTask, period, period);
+    }
+
+    private void showNotification(String notice) {
+        mStyle = new NotificationCompat.BigTextStyle();
+        mStyle.bigText(notice);
+        mBuilder.setStyle(mStyle);
+        mNotification = mBuilder.build();
+        mNotification.flags |= Notification.FLAG_ONGOING_EVENT;
+        mNotification.when = System.currentTimeMillis();
+        mNotificationManager.notify(0, mNotification);
+    }
+
+    private class StatusObserver extends FileObserver {
+
+        public StatusObserver(String path) {
+            super(path);
+        }
+
+        @Override
+        public void onEvent(int event, String path) {
+            int action = event & FileObserver.ALL_EVENTS;
+            switch (action) {
+                case FileObserver.CREATE:
+                case FileObserver.MOVED_TO:
+                case FileObserver.MOVED_FROM:
+                case FileObserver.DELETE:
+                    if (!mIsNotificationShown) {
+                        mIsNotificationShown = true;
+                        restartTimer(TIMER_MEDIUM);
+                    }
+                    break;
+            }
+        }
+    }
+
     private void postDelayedThread () {
         mStartSeafileThread = null;
         mStartSeafileThread = new StartSeafileThread();
@@ -916,7 +1048,7 @@ public class SeafileService extends Service {
                     return mAllAppdataList;
                 case  SeafileUtils.TAG_APPDATA_IMPORT:
                     String appName = null;
-                    for (String name : SeafileUtils.listFiles(
+                    for (String name : SeafileUtils.execCommand("ls " +
                             mConfigPath.getAbsolutePath() + SEAFILE_PATH_APPDATA)) {
                         appName = name.replace(".tar.gz", "");
                         for (ResolveInfo info : mAllAppdataList) {
@@ -931,7 +1063,7 @@ public class SeafileService extends Service {
                     return mAllBrowserList;
                 case  SeafileUtils.TAG_BROWSER_IMPORT:
                     String browserName = null;
-                    for (String name : SeafileUtils.listFiles(
+                    for (String name : SeafileUtils.execCommand("ls " +
                             mConfigPath.getAbsolutePath() + SEAFILE_PATH_BROWSER)) {
                         browserName = name.replace(".tar.gz", "");
                         for (ResolveInfo info : mAllBrowserList) {
