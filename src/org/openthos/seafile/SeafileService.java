@@ -159,7 +159,7 @@ public class SeafileService extends Service {
         mSp = getSharedPreferences("account",Context.MODE_PRIVATE);
         mScheduledService = Executors.newScheduledThreadPool(1);
         mPackageManager = getPackageManager();
-        initAccount(mSp.getString("user","")  + "@openthos.org", mSp.getString("password",""));
+        initAccount(mSp.getString("user", "")  + "@openthos.org", mSp.getString("password", ""));
     }
 
     @Override
@@ -174,7 +174,7 @@ public class SeafileService extends Service {
     }
 
     private void initAccount(String userName, String password) {
-	SeafileUtils.mUserId = userName;
+        SeafileUtils.mUserId = userName.equals("@openthos.org") ? "" : userName;
         SeafileUtils.mUserPassword = password;
         mUserPath = SeafileUtils.SEAFILE_DATA_ROOT_PATH + "/" + SeafileUtils.mUserId;
         mConfigPath = new File(SeafileUtils.SEAFILE_PROOT_PATH,
@@ -305,7 +305,7 @@ public class SeafileService extends Service {
                             getString(R.string.seafile_downloading));
                     s = s.replace(SeafileUtils.DATA_SEAFILE_NAME,
                             getString(R.string.data_seafile_name));
-                    s = s.replace((SeafileUtils.SETTING_SEAFILE_NAME,
+                    s = s.replace(SeafileUtils.SETTING_SEAFILE_NAME,
                             getString(R.string.userconfig_seafile_name));
                 }
             }

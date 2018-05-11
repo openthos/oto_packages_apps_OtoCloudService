@@ -313,9 +313,7 @@ public class SeafileUtils {
             throws UnsupportedEncodingException, HttpRequest.HttpRequestException {
         HttpRequest ret = null;
         ret = HttpRequest.get("http://166.111.120.235/api2/repos/", null, false);
-        ret.readTimeout(5000)
-                .connectTimeout(5000)
-                .followRedirects(false)
+        ret.readTimeout(15000).connectTimeout(15000).followRedirects(false)
                 .header("Authorization", "Token " + token);
         if (ret.ok()) {
             return new String(ret.bytes(), "UTF-8");
@@ -329,8 +327,7 @@ public class SeafileUtils {
             HttpRequest.HttpRequestException, PackageManager.NameNotFoundException {
         HttpRequest rep = null;
         rep = HttpRequest.post("http://166.111.120.235/api2/auth-token/", null, false)
-                .followRedirects(true)
-                .connectTimeout(5000);
+                .followRedirects(true).connectTimeout(15000);
         rep.form("username", mUserId);
         rep.form("password", mUserPassword);
         PackageInfo packageInfo = null;
