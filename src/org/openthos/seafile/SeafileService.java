@@ -831,7 +831,7 @@ public class SeafileService extends Service {
         @Override
         public void updateAccount(String name, String password) {
             mSp.edit().putString("user", name).putString("password", password).commit();
-            initAccount(name, password);
+            initAccount(name + "@openthos.org", password);
         }
 
         @Override
