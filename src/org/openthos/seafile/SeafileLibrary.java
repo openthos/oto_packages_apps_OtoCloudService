@@ -8,6 +8,7 @@ public class SeafileLibrary {
     public String libraryId;
     public String libraryName;
     public int isSync;
+    public String filePath;
 
     public SeafileLibrary(){
     }

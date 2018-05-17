@@ -10,22 +10,21 @@ import java.util.ArrayList;
 public class SeafileAccount {
     public String mUserName;
     public int mUserId;
-    public ArrayList<SeafileLibrary> mLibrarys;
+    public SeafileLibrary mDataLibrary;
+    public SeafileLibrary mSettingLibrary;
     public File mFile;
 
     public SeafileAccount(){
-        mLibrarys = new ArrayList<>();
     }
 
     @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append("[");
-        for (int i = 0; i < mLibrarys.size(); i++) {
-            sb.append("{\"id\":\"" + mLibrarys.get(i).libraryId);
-            sb.append("\",\"name\":\"" + mLibrarys.get(i).libraryName + "\"},");
-        }
-        sb.delete(sb.length() - 1, sb.length());
+        sb.append("{\"id\":\"" + mSettingLibrary.libraryId);
+        sb.append("\",\"name\":\"" + mSettingLibrary.libraryName + "\"},");
+        sb.append("{\"id\":\"" + mDataLibrary.libraryId);
+        sb.append("\",\"name\":\"" + mDataLibrary.libraryName + "\"}");
         sb.append("]");
         return sb.toString();
     }

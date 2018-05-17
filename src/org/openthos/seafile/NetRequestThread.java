@@ -104,16 +104,18 @@ public class NetRequestThread extends Thread {
             InputStream in = entity.getContent();
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
             String line = null;
-            String temp = "";
-
             try {
                 while ((line = reader.readLine()) != null) {
                     if (line.equals(context.getResources()
                             .getString(R.string.registe_success_info))) {
                         handler.sendEmptyMessage(MSG_REGIST_SEAFILE_OK);
                     } else {
-                        handler.sendEmptyMessage(MSG_REGIST_SEAFILE_FAILED);
+                        Message msg = new Message();
+                        msg.what = MSG_REGIST_SEAFILE_FAILED;
+                        msg.obj = "failed";
+                        handler.sendMessage(msg);
                     }
+                    break;
                 }
             } catch (IOException e) {
                 System.out.println("Error=" + e.toString());
@@ -284,8 +286,6 @@ public class NetRequestThread extends Thread {
             InputStream in = entity.getContent();
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
             String line = null;
-            String temp = "";
-
             try {
                 while ((line = reader.readLine()) != null) {
                     if (line.contains("Sorry, unrecognized username or password")) {
