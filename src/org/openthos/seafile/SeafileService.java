@@ -23,12 +23,12 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
-import android.net.EthernetManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.FileObserver;
 import android.os.Handler;
 import android.os.IBinder;
@@ -41,9 +41,6 @@ import android.util.Log;
 import android.widget.Toast;
 import android.support.v4.app.NotificationCompat;
 
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -67,9 +64,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import android.os.Environment;
-import android.os.RemoteException;
-
 public class SeafileService extends Service {
     private static final String SYSTEM_PATH_DATA = "/data/data/";
     private static final String SYSTEM_PATH_WALLPAPER = "/data/system/users/0/wallpaper";
@@ -91,7 +85,6 @@ public class SeafileService extends Service {
     private static final String APPSTORE_DOWNLOAD_PATH
             = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             .getAbsolutePath() + "/app";
-    private static final String URL_REGIEST_ACCOUNT= "https://dev.openthos.org/accounts/register/";
 
     private static final int INIT_NOTIFICATION = 40000001;
     private static final int ADD_BINDER = 40000002;
@@ -162,11 +155,11 @@ public class SeafileService extends Service {
         mSp = getSharedPreferences("account",Context.MODE_PRIVATE);
         mPackageManager = getPackageManager();
         initAppIntent();
-        initAccount(mSp.getString("user", "")  + "@openthos.org", mSp.getString("password", ""));
+        initAccount(mSp.getString("user", ""), mSp.getString("password", ""));
     }
 
     private void initAccount(String userName, String password) {
-        SeafileUtils.mUserId = userName.equals("@openthos.org") ? "" : userName;
+        SeafileUtils.mUserId = userName;
         SeafileUtils.mUserPassword = password;
         mUserPath = SeafileUtils.SEAFILE_DATA_ROOT_PATH + "/" + SeafileUtils.mUserId;
         mConfigPath = new File(SeafileUtils.SEAFILE_PROOT_PATH,
@@ -176,7 +169,6 @@ public class SeafileService extends Service {
             return;
         }
         if (mInitLibrarysThread != null) {
-            mInitLibrarysThread.stop();
             mInitLibrarysThread = null;
         }
         mScheduledService = Executors.newScheduledThreadPool(1);
@@ -228,7 +220,7 @@ public class SeafileService extends Service {
                 e.printStackTrace();
             }
 
-            if (!(mAccount.mSettingLibrary == null)) {
+            if (mAccount.mSettingLibrary == null) {
                 SeafileLibrary seafileLibrary = new SeafileLibrary();
                 seafileLibrary.libraryName = SeafileUtils.SETTING_SEAFILE_NAME;
                 seafileLibrary.libraryId
@@ -248,7 +240,7 @@ public class SeafileService extends Service {
                 mAccount.mSettingLibrary = null;
             }
 
-            if (!(mAccount.mDataLibrary == null)) {
+            if (mAccount.mDataLibrary == null) {
                 SeafileLibrary seafileLibrary = new SeafileLibrary();
                 seafileLibrary.libraryName = SeafileUtils.DATA_SEAFILE_NAME;
                 seafileLibrary.libraryId
@@ -264,7 +256,7 @@ public class SeafileService extends Service {
                         + "/" + SeafileUtils.mUserId + "/" + mAccount.mDataLibrary.libraryName;
                 if (isSync == SeafileUtils.SYNC) {
                     SeafileUtils.sync(mAccount.mDataLibrary.libraryId,
-                            mAccount.mSettingLibrary.filePath);
+                            mAccount.mDataLibrary.filePath);
                 }
             } else {
                 mAccount.mDataLibrary = null;
@@ -304,9 +296,10 @@ public class SeafileService extends Service {
                     s = s.replace(SEAFILE_STATUS_DOWNLOADING,
                             getString(R.string.seafile_downloading));
                     s = s.replace(SeafileUtils.DATA_SEAFILE_NAME,
-                            getString(R.string.data_seafile_name));
+                            getString(R.string.data_seafile_name)) + "\n";
                     s = s.replace(SeafileUtils.SETTING_SEAFILE_NAME,
                             getString(R.string.userconfig_seafile_name));
+                    notice += s;
                 }
             }
             if (!TextUtils.isEmpty(notice)) {
@@ -550,16 +543,6 @@ public class SeafileService extends Service {
         }
     }
 
-
-    private void getCsrf(String user, String password) {
-        List<NameValuePair> list = new ArrayList<>();
-        list.add(new BasicNameValuePair("email", user));
-        list.add(new BasicNameValuePair("password1", password));
-        list.add(new BasicNameValuePair("password2", password));
-        RequestThread thread = new RequestThread(mHandler, URL_REGIEST_ACCOUNT, list);
-        thread.start();
-    }
-
     private void registSeafile(String openthosID, String password) {
     }
 
@@ -740,7 +723,7 @@ public class SeafileService extends Service {
 
     public void updateAccount(String name, String password) {
         mSp.edit().putString("user", name).putString("password", password).commit();
-        initAccount(name + "@openthos.org", password);
+        initAccount(name, password);
     }
 
     private void installSlient(String apkPath) {
@@ -840,7 +823,6 @@ public class SeafileService extends Service {
             SeafileUtils.stop();
             stopTimer();
             if (mInitLibrarysThread != null) {
-                mInitLibrarysThread.stop();
                 mInitLibrarysThread = null;
             }
             mScheduledService.shutdown();
@@ -959,17 +941,28 @@ public class SeafileService extends Service {
 
         @Override
         public void registeAccount(String userName, String email, String password) {
-            //getCsrf(userName, password);
-            NetRequestThread registeThread = new NetRequestThread(mHandler, SeafileService.this,
-                    userName, email, password, NetRequestThread.Mark.REGISTE);
-            registeThread.start();
+            if (SeafileUtils.mIsDevServer) {
+                DevRequestThread devThread = new DevRequestThread(mHandler, SeafileService.this,
+                        userName, email, password, Mark.REGISTE);
+                devThread.start();
+            } else {
+                LibraryRequestThread libraryThread = new LibraryRequestThread(
+                        mHandler, SeafileService.this, userName, email, password, Mark.REGISTE);
+                libraryThread.start();
+            }
         }
 
         @Override
         public void loginAccount(String userName, String password) {
-            NetRequestThread loginThread = new NetRequestThread(
-                    mHandler, SeafileService.this, userName, password, NetRequestThread.Mark.LOGIN);
-            loginThread.start();
+            if (SeafileUtils.mIsDevServer) {
+                DevRequestThread devThread = new DevRequestThread(
+                        mHandler, SeafileService.this, userName, password, Mark.LOGIN);
+                devThread.start();
+            } else {
+                LibraryRequestThread libraryThread = new LibraryRequestThread(
+                        mHandler, SeafileService.this, userName, password, Mark.LOGIN);
+                libraryThread.start();
+            }
         }
 
         @Override
@@ -1090,6 +1083,14 @@ public class SeafileService extends Service {
             }
             return null;
         }
+
+        public void setDevServer(boolean isDev) {
+            SeafileUtils.mIsDevServer = isDev;
+        }
+
+        public boolean isDevServer() {
+            return SeafileUtils.mIsDevServer;
+        }
     }
 
     private class SeafileHandler extends Handler {
@@ -1110,11 +1111,11 @@ public class SeafileService extends Service {
                 case REMOVE_BINDER:
                     mIBinders.remove((IBinder) msg.obj);
                     break;
-                case NetRequestThread.MSG_REGIST_SEAFILE_OK:
+                case LibraryRequestThread.MSG_REGIST_SEAFILE_OK:
                     for (IBinder iBinder : mIBinders) {
                         Parcel _data = Parcel.obtain();
                         Parcel _reply = Parcel.obtain();
-                        _data.writeInterfaceToken(DESCRIPTOR);
+                        _data.writeString(msg.obj.toString());
                         try {
                             iBinder.transact(CODE_REGIEST_SUCCESS, _data, _reply, 0);
                         } catch (RemoteException e) {
@@ -1125,11 +1126,10 @@ public class SeafileService extends Service {
                         }
                     }
                     break;
-                case NetRequestThread.MSG_REGIST_SEAFILE_FAILED:
+                case LibraryRequestThread.MSG_REGIST_SEAFILE_FAILED:
                     for (IBinder iBinder : mIBinders) {
                         Parcel _data = Parcel.obtain();
                         Parcel _reply = Parcel.obtain();
-                        _data.writeInterfaceToken(DESCRIPTOR);
                         _data.writeString(msg.obj.toString());
                         try {
                             iBinder.transact(CODE_REGIEST_FAILED, _data, _reply, 0);
@@ -1141,7 +1141,7 @@ public class SeafileService extends Service {
                         }
                     }
                     break;
-                case NetRequestThread.MSG_LOGIN_SEAFILE_OK:
+                case LibraryRequestThread.MSG_LOGIN_SEAFILE_OK:
                     Bundle bundle = msg.getData();
                     updateAccount(bundle.getString("user"), bundle.getString("password"));
                     for (IBinder iBinder : mIBinders) {
@@ -1158,11 +1158,11 @@ public class SeafileService extends Service {
                         }
                     }
                     break;
-                case NetRequestThread.MSG_LOGIN_SEAFILE_FAILED:
+                case LibraryRequestThread.MSG_LOGIN_SEAFILE_FAILED:
                     for (IBinder iBinder : mIBinders) {
                         Parcel _data = Parcel.obtain();
                         Parcel _reply = Parcel.obtain();
-                        _data.writeInterfaceToken(DESCRIPTOR);
+                        _data.writeString(msg.obj.toString());
                         try {
                             iBinder.transact(CODE_LOGIN_FAILED, _data, _reply, 0);
                         } catch (RemoteException e) {

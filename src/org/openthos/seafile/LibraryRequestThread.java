@@ -5,6 +5,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -26,10 +27,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NetRequestThread extends Thread {
+public class LibraryRequestThread extends Thread {
     public static final int MSG_REGIST_SEAFILE_OK = 0x1001;
     public static final int MSG_REGIST_SEAFILE_FAILED = 0x1002;
     public static final int MSG_LOGIN_SEAFILE_OK = 0x1003;
@@ -47,7 +49,7 @@ public class NetRequestThread extends Thread {
     private Context context;
     private Handler handler;
 
-    public NetRequestThread(Handler handler, Context context,
+    public LibraryRequestThread(Handler handler, Context context,
             String name, String pass, Mark mark) {
         super();
         this.handler = handler;
@@ -57,7 +59,7 @@ public class NetRequestThread extends Thread {
         this.mark = mark;
     }
 
-    public NetRequestThread(Handler handler, Context context,
+    public LibraryRequestThread(Handler handler, Context context,
             String id, String email, String passwd, Mark mark) {
         super();
         this.handler = handler;
@@ -108,7 +110,11 @@ public class NetRequestThread extends Thread {
                 while ((line = reader.readLine()) != null) {
                     if (line.equals(context.getResources()
                             .getString(R.string.registe_success_info))) {
-                        handler.sendEmptyMessage(MSG_REGIST_SEAFILE_OK);
+                        //handler.sendEmptyMessage(MSG_REGIST_SEAFILE_OK);
+                        Message msg = new Message();
+                        msg.what = MSG_REGIST_SEAFILE_OK;
+                        msg.obj = context.getString(R.string.toast_registe_successful);
+                        handler.sendMessage(msg);
                     } else {
                         Message msg = new Message();
                         msg.what = MSG_REGIST_SEAFILE_FAILED;
@@ -298,7 +304,7 @@ public class NetRequestThread extends Thread {
                 Message msg = new Message();
                 msg.what = MSG_LOGIN_SEAFILE_OK;
                 Bundle bundle = new Bundle();
-                bundle.putString("user", name);
+                bundle.putString("user", name + "@openthos.org");
                 bundle.putString("password", pass);
                 msg.setData(bundle);
                 handler.sendMessage(msg);
@@ -312,9 +318,5 @@ public class NetRequestThread extends Thread {
                 }
             }
         }
-    }
-
-    enum Mark {
-        REGISTE, LOGIN
     }
 }

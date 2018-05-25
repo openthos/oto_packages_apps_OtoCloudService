@@ -44,11 +44,13 @@ public class SeafileUtils {
     public static final String SETTING_SEAFILE_NAME = "UserConfig";
     public static final String DATA_SEAFILE_NAME = "DATA";
 
-    public static final String SEAFILE_BASE_URL = "-s http://166.111.120.235/ ";
+    public static final String SEAFILE_URL_LIBRARY = "http://166.111.120.235/";
+    public static final String SEAFILE_URL_DEV = "https://dev.openthos.org/";
+    public static boolean mIsDevServer = true;
     public static String mUserId = "";
     public static String mUserPassword = "";
     public static String getUserAccount() {
-        return "-u " + mUserId + " -p " + mUserPassword;
+        return " -u " + mUserId + " -p " + mUserPassword;
     }
 
     public static final int SEAFILE_ID_LENGTH = 36;
@@ -67,6 +69,10 @@ public class SeafileUtils {
     }
                   // "mkdir -m 777 " + SEAFILE_CONFIG_PATH
                   //  + ";" + "chmod 777 " + SEAFILE_CONFIG_PATH
+
+    private static String getUrl() {
+        return mIsDevServer ? SEAFILE_URL_DEV : SEAFILE_URL_LIBRARY;
+    }
 
     public static void init() {
         File seafileAtDisk = new File(SEAFILE_DATA_ROOT_PATH);
@@ -110,7 +116,7 @@ public class SeafileUtils {
             }
             pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE
                     + "download -l " + libraryid + " -d "
-                    + filePath + " " + SEAFILE_BASE_URL + getUserAccount()});
+                    + filePath + " " + " -s " + getUrl() + getUserAccount()});
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
             while ((line = in.readLine()) != null) {
@@ -135,7 +141,7 @@ public class SeafileUtils {
         String id = "";
         try {
             pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE
-                    + "create -n " + fileName +  " " + SEAFILE_BASE_URL + getUserAccount()});
+                    + "create -n " + fileName +  " -s " + getUrl() + getUserAccount()});
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
             while ((line = in.readLine()) != null) {
@@ -166,10 +172,10 @@ public class SeafileUtils {
             }
             Log.i("wwww", SEAFILE_COMMAND_BASE
                      + "sync -l " + libraryid + " -d "
-                     + filePath + " " + SEAFILE_BASE_URL + getUserAccount());
+                     + filePath + " -s " + getUrl() + getUserAccount());
             pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE
                     + "sync -l " + libraryid + " -d "
-                    + filePath + " " + SEAFILE_BASE_URL + getUserAccount()});
+                    + filePath + " -s " + getUrl() + getUserAccount()});
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
             while ((line = in.readLine()) != null) {
@@ -312,7 +318,7 @@ public class SeafileUtils {
     public static String getResult(String token)
             throws UnsupportedEncodingException, HttpRequest.HttpRequestException {
         HttpRequest ret = null;
-        ret = HttpRequest.get("http://166.111.120.235/api2/repos/", null, false);
+        ret = HttpRequest.get(getUrl() + "api2/repos/", null, false);
         ret.readTimeout(15000).connectTimeout(15000).followRedirects(false)
                 .header("Authorization", "Token " + token);
         if (ret.ok()) {
@@ -326,7 +332,7 @@ public class SeafileUtils {
             throws UnsupportedEncodingException, JSONException,
             HttpRequest.HttpRequestException, PackageManager.NameNotFoundException {
         HttpRequest rep = null;
-        rep = HttpRequest.post("http://166.111.120.235/api2/auth-token/", null, false)
+        rep = HttpRequest.post(getUrl() + "api2/auth-token/", null, false)
                 .followRedirects(true).connectTimeout(15000);
         rep.form("username", mUserId);
         rep.form("password", mUserPassword);

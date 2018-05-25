@@ -34,4 +34,7 @@ interface ISeafileService {
     int getTagAppdataExport();
     int getTagBrowserImport();
     int getTagBrowserExport();
+
+    void setDevServer(boolean isDev);
+    boolean isDevServer();
 }
