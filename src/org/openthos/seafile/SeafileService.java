@@ -39,7 +39,6 @@ import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
-import android.support.v4.app.NotificationCompat;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -141,9 +140,8 @@ public class SeafileService extends Service {
     private StatusObserver mDataObserver;
     private StatusObserver mUserConfigObserver;
     private NotificationManager mNotificationManager;
-    private NotificationCompat.Builder mBuilder;
-    private Notification mNotification;
-    private NotificationCompat.BigTextStyle mStyle;
+    private Notification.Builder mBuilder;
+    private Notification.BigTextStyle mStyle;
     private boolean mIsNotificationShown = false;
     private NetworkReceiver mNetworkReceiver;
 
@@ -269,11 +267,12 @@ public class SeafileService extends Service {
         mStatusTimer = new Timer();
         mStatusTask = new StatusTask();
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        mBuilder = new NotificationCompat.Builder(this);
+        mBuilder = new Notification.Builder(this);
         mBuilder.setContentTitle(getString(R.string.seafile_status_title));
         mBuilder.setSmallIcon(R.mipmap.ic_launcher);
-        mBuilder.setDefaults(NotificationCompat.DEFAULT_ALL);
         mBuilder.setAutoCancel(false);
+        mBuilder.setOngoing(true);
+        mStyle = new Notification.BigTextStyle();
         mStatusTimer.schedule(mStatusTask, 0, TIMER_LONG);
         mDataObserver = new StatusObserver(mUserPath + "/" + SeafileUtils.DATA_SEAFILE_NAME);
         mUserConfigObserver = new StatusObserver(mConfigPath.getAbsolutePath() +
@@ -306,6 +305,7 @@ public class SeafileService extends Service {
                 showNotification(notice);
                 if (!mIsNotificationShown) {
                     mIsNotificationShown = true;
+                    mBuilder.setWhen(System.currentTimeMillis());
                     restartTimer(TIMER_SHORT);
                 }
             } else {
@@ -334,13 +334,9 @@ public class SeafileService extends Service {
     }
 
     private void showNotification(String notice) {
-        mStyle = new NotificationCompat.BigTextStyle();
         mStyle.bigText(notice);
         mBuilder.setStyle(mStyle);
-        mNotification = mBuilder.build();
-        mNotification.flags |= Notification.FLAG_ONGOING_EVENT;
-        mNotification.when = System.currentTimeMillis();
-        mNotificationManager.notify(0, mNotification);
+        mNotificationManager.notify(0, mBuilder.getNotification());
     }
 
     private class StatusObserver extends FileObserver {
