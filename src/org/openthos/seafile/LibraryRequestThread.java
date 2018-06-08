@@ -36,12 +36,11 @@ public class LibraryRequestThread extends Thread {
     public static final int MSG_REGIST_SEAFILE_FAILED = 0x1002;
     public static final int MSG_LOGIN_SEAFILE_OK = 0x1003;
     public static final int MSG_LOGIN_SEAFILE_FAILED = 0x1004;
-    private String hostUri = "http://166.111.120.235/";
-    private String registeUri = "http://166.111.120.235/id/u/register";
-    private String loginGetUri = "http://166.111.120.235/oauth/login/";
+    private String registeUri = SeafileUtils.SEAFILE_URL_LIBRARY + "id/u/register";
+    private String loginGetUri = SeafileUtils.SEAFILE_URL_LIBRARY + "oauth/login/";
     private String loginPostUri =
-            "http://166.111.120.235/id/user/login?destination=oauth2/authorize";
-    private String referer = "http://166.111.120.235/accounts/login/?next=/";
+            SeafileUtils.SEAFILE_URL_LIBRARY + "id/user/login?destination=oauth2/authorize";
+    private String referer = SeafileUtils.SEAFILE_URL_LIBRARY + "accounts/login/?next=/";
     private String redirect = "http.protocol.handle-redirects";
     private String location, csrftoken, sessionid, sess, form_build_id;
     private String name , pass, id, email, passwd;
@@ -136,7 +135,7 @@ public class LibraryRequestThread extends Thread {
     }
 
     private void loginStep1Get() throws Exception{
-        URI uri = new URI(hostUri);
+        URI uri = new URI(SeafileUtils.SEAFILE_URL_LIBRARY);
         HttpParams httpParams = new BasicHttpParams();
         httpParams.setParameter(redirect, true);
         HttpClient httpClient = new DefaultHttpClient(httpParams);
@@ -295,7 +294,10 @@ public class LibraryRequestThread extends Thread {
             try {
                 while ((line = reader.readLine()) != null) {
                     if (line.contains("Sorry, unrecognized username or password")) {
-                        handler.sendEmptyMessage(MSG_LOGIN_SEAFILE_FAILED);
+                        Message msg = new Message();
+                        msg.what = MSG_LOGIN_SEAFILE_FAILED;
+                        msg.obj = context.getString(R.string.toast_login_failed);
+                        handler.sendMessage(msg);
                         return;
                     }
                 }

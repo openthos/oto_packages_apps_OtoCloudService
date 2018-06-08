@@ -44,9 +44,9 @@ public class SeafileUtils {
     public static final String SETTING_SEAFILE_NAME = "UserConfig";
     public static final String DATA_SEAFILE_NAME = "DATA";
 
-    public static final String SEAFILE_URL_LIBRARY = "http://166.111.120.235/";
+    public static final String SEAFILE_URL_LIBRARY = "http://dev.openthos.org/";
     public static final String SEAFILE_URL_DEV = "https://dev.openthos.org/";
-    public static boolean mIsDevServer = true;
+    public static boolean mIsDevServer = false;
     public static String mUserId = "";
     public static String mUserPassword = "";
     public static String getUserAccount() {
