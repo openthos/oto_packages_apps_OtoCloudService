@@ -37,4 +37,7 @@ interface ISeafileService {
 
     void setDevServer(boolean isDev);
     boolean isDevServer();
+
+    void setOpenthosUrl(String url);
+    String getOpenthosUrl();
 }

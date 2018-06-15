@@ -153,6 +153,7 @@ public class SeafileService extends Service {
         mSp = getSharedPreferences("account",Context.MODE_PRIVATE);
         mPackageManager = getPackageManager();
         initAppIntent();
+        SeafileUtils.mOpenthosUrl = mSp.getString("url", SeafileUtils.SEAFILE_URL_LIBRARY);
         initAccount(mSp.getString("user", ""), mSp.getString("password", ""));
     }
 
@@ -1086,6 +1087,15 @@ public class SeafileService extends Service {
 
         public boolean isDevServer() {
             return SeafileUtils.mIsDevServer;
+        }
+
+        public void setOpenthosUrl(String url) {
+            SeafileUtils.mOpenthosUrl = url;
+            mSp.edit().putString("url", url).commit();
+        }
+
+        public String getOpenthosUrl() {
+            return SeafileUtils.mOpenthosUrl;
         }
     }
 

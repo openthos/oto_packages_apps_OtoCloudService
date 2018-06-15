@@ -36,17 +36,18 @@ public class LibraryRequestThread extends Thread {
     public static final int MSG_REGIST_SEAFILE_FAILED = 0x1002;
     public static final int MSG_LOGIN_SEAFILE_OK = 0x1003;
     public static final int MSG_LOGIN_SEAFILE_FAILED = 0x1004;
-    private String registeUri = SeafileUtils.SEAFILE_URL_LIBRARY + "id/u/register";
-    private String loginGetUri = SeafileUtils.SEAFILE_URL_LIBRARY + "oauth/login/";
+    private String registeUri = SeafileUtils.mOpenthosUrl + "id/u/register";
+    private String loginGetUri = SeafileUtils.mOpenthosUrl + "oauth/login/";
     private String loginPostUri =
-            SeafileUtils.SEAFILE_URL_LIBRARY + "id/user/login?destination=oauth2/authorize";
-    private String referer = SeafileUtils.SEAFILE_URL_LIBRARY + "accounts/login/?next=/";
+            SeafileUtils.mOpenthosUrl + "id/user/login?destination=oauth2/authorize";
+    private String referer = SeafileUtils.mOpenthosUrl + "accounts/login/?next=/";
     private String redirect = "http.protocol.handle-redirects";
     private String location, csrftoken, sessionid, sess, form_build_id;
     private String name , pass, id, email, passwd;
     private Mark mark;
     private Context context;
     private Handler handler;
+    private Message message;
 
     public LibraryRequestThread(Handler handler, Context context,
             String name, String pass, Mark mark) {
@@ -75,7 +76,22 @@ public class LibraryRequestThread extends Thread {
             if (mark == Mark.REGISTE) {
                 registePost();
             } else if (mark == Mark.LOGIN) {
-                loginStep1Get();
+                message = new Message();
+                boolean success = loginStep1Get();
+                if (success) {
+                    SeafileService.mSp.edit()
+                            .putString("user", name).putString("password", pass).commit();
+                    message.what = MSG_LOGIN_SEAFILE_OK;
+                    Bundle bundle = new Bundle();
+                    bundle.putString("user", name + "@openthos.org");
+                    bundle.putString("password", pass);
+                    message.setData(bundle);
+                    handler.sendMessage(message);
+                } else {
+                    message.what = MSG_LOGIN_SEAFILE_FAILED;
+                    message.obj = context.getString(R.string.toast_login_failed);
+                    handler.sendMessage(message);
+                }
             }
         } catch (Exception e) {
             System.out.println("Error=" + e.toString());
@@ -134,8 +150,8 @@ public class LibraryRequestThread extends Thread {
         }
     }
 
-    private void loginStep1Get() throws Exception{
-        URI uri = new URI(SeafileUtils.SEAFILE_URL_LIBRARY);
+    private boolean loginStep1Get() throws Exception{
+        URI uri = new URI(SeafileUtils.mOpenthosUrl);
         HttpParams httpParams = new BasicHttpParams();
         httpParams.setParameter(redirect, true);
         HttpClient httpClient = new DefaultHttpClient(httpParams);
@@ -157,11 +173,12 @@ public class LibraryRequestThread extends Thread {
                     break;
                 }
             }
-            loginStep2Get(csrftoken, sessionid);
+            return loginStep2Get(csrftoken, sessionid);
         }
+        return false;
     }
 
-    private void loginStep2Get(String csrftoken, String sessionid) throws Exception{
+    private boolean loginStep2Get(String csrftoken, String sessionid) throws Exception{
         URI uri = new URI(loginGetUri);
         HttpParams httpParams = new BasicHttpParams();
         httpParams.setParameter(redirect, false);
@@ -184,11 +201,12 @@ public class LibraryRequestThread extends Thread {
                     break;
                 }
             }
-            loginStep3Get(location, csrftoken, sessionid);
+            return loginStep3Get(location, csrftoken, sessionid);
         }
+        return false;
     }
 
-    private void loginStep3Get(String location, String csrftoken, String sessionid) throws Exception{
+    private boolean loginStep3Get(String location, String csrftoken, String sessionid) throws Exception{
         URI uri = new URI(location);
         HttpParams httpParams = new BasicHttpParams();
         httpParams.setParameter(redirect, false);
@@ -215,11 +233,12 @@ public class LibraryRequestThread extends Thread {
                     break;
                 }
             }
-            loginStep4Get(location, csrftoken, sessionid, sess);
+            return loginStep4Get(location, csrftoken, sessionid, sess);
         }
+        return false;
     }
 
-    private void loginStep4Get(String location, String csrftoken,
+    private boolean loginStep4Get(String location, String csrftoken,
                           String sessionid, String sess) throws Exception{
         URI uri = new URI(location);
         HttpParams httpParams = new BasicHttpParams();
@@ -248,7 +267,7 @@ public class LibraryRequestThread extends Thread {
                         break;
                     }
                 }
-                loginStep5Post(csrftoken, sessionid, sess, form_build_id);
+                return loginStep5Post(csrftoken, sessionid, sess, form_build_id);
             } catch (IOException e) {
                 System.out.println("Error=" + e.toString());
             } finally {
@@ -259,12 +278,13 @@ public class LibraryRequestThread extends Thread {
                 }
             }
         }
+        return false;
     }
 
-    private void loginStep5Post(String csrftoken, String sessionid, String sess,
+    private boolean loginStep5Post(String csrftoken, String sessionid, String sess,
                            String form_build_id) throws Exception {
         HttpParams httpParams = new BasicHttpParams();
-        httpParams.setParameter(redirect, true);
+        httpParams.setParameter(redirect, false);
         HttpResponse httpResponse = null;
         HttpClient httpClient = new DefaultHttpClient(httpParams);
         URI url = new URI(loginPostUri);
@@ -286,6 +306,22 @@ public class LibraryRequestThread extends Thread {
         httpResponse = httpClient.execute(post);
         int statusCode = httpResponse.getStatusLine().getStatusCode();
 
+        if (statusCode == 302) {
+            Header[] allHeaders = httpResponse.getAllHeaders();
+            for (int i = 0; i < allHeaders.length; i++) {
+                if (allHeaders[i].toString().contains("Location")) {
+                    String[] strings = allHeaders[i].toString().split("Location: ");
+                    location = strings[1];
+                }
+                if (allHeaders[i].toString().contains("Set-Cookie:")) {
+                    String[] strings = allHeaders[i].toString().split("; ");
+                    sess = strings[0].split("Set-Cookie: ")[1];
+                    break;
+                }
+            }
+            return step6Get(location, csrftoken, sessionid, sess);
+        }
+
         if (statusCode == 200) {
             HttpEntity entity = httpResponse.getEntity();
             InputStream in = entity.getContent();
@@ -294,22 +330,9 @@ public class LibraryRequestThread extends Thread {
             try {
                 while ((line = reader.readLine()) != null) {
                     if (line.contains("Sorry, unrecognized username or password")) {
-                        Message msg = new Message();
-                        msg.what = MSG_LOGIN_SEAFILE_FAILED;
-                        msg.obj = context.getString(R.string.toast_login_failed);
-                        handler.sendMessage(msg);
-                        return;
+                        return false;
                     }
                 }
-                SeafileService.mSp.edit()
-                        .putString("user", name).putString("password", pass).commit();
-                Message msg = new Message();
-                msg.what = MSG_LOGIN_SEAFILE_OK;
-                Bundle bundle = new Bundle();
-                bundle.putString("user", name + "@openthos.org");
-                bundle.putString("password", pass);
-                msg.setData(bundle);
-                handler.sendMessage(msg);
             } catch (IOException e) {
                 System.out.println("Error=" + e.toString());
             } finally {
@@ -320,5 +343,93 @@ public class LibraryRequestThread extends Thread {
                 }
             }
         }
+        return false;
+    }
+
+    private boolean step6Get(String location, String csrftoken,
+                          String sessionid, String sess) throws Exception{
+        URI uri = new URI(location);
+        HttpParams httpParams = new BasicHttpParams();
+        httpParams.setParameter(redirect, false);
+        HttpClient httpClient = new DefaultHttpClient(httpParams);
+        HttpUriRequest get = new HttpGet(uri);
+        get.setHeader("Referer",
+                loginPostUri);
+        get.setHeader("Cookie","csrftoken=" + csrftoken + ";" +
+                " django_language=zh-cn; has_js=1; sessionid=" +  sessionid + "; " + sess);
+        get.setParams(httpParams);
+        HttpResponse httpResponse = httpClient.execute(get);
+        int statusCode = httpResponse.getStatusLine().getStatusCode();
+        android.util.Log.i("step6Get", statusCode + "");
+
+        if (statusCode == 302) {
+            Header[] allHeaders = httpResponse.getAllHeaders();
+            for (int i = 0; i < allHeaders.length; i++) {
+                if (allHeaders[i].toString().contains("Location")) {
+                    String[] strings = allHeaders[i].toString().split("Location: ");
+                    location = strings[1];
+                    break;
+                }
+            }
+            return step7Get(location, csrftoken, sessionid, sess);
+        }
+        return false;
+    }
+
+    private boolean step7Get(String location, String csrftoken,
+                          String sessionid, String sess) throws Exception{
+        URI uri = new URI(location);
+        HttpParams httpParams = new BasicHttpParams();
+        httpParams.setParameter(redirect, false);
+        HttpClient httpClient = new DefaultHttpClient(httpParams);
+        HttpUriRequest get = new HttpGet(uri);
+        get.setHeader("Referer",
+                SeafileUtils.mOpenthosUrl + "id/user/login?destination=oauth2/authorize");
+        get.setHeader("Cookie","csrftoken=" + csrftoken + ";" +
+                " django_language=zh-cn; has_js=1; sessionid=" +  sessionid + "; " + sess);
+
+        get.setParams(httpParams);
+        HttpResponse httpResponse = httpClient.execute(get);
+        int statusCode = httpResponse.getStatusLine().getStatusCode();
+        android.util.Log.i("step7Get", statusCode + "");
+        if (statusCode == 302) {
+            Header[] allHeaders = httpResponse.getAllHeaders();
+            for (int i = 0; i < allHeaders.length; i++) {
+                if (allHeaders[i].toString().contains("Location")) {
+                    String[] strings = allHeaders[i].toString().split("Location: ");
+                    location = strings[1];
+                }
+                if (allHeaders[i].toString().contains("sessionid")) {
+                    String[] strings = allHeaders[i].toString().split("=");
+                    sessionid = strings[1].split(";")[0];
+                    break;
+                }
+            }
+            return step8Get(location, csrftoken, sessionid, sess);
+        }
+        return false;
+    }
+
+    private boolean step8Get(String location, String csrftoken,
+                          String sessionid, String sess) throws Exception{
+        URI uri = new URI(location);
+        HttpParams httpParams = new BasicHttpParams();
+        httpParams.setParameter(redirect, false);
+        HttpClient httpClient = new DefaultHttpClient(httpParams);
+        HttpUriRequest get = new HttpGet(uri);
+        get.setHeader("Referer",
+                SeafileUtils.mOpenthosUrl + "id/user/login?destination=oauth2/authorize");
+        get.setHeader("Cookie","csrftoken=" + csrftoken + ";" +
+                " django_language=zh-cn; has_js=1; sessionid=" +  sessionid + "; " + sess);
+
+        get.setParams(httpParams);
+        HttpResponse httpResponse = httpClient.execute(get);
+        int statusCode = httpResponse.getStatusLine().getStatusCode();
+        android.util.Log.i("step8Get", statusCode + "");
+
+        if (statusCode == 200) {
+            return true;
+        }
+        return false;
     }
 }

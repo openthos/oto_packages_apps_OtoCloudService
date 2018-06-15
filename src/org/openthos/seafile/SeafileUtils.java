@@ -45,7 +45,7 @@ public class SeafileUtils {
     public static final String DATA_SEAFILE_NAME = "DATA";
 
     public static final String SEAFILE_URL_LIBRARY = "http://dev.openthos.org/";
-    public static final String SEAFILE_URL_DEV = "https://dev.openthos.org/";
+    public static String mOpenthosUrl = SEAFILE_URL_LIBRARY;
     public static boolean mIsDevServer = false;
     public static String mUserId = "";
     public static String mUserPassword = "";
@@ -66,12 +66,6 @@ public class SeafileUtils {
 
     public static boolean isExistsAccount() {
         return !TextUtils.isEmpty(mUserId) || !TextUtils.isEmpty(mUserPassword);
-    }
-                  // "mkdir -m 777 " + SEAFILE_CONFIG_PATH
-                  //  + ";" + "chmod 777 " + SEAFILE_CONFIG_PATH
-
-    private static String getUrl() {
-        return mIsDevServer ? SEAFILE_URL_DEV : SEAFILE_URL_LIBRARY;
     }
 
     public static void init() {
@@ -116,7 +110,7 @@ public class SeafileUtils {
             }
             pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE
                     + "download -l " + libraryid + " -d "
-                    + filePath + " " + " -s " + getUrl() + getUserAccount()});
+                    + filePath + " " + " -s " + mOpenthosUrl + getUserAccount()});
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
             while ((line = in.readLine()) != null) {
@@ -141,7 +135,7 @@ public class SeafileUtils {
         String id = "";
         try {
             pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE
-                    + "create -n " + fileName +  " -s " + getUrl() + getUserAccount()});
+                    + "create -n " + fileName +  " -s " + mOpenthosUrl + getUserAccount()});
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
             while ((line = in.readLine()) != null) {
@@ -172,10 +166,10 @@ public class SeafileUtils {
             }
             Log.i("wwww", SEAFILE_COMMAND_BASE
                      + "sync -l " + libraryid + " -d "
-                     + filePath + " -s " + getUrl() + getUserAccount());
+                     + filePath + " -s " + mOpenthosUrl + getUserAccount());
             pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE
                     + "sync -l " + libraryid + " -d "
-                    + filePath + " -s " + getUrl() + getUserAccount()});
+                    + filePath + " -s " + mOpenthosUrl + getUserAccount()});
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
             while ((line = in.readLine()) != null) {
@@ -318,7 +312,7 @@ public class SeafileUtils {
     public static String getResult(String token)
             throws UnsupportedEncodingException, HttpRequest.HttpRequestException {
         HttpRequest ret = null;
-        ret = HttpRequest.get(getUrl() + "api2/repos/", null, false);
+        ret = HttpRequest.get(mOpenthosUrl + "api2/repos/", null, false);
         ret.readTimeout(15000).connectTimeout(15000).followRedirects(false)
                 .header("Authorization", "Token " + token);
         if (ret.ok()) {
@@ -332,7 +326,7 @@ public class SeafileUtils {
             throws UnsupportedEncodingException, JSONException,
             HttpRequest.HttpRequestException, PackageManager.NameNotFoundException {
         HttpRequest rep = null;
-        rep = HttpRequest.post(getUrl() + "api2/auth-token/", null, false)
+        rep = HttpRequest.post(mOpenthosUrl + "api2/auth-token/", null, false)
                 .followRedirects(true).connectTimeout(15000);
         rep.form("username", mUserId);
         rep.form("password", mUserPassword);
