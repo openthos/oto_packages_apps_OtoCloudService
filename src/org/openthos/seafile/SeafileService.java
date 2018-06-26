@@ -300,6 +300,11 @@ public class SeafileService extends Service {
                     s = s.replace(SeafileUtils.SETTING_SEAFILE_NAME,
                             getString(R.string.userconfig_seafile_name));
                     notice += s;
+                } else if (s.contains("waiting for sync")
+                        || s.contains("Failed to get sync info from server")
+                        || s.contains("You do not have permission to access this library")) {
+                    reSync();
+                    break;
                 }
             }
             if (!TextUtils.isEmpty(notice)) {
@@ -315,6 +320,21 @@ public class SeafileService extends Service {
                     mNotificationManager.cancel(0);
                     restartTimer(TIMER_LONG);
                 }
+            }
+        }
+    }
+
+    private void reSync() {
+        if (mAccount != null) {
+            SeafileUtils.desync(mAccount.mDataLibrary.filePath);
+            SeafileUtils.desync(mAccount.mSettingLibrary.filePath);
+            if (mAccount.mDataLibrary != null
+                    && mAccount.mDataLibrary.isSync == SeafileUtils.SYNC) {
+                SeafileUtils.sync(mAccount.mDataLibrary.libraryId, mAccount.mDataLibrary.filePath);
+            }
+            if (mAccount.mSettingLibrary != null) {
+                SeafileUtils.sync(mAccount.mSettingLibrary.libraryId,
+                        mAccount.mSettingLibrary.filePath);
             }
         }
     }
@@ -783,15 +803,17 @@ public class SeafileService extends Service {
 
         @Override
         public void syncData() {
-            mConsole.updateSync(mAccount.mUserId, mAccount.mDataLibrary.libraryId,
-                     mAccount.mDataLibrary.libraryName, SeafileUtils.SYNC);
+            mAccount.mDataLibrary.isSync =
+                    mConsole.updateSync(mAccount.mUserId, mAccount.mDataLibrary.libraryId,
+                    mAccount.mDataLibrary.libraryName, SeafileUtils.SYNC);
             SeafileUtils.sync(mAccount.mDataLibrary.libraryId, mAccount.mDataLibrary.filePath);
         }
 
         @Override
         public void desyncData() {
-            mConsole.updateSync(mAccount.mUserId, mAccount.mDataLibrary.libraryId,
-                     mAccount.mDataLibrary.libraryName, SeafileUtils.UNSYNC);
+            mAccount.mDataLibrary.isSync =
+                    mConsole.updateSync(mAccount.mUserId, mAccount.mDataLibrary.libraryId,
+                    mAccount.mDataLibrary.libraryName, SeafileUtils.UNSYNC);
             SeafileUtils.desync(mAccount.mDataLibrary.filePath);
         }
 
@@ -815,6 +837,8 @@ public class SeafileService extends Service {
             if (mUserConfigObserver != null) {
                 mUserConfigObserver.stopWatching();
             }
+            SeafileUtils.desync(mAccount.mDataLibrary.filePath);
+            SeafileUtils.desync(mAccount.mSettingLibrary.filePath);
             mSp.edit().putString("user", "").putString("password", "").commit();
             mAccount = null;
             SeafileUtils.stop();

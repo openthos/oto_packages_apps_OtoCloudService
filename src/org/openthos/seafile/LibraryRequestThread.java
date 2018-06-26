@@ -133,7 +133,7 @@ public class LibraryRequestThread extends Thread {
                     } else {
                         Message msg = new Message();
                         msg.what = MSG_REGIST_SEAFILE_FAILED;
-                        msg.obj = "failed";
+                        msg.obj = line;
                         handler.sendMessage(msg);
                     }
                     break;
@@ -147,6 +147,11 @@ public class LibraryRequestThread extends Thread {
                     System.out.println("Error=" + e.toString());
                 }
             }
+        } else {
+            Message msg = new Message();
+            msg.what = MSG_REGIST_SEAFILE_FAILED;
+            msg.obj = context.getString(R.string.toast_registe_error);
+            handler.sendMessage(msg);
         }
     }
 

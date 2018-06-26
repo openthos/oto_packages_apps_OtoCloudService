@@ -16,5 +16,6 @@
     <string name="toast_openthos_password_wrong">passowrd is wrong</string>
     <string name="toast_openthos_id_wrong">OpenthosID is wrong</string>
     <string name="toast_registe_successful">Registe successfully!</string>
+    <string name="toast_registe_error">Registe failed, network request error.</string>
     <string name="toast_login_failed">Login failed, unrecognized username or password</string>
 </resources>
