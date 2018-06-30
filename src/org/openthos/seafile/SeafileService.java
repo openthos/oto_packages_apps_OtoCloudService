@@ -62,6 +62,8 @@ import java.util.Date;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SeafileService extends Service {
     private static final String SYSTEM_PATH_DATA = "/data/data/";
@@ -236,7 +238,7 @@ public class SeafileService extends Service {
                         mAccount.mSettingLibrary.filePath);
                 startTimer();
             } else {
-                mAccount.mSettingLibrary = null;
+                mAccount = null;
             }
 
             if (mAccount.mDataLibrary == null) {
@@ -258,7 +260,7 @@ public class SeafileService extends Service {
                             mAccount.mDataLibrary.filePath);
                 }
             } else {
-                mAccount.mDataLibrary = null;
+                mAccount = null;
             }
             mHandler.sendEmptyMessage(INIT_NOTIFICATION);
         }
@@ -274,7 +276,7 @@ public class SeafileService extends Service {
         mBuilder.setAutoCancel(false);
         mBuilder.setOngoing(true);
         mStyle = new Notification.BigTextStyle();
-        mStatusTimer.schedule(mStatusTask, 0, TIMER_LONG);
+        mStatusTimer.schedule(mStatusTask, 3000, TIMER_LONG);
         mDataObserver = new StatusObserver(mUserPath + "/" + SeafileUtils.DATA_SEAFILE_NAME);
         mUserConfigObserver = new StatusObserver(mConfigPath.getAbsolutePath() +
                 "/" + SeafileUtils.SETTING_SEAFILE_NAME);
@@ -536,15 +538,13 @@ public class SeafileService extends Service {
 
     private void importFiles(List<String> packages, String configPath) {
         for (int i = 0; i < packages.size(); i++) {
-            try {
-                int uid = mPackageManager.getApplicationInfo(
-                         packages.get(i), PackageManager.GET_ACTIVITIES).uid;
+            HashMap<String, String> map = SeafileUtils.execCommands("ls -l /data/data");
+            String uid = map.get(packages.get(i));
+            if (!TextUtils.isEmpty(uid)) {
                 SeafileUtils.untarFile(mConfigPath.getAbsolutePath() +
                         configPath + packages.get(i) + ".tar.gz");
                 SeafileUtils.chownFile(mConfigPath.getAbsolutePath() +
                         configPath + packages.get(i), uid);
-            } catch (PackageManager.NameNotFoundException e) {
-                e.printStackTrace();
             }
         }
     }
@@ -830,6 +830,11 @@ public class SeafileService extends Service {
         }
 
         @Override
+        public boolean initFinished() {
+            return mAccount != null || mAccount.mDataLibrary != null;
+        }
+
+        @Override
         public void stopAccount() {
             if (mDataObserver != null) {
                 mDataObserver.stopWatching();
@@ -837,8 +842,10 @@ public class SeafileService extends Service {
             if (mUserConfigObserver != null) {
                 mUserConfigObserver.stopWatching();
             }
-            SeafileUtils.desync(mAccount.mDataLibrary.filePath);
-            SeafileUtils.desync(mAccount.mSettingLibrary.filePath);
+            if (mAccount != null) {
+                SeafileUtils.desync(mAccount.mDataLibrary.filePath);
+                SeafileUtils.desync(mAccount.mSettingLibrary.filePath);
+            }
             mSp.edit().putString("user", "").putString("password", "").commit();
             mAccount = null;
             SeafileUtils.stop();
@@ -1177,7 +1184,7 @@ public class SeafileService extends Service {
                     for (IBinder iBinder : mIBinders) {
                         Parcel _data = Parcel.obtain();
                         Parcel _reply = Parcel.obtain();
-                        _data.writeInterfaceToken(DESCRIPTOR);
+                        _data.writeString(msg.obj.toString());
                         try {
                             iBinder.transact(CODE_LOGIN_SUCCESS, _data, _reply, 0);
                         } catch (RemoteException e) {

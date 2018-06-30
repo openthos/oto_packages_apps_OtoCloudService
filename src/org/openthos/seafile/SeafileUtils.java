@@ -23,6 +23,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Wang Zhixu on 12/23/16.
@@ -378,6 +380,7 @@ public class SeafileUtils {
         }
     }
 
+
     public static void exec(String cmd) {
         if (TextUtils.isEmpty(cmd)) {
             return;
@@ -553,7 +556,39 @@ public class SeafileUtils {
         return result;
     }
 
-    public static void chownFile(String path, int uid) {
+    public static HashMap<String, String> execCommands(String command) {
+        Process pro = null;
+        BufferedReader in = null;
+        HashMap<String, String> result = new HashMap();
+        try {
+            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", command});
+            in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
+            String line;
+            while ((line = in.readLine()) != null) {
+                String[] lines = line.split("\\s+");
+                if (lines.length > 2) {
+                    result.put(lines[lines.length - 1], lines[1]);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (pro != null) {
+                processDestroy(pro);
+                pro = null;
+            }
+        }
+        return result;
+    }
+
+    public static void chownFile(String path, String uid) {
         if (TextUtils.isEmpty(path)) {
             return;
         }

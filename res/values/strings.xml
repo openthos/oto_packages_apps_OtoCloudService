@@ -18,4 +18,5 @@
     <string name="toast_registe_successful">Registe successfully!</string>
     <string name="toast_registe_error">Registe failed, network request error.</string>
     <string name="toast_login_failed">Login failed, unrecognized username or password</string>
+    <string name="toast_bind_successful">Bind successfully!</string>
 </resources>

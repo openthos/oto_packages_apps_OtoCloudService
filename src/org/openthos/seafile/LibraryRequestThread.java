@@ -86,6 +86,7 @@ public class LibraryRequestThread extends Thread {
                     bundle.putString("user", name + "@openthos.org");
                     bundle.putString("password", pass);
                     message.setData(bundle);
+                    message.obj = context.getString(R.string.toast_bind_successful);
                     handler.sendMessage(message);
                 } else {
                     message.what = MSG_LOGIN_SEAFILE_FAILED;

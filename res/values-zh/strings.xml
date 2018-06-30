@@ -17,4 +17,5 @@
     <string name="toast_registe_successful">注册成功</string>
     <string name="toast_registe_error">注册失败，网络请求异常</string>
     <string name="toast_login_failed">登录失败，帐号或密码未通过验证</string>
+    <string name="toast_bind_successful">绑定成功</string>
 </resources>

@@ -7,6 +7,7 @@ interface ISeafileService {
     void desyncData();
     String getUserName();
     boolean isSync();
+    boolean initFinished();
 
     void registeAccount(String userName, String email, String password);
     void loginAccount(String userName, String password);

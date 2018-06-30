@@ -136,6 +136,7 @@ public class DevRequestThread extends Thread {
             bundle.putString("user", mName);
             bundle.putString("password", mPass);
             msg.setData(bundle);
+            msg.obj = mContext.getString(R.string.toast_bind_successful);
             mHandler.sendMessage(msg);
         } else {
             mHandler.sendEmptyMessage(LibraryRequestThread.MSG_LOGIN_SEAFILE_FAILED);
