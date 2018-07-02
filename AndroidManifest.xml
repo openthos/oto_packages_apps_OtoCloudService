@@ -51,6 +51,14 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+        <activity android:name=".seaapp.SeafileActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+
+        <service android:name=".seaapp.transfer.TransferService" > </service>
+        <service android:name=".seaapp.monitor.FileMonitorService" > </service>
     </application>
 
 </manifest>
