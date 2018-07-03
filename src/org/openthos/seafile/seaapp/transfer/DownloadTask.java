@@ -1,6 +1,7 @@
 package org.openthos.seafile.seaapp.transfer;
 
 
+import android.os.Message;
 import org.json.JSONException;
 
 import java.io.File;
@@ -12,6 +13,7 @@ import org.openthos.seafile.seaapp.DataManager;
 import org.openthos.seafile.seaapp.ProgressMonitor;
 import org.openthos.seafile.seaapp.SeafException;
 import org.openthos.seafile.seaapp.SeafRepo;
+import org.openthos.seafile.seaapp.SeafileActivity;
 
 /**
  * Download task
@@ -110,6 +112,11 @@ public class DownloadTask extends TransferTask {
                 state = TaskState.FINISHED;
                 localPath = file.getPath();
                 downloadStateListener.onFileDownloaded(taskID);
+
+                Message msg = Message.obtain();
+                msg.what = 1;
+                msg.obj = file.getAbsolutePath();
+                SeafileActivity.mHandler.sendMessage(msg);
             } else {
                 state = TaskState.FAILED;
                 if (err == null)

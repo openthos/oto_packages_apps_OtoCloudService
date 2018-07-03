@@ -16,7 +16,6 @@ public class GenericListener implements View.OnTouchListener{
     private Long mLastClickTime;
     private long DOUBLE_CLICK_INTERVAL_TIME = 1000; // 1.0 second
     private NavContext mNavContext;
-    public FileDialog mFileDialog;
 
 
     @Override
@@ -79,6 +78,7 @@ public class GenericListener implements View.OnTouchListener{
 
     private void openFile(SeafDirent seafDirent) {
         if (seafDirent.isDir()) {
+            SeafileActivity.mActivity.mStoredViews.add(seafDirent);
             String currentPath = mNavContext.getDirPath();
             String newPath = currentPath.endsWith("/") ?
                     currentPath + seafDirent.name : currentPath + "/" + seafDirent.name;
@@ -97,8 +97,9 @@ public class GenericListener implements View.OnTouchListener{
             SeafRepo repo = SeafileActivity.mDataManager.getCachedRepoByID(repoID);
             int taskID = SeafileActivity.txService.addDownloadTask(
                     SeafileActivity.mAccount, repoName, repoID, filePath, fileSize);
-            mFileDialog = new FileDialog(SeafileActivity.mActivity, repoName, repoID, filePath, taskID);
-            mFileDialog.show();
+            SeafileActivity.mFileDialog
+                    = new FileDialog(SeafileActivity.mActivity, repoName, repoID, filePath, taskID);
+            SeafileActivity.mFileDialog.show();
 
 
 //            loadFile(repoName, repoID, filePath, fileSize);
@@ -225,6 +226,7 @@ public class GenericListener implements View.OnTouchListener{
 //            updateAdapterWithDirents(dirents, false);
             SeafileActivity.mAdapter.setItemsAndRefresh(dirents);
 
+            SeafileActivity.mActivity.mStoredViews.add(dirents);
 
         }
     }

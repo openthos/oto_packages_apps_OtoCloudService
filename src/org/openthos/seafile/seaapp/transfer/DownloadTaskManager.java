@@ -2,8 +2,6 @@ package org.openthos.seafile.seaapp.transfer;
 
 import android.content.Intent;
 import android.support.v4.content.LocalBroadcastManager;
-import android.widget.Toast;
-
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -178,13 +176,6 @@ public class DownloadTaskManager extends TransferManager implements DownloadStat
         LocalBroadcastManager.getInstance(SeafileActivity.mActivity).sendBroadcast(localIntent);
         notifyProgress(taskID);
 
-//        FileDialog fileDialog = SeafileActivity.mActivity.getFileDialog();
-//        if (fileDialog.isShowing()) {
-//            fileDialog.dismiss();
-//        }
-        Toast.makeText(SeafileActivity.mActivity,
-                SeafileActivity.mActivity.getString(R.string.download_finished),
-                Toast.LENGTH_SHORT).show();;
     }
 
     @Override

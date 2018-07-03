@@ -9,10 +9,13 @@ import android.content.ServiceConnection;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.widget.GridView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.json.JSONException;
 
@@ -25,6 +28,7 @@ import org.openthos.seafile.seaapp.monitor.FileMonitorService;
 import org.openthos.seafile.seaapp.ssl.CertsManager;
 import org.openthos.seafile.seaapp.transfer.PendingUploadInfo;
 import org.openthos.seafile.seaapp.transfer.TransferService;
+import org.openthos.seafile.seaapp.ToastUtil;
 
 public class SeafileActivity extends FragmentActivity {
     public static SeafileActivity mActivity;
@@ -38,6 +42,25 @@ public class SeafileActivity extends FragmentActivity {
     private ArrayList<PendingUploadInfo> pendingUploads = new ArrayList<>();
     public static FragmentTransaction mTransaction;
     public static NavContext mNavContext = new NavContext();
+    public static List<Object> mStoredViews = new ArrayList<>();
+    public static FileDialog mFileDialog;
+
+    public static Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case 1:
+                    if (mFileDialog != null && mFileDialog.isShowing()) {
+                        mFileDialog.dismiss();
+                    }
+                    String filePath = (String) msg.obj;
+                    ToastUtil.showSingletonToast(SeafileActivity.mActivity,
+                            SeafileActivity.mActivity.getString(R.string.download_finished)
+                                    + "  " + filePath);
+            }
+            super.handleMessage(msg);
+        }
+    };
 
 
     ServiceConnection mConnection = new ServiceConnection() {
@@ -261,6 +284,7 @@ public class SeafileActivity extends FragmentActivity {
             }
 
             if (rs != null) {
+                mStoredViews.add(rs);
                 dataManager.setReposRefreshTimeStamp();
                 mAdapter.setItemsAndRefresh(rs);
 
@@ -271,7 +295,19 @@ public class SeafileActivity extends FragmentActivity {
         }
     }
 
-    public FileDialog getFileDialog() {
-        return mGenericListener.mFileDialog;
+    @Override
+    public void onBackPressed() {
+        if (mStoredViews.size() > 1) {
+            mStoredViews.remove(mStoredViews.size() - 1);
+            Object o = mStoredViews.get(mStoredViews.size() - 1);
+            if (o instanceof List) {
+                mAdapter.setItemsAndRefresh((List) o);
+            } else if (o instanceof SeafRepo) {
+
+            }
+
+        } else {
+//            super.onBackPressed();
+        }
     }
 }
