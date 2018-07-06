@@ -6,6 +6,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openthos.seafile.R;
+import org.openthos.seafile.SeafileUtils;
 import org.openthos.seafile.seaapp.monitor.FileMonitorService;
 import org.openthos.seafile.seaapp.ssl.CertsManager;
 import org.openthos.seafile.seaapp.transfer.PendingUploadInfo;
@@ -124,9 +126,10 @@ public class SeafileActivity extends FragmentActivity {
     }
 
     public void getAccountAndLogin() {
-        String serverURL = "http://dev.openthos.org/";
-        String email = "seafile006@openthos.org";
-        String passwd = "123456";
+        SharedPreferences sp = getSharedPreferences("account",Context.MODE_PRIVATE);
+        String serverURL = sp.getString("url", SeafileUtils.SEAFILE_URL_LIBRARY);
+        String email = sp.getString("user", "");
+        String passwd = sp.getString("password", "");
         mAccount = new Account(serverURL, email, null, false, null);
         mDataManager = new DataManager(mAccount);
         ConcurrentAsyncTask.execute(new LoginTask(mAccount, passwd, null,false));
