@@ -7,7 +7,6 @@ interface ISeafileService {
     void desyncData();
     String getUserName();
     boolean isSync();
-    boolean initFinished();
 
     void registeAccount(String userName, String email, String password);
     void loginAccount(String userName, String password);
@@ -31,13 +30,11 @@ interface ISeafileService {
     int getCodeRegiestFailed();
     int getCodeLoginSuccess();
     int getCodeLoginFailed();
+    int getCodeChangeUrl();
     int getTagAppdataImport();
     int getTagAppdataExport();
     int getTagBrowserImport();
     int getTagBrowserExport();
-
-    void setDevServer(boolean isDev);
-    boolean isDevServer();
 
     void setOpenthosUrl(String url);
     String getOpenthosUrl();

@@ -99,6 +99,7 @@ public class SeafileService extends Service {
     private static final int CODE_REGIEST_FAILED = 80000006;
     private static final int CODE_LOGIN_SUCCESS = 80000007;
     private static final int CODE_LOGIN_FAILED = 80000008;
+    private static final int CODE_CHANGE_URL = 80000009;
 
     private static final long TIMER_SHORT = 1000;
     private static final long TIMER_MEDIUM= TIMER_SHORT * 10;
@@ -803,18 +804,36 @@ public class SeafileService extends Service {
 
         @Override
         public void syncData() {
-            mAccount.mDataLibrary.isSync =
-                    mConsole.updateSync(mAccount.mUserId, mAccount.mDataLibrary.libraryId,
-                    mAccount.mDataLibrary.libraryName, SeafileUtils.SYNC);
-            SeafileUtils.sync(mAccount.mDataLibrary.libraryId, mAccount.mDataLibrary.filePath);
+            if (mAccount == null || mAccount.mDataLibrary == null) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run () {
+                        Toast.makeText(SeafileService.this, getString(R.string.toast_data_init), 0).show();
+                    }
+                });
+            } else {
+                mAccount.mDataLibrary.isSync =
+                        mConsole.updateSync(mAccount.mUserId, mAccount.mDataLibrary.libraryId,
+                        mAccount.mDataLibrary.libraryName, SeafileUtils.SYNC);
+                SeafileUtils.sync(mAccount.mDataLibrary.libraryId, mAccount.mDataLibrary.filePath);
+            }
         }
 
         @Override
         public void desyncData() {
-            mAccount.mDataLibrary.isSync =
-                    mConsole.updateSync(mAccount.mUserId, mAccount.mDataLibrary.libraryId,
-                    mAccount.mDataLibrary.libraryName, SeafileUtils.UNSYNC);
-            SeafileUtils.desync(mAccount.mDataLibrary.filePath);
+            if (mAccount == null || mAccount.mDataLibrary == null) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run () {
+                        Toast.makeText(SeafileService.this, getString(R.string.toast_data_init), 0).show();
+                    }
+                });
+            } else {
+                mAccount.mDataLibrary.isSync =
+                        mConsole.updateSync(mAccount.mUserId, mAccount.mDataLibrary.libraryId,
+                        mAccount.mDataLibrary.libraryName, SeafileUtils.UNSYNC);
+                SeafileUtils.desync(mAccount.mDataLibrary.filePath);
+            }
         }
 
         @Override
@@ -827,11 +846,6 @@ public class SeafileService extends Service {
             return mAccount != null
                 && mAccount.mDataLibrary != null
                 && mAccount.mDataLibrary.isSync == SeafileUtils.SYNC;
-        }
-
-        @Override
-        public boolean initFinished() {
-            return mAccount != null || mAccount.mDataLibrary != null;
         }
 
         @Override
@@ -969,28 +983,16 @@ public class SeafileService extends Service {
 
         @Override
         public void registeAccount(String userName, String email, String password) {
-            if (SeafileUtils.mIsDevServer) {
-                DevRequestThread devThread = new DevRequestThread(mHandler, SeafileService.this,
-                        userName, email, password, Mark.REGISTE);
-                devThread.start();
-            } else {
-                LibraryRequestThread libraryThread = new LibraryRequestThread(
-                        mHandler, SeafileService.this, userName, email, password, Mark.REGISTE);
-                libraryThread.start();
-            }
+            LibraryRequestThread libraryThread = new LibraryRequestThread(
+                    mHandler, SeafileService.this, userName, email, password, Mark.REGISTE);
+            libraryThread.start();
         }
 
         @Override
         public void loginAccount(String userName, String password) {
-            if (SeafileUtils.mIsDevServer) {
-                DevRequestThread devThread = new DevRequestThread(
-                        mHandler, SeafileService.this, userName, password, Mark.LOGIN);
-                devThread.start();
-            } else {
-                LibraryRequestThread libraryThread = new LibraryRequestThread(
-                        mHandler, SeafileService.this, userName, password, Mark.LOGIN);
-                libraryThread.start();
-            }
+            LibraryRequestThread libraryThread = new LibraryRequestThread(
+                    mHandler, SeafileService.this, userName, password, Mark.LOGIN);
+            libraryThread.start();
         }
 
         @Override
@@ -1047,6 +1049,11 @@ public class SeafileService extends Service {
         @Override
         public int getCodeLoginFailed() {
             return CODE_LOGIN_FAILED;
+        }
+
+        @Override
+        public int getCodeChangeUrl() {
+            return CODE_CHANGE_URL;
         }
 
         @Override
@@ -1112,17 +1119,14 @@ public class SeafileService extends Service {
             return null;
         }
 
-        public void setDevServer(boolean isDev) {
-            SeafileUtils.mIsDevServer = isDev;
-        }
-
-        public boolean isDevServer() {
-            return SeafileUtils.mIsDevServer;
-        }
-
         public void setOpenthosUrl(String url) {
-            SeafileUtils.mOpenthosUrl = url;
-            mSp.edit().putString("url", url).commit();
+            mHandler.post(new Runnable() {
+                @Override
+                public void run () {
+                    ChangeUrlDialog dialog = new ChangeUrlDialog(SeafileService.this, mHandler);
+                    dialog.showDialog();
+                }
+            });
         }
 
         public String getOpenthosUrl() {
@@ -1202,6 +1206,21 @@ public class SeafileService extends Service {
                         _data.writeString(msg.obj.toString());
                         try {
                             iBinder.transact(CODE_LOGIN_FAILED, _data, _reply, 0);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        } finally {
+                            _data.recycle();
+                            _reply.recycle();
+                        }
+                    }
+                    break;
+                case ChangeUrlDialog.MSG_CHANGE_URL:
+                    for (IBinder iBinder : mIBinders) {
+                        Parcel _data = Parcel.obtain();
+                        Parcel _reply = Parcel.obtain();
+                        _data.writeString(SeafileUtils.mOpenthosUrl);
+                        try {
+                            iBinder.transact(CODE_CHANGE_URL, _data, _reply, 0);
                         } catch (RemoteException e) {
                             e.printStackTrace();
                         } finally {

@@ -19,4 +19,11 @@
     <string name="toast_registe_error">Registe failed, network request error.</string>
     <string name="toast_login_failed">Login failed, unrecognized username or password</string>
     <string name="toast_bind_successful">Bind successfully!</string>
+    <string name="url_dev">http://dev.openthos.org/</string>
+    <string name="url_lab">http://192.168.0.158/</string>
+    <string name="url_devs">http://166.111.120.235/</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="title_change_url">Change openthos url</string>
+    <string name="toast_data_init">The data is initializing...</string>
 </resources>

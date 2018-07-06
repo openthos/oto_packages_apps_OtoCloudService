@@ -48,7 +48,6 @@ public class SeafileUtils {
 
     public static final String SEAFILE_URL_LIBRARY = "http://dev.openthos.org/";
     public static String mOpenthosUrl = SEAFILE_URL_LIBRARY;
-    public static boolean mIsDevServer = false;
     public static String mUserId = "";
     public static String mUserPassword = "";
     public static String getUserAccount() {
