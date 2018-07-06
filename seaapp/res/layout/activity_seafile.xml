@@ -5,16 +5,24 @@
 
     <ListView
         android:id="@+id/lv"
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:dividerHeight="5dp"
+        android:dividerHeight="10dp"
         android:divider="@android:color/transparent"
         ></ListView>
 
     <GridView
-        android:visibility="gone"
         android:id="@+id/gv"
+        android:visibility="gone"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"></GridView>
+        android:layout_height="wrap_content"
+        android:dividerHeight="5dp"
+        android:columnWidth="135dp"
+        android:horizontalSpacing="20dp"
+        android:verticalSpacing="20dp"
+        android:numColumns="auto_fit"
+        android:divider="@android:color/transparent"
+        ></GridView>
 
 </LinearLayout>

@@ -75,6 +75,7 @@ public class FileDialog extends Dialog {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
         Window window = getWindow() ;
 
         window.setContentView(R.layout.file_dialog);

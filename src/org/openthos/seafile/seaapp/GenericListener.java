@@ -35,9 +35,8 @@ public class GenericListener implements View.OnTouchListener{
                             mPreSeaf = view.getTag();
                             mLastClickTime = System.currentTimeMillis();
                             break;
-
-
                         case R.id.lv:
+                        case R.id.gv:
                             mPreSeaf = null;
                             mLastClickTime = null;
                             break;
@@ -95,7 +94,9 @@ public class GenericListener implements View.OnTouchListener{
             String dirPath = mNavContext.getDirPath();
             String filePath = Utils.pathJoin(mNavContext.getDirPath(), fileName);
             SeafRepo repo = SeafileActivity.mDataManager.getCachedRepoByID(repoID);
-            int taskID = SeafileActivity.txService.addDownloadTask(
+            //int taskID = SeafileActivity.txService.addDownloadTask(
+            //        SeafileActivity.mAccount, repoName, repoID, filePath, fileSize);
+            int taskID = SeafileActivity.mDownloadTaskManager.addTask(
                     SeafileActivity.mAccount, repoName, repoID, filePath, fileSize);
             SeafileActivity.mFileDialog
                     = new FileDialog(SeafileActivity.mActivity, repoName, repoID, filePath, taskID);

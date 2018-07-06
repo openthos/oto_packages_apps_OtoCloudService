@@ -1,6 +1,5 @@
 package org.openthos.seafile.seaapp;
 
-import android.app.Activity;
 import android.app.FragmentTransaction;
 import android.content.ComponentName;
 import android.content.Context;
@@ -13,10 +12,9 @@ import android.os.IBinder;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.FragmentActivity;
-import android.util.Log;
+import android.view.View;
 import android.widget.GridView;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import org.json.JSONException;
 
@@ -30,6 +28,7 @@ import org.openthos.seafile.seaapp.monitor.FileMonitorService;
 import org.openthos.seafile.seaapp.ssl.CertsManager;
 import org.openthos.seafile.seaapp.transfer.PendingUploadInfo;
 import org.openthos.seafile.seaapp.transfer.TransferService;
+import org.openthos.seafile.seaapp.transfer.DownloadTaskManager;
 import org.openthos.seafile.seaapp.ToastUtil;
 
 public class SeafileActivity extends FragmentActivity {
@@ -46,6 +45,10 @@ public class SeafileActivity extends FragmentActivity {
     public static NavContext mNavContext = new NavContext();
     public static List<Object> mStoredViews = new ArrayList<>();
     public static FileDialog mFileDialog;
+    public String mViewTag = null;
+    public static String TAG_LIST = "list";
+    public static String TAG_GRID = "grid";
+    public static DownloadTaskManager mDownloadTaskManager = new DownloadTaskManager();
 
     public static Handler mHandler = new Handler() {
         @Override
@@ -115,13 +118,15 @@ public class SeafileActivity extends FragmentActivity {
     }
 
     private void init() {
-        mListView = (ListView) findViewById(R.id.lv);
-//        mGridView = (GridView) findViewById(R.id.gv);
         mGenericListener = new GenericListener();
-        mListView.setOnTouchListener(mGenericListener);
-
         mAdapter = new SeafItemAdapter(this);
+        mListView = (ListView) findViewById(R.id.lv);
+        mGridView = (GridView) findViewById(R.id.gv);
+        mListView.setOnTouchListener(mGenericListener);
         mListView.setAdapter(mAdapter);
+        mGridView.setOnTouchListener(mGenericListener);
+        mGridView.setAdapter(mAdapter);
+        switchView(TAG_LIST);
         getAccountAndLogin();
     }
 
@@ -311,6 +316,17 @@ public class SeafileActivity extends FragmentActivity {
 
         } else {
 //            super.onBackPressed();
+        }
+    }
+
+    public void switchView(String tag) {
+        mViewTag = tag;
+        if (TAG_LIST.equals(mViewTag)) {
+            mListView.setVisibility(View.VISIBLE);
+            mGridView.setVisibility(View.GONE);
+        } else if (TAG_GRID.equals(mViewTag)) {
+            mListView.setVisibility(View.GONE);
+            mGridView.setVisibility(View.VISIBLE);
         }
     }
 }
