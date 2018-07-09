@@ -5,6 +5,7 @@ import android.os.AsyncTask;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.io.File;
 import java.net.HttpURLConnection;
 import java.util.List;
 
@@ -93,29 +94,20 @@ public class GenericListener implements View.OnTouchListener{
             String repoID = mNavContext.getRepoID();
             String dirPath = mNavContext.getDirPath();
             String filePath = Utils.pathJoin(mNavContext.getDirPath(), fileName);
-            SeafRepo repo = SeafileActivity.mDataManager.getCachedRepoByID(repoID);
-            //int taskID = SeafileActivity.txService.addDownloadTask(
-            //        SeafileActivity.mAccount, repoName, repoID, filePath, fileSize);
-            int taskID = SeafileActivity.mDownloadTaskManager.addTask(
-                    SeafileActivity.mAccount, repoName, repoID, filePath, fileSize);
-            SeafileActivity.mFileDialog
-                    = new FileDialog(SeafileActivity.mActivity, repoName, repoID, filePath, taskID);
-            SeafileActivity.mFileDialog.show();
-
-
-//            loadFile(repoName, repoID, filePath, fileSize);
+            String localPath = Utils.pathJoin(
+                    SeafileActivity.mDataManager.getRepoDir(repoName, repoID), filePath);
+            File localFile = new File(localPath);
+            if (localFile.exists()) {
+                IntentBuilder.viewFile(SeafileActivity.mActivity, localPath);
+            } else {
+                SeafRepo repo = SeafileActivity.mDataManager.getCachedRepoByID(repoID);
+                int taskID = SeafileActivity.mDownloadTaskManager
+                        .addTask(SeafileActivity.mAccount, repoName, repoID, filePath, fileSize);
+                SeafileActivity.mFileDialog = new FileDialog(
+                        SeafileActivity.mActivity, repoName, repoID, filePath, taskID);
+                SeafileActivity.mFileDialog.show();
+            }
         }
-    }
-
-    private void loadFile(String repoName, String repoID, String filePath, long fileSize) {
-//        Intent intent = new Intent(this, FileActivity.class);
-//        intent.putExtra("repoName", repoName);
-//        intent.putExtra("repoID", repoID);
-//        intent.putExtra("filePath", filePath);
-//        intent.putExtra("account", SeafileActivity.mAccount);
-//        intent.putExtra("taskID", taskID);
-//        startActivityForResult(intent, DOWNLOAD_FILE_REQUEST);
-
     }
 
     private void loadDir() {
@@ -226,9 +218,7 @@ public class GenericListener implements View.OnTouchListener{
             dataManager.setDirsRefreshTimeStamp(myRepoID, myPath);
 //            updateAdapterWithDirents(dirents, false);
             SeafileActivity.mAdapter.setItemsAndRefresh(dirents);
-
             SeafileActivity.mActivity.mStoredViews.add(dirents);
-
         }
     }
 }

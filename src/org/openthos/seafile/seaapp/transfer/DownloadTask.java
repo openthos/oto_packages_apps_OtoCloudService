@@ -14,6 +14,7 @@ import org.openthos.seafile.seaapp.ProgressMonitor;
 import org.openthos.seafile.seaapp.SeafException;
 import org.openthos.seafile.seaapp.SeafRepo;
 import org.openthos.seafile.seaapp.SeafileActivity;
+import org.openthos.seafile.seaapp.IntentBuilder;
 
 /**
  * Download task
@@ -117,6 +118,7 @@ public class DownloadTask extends TransferTask {
                 msg.what = 1;
                 msg.obj = file.getAbsolutePath();
                 SeafileActivity.mHandler.sendMessage(msg);
+                IntentBuilder.viewFile(SeafileActivity.mActivity, file.getAbsolutePath());
             } else {
                 state = TaskState.FAILED;
                 if (err == null)
