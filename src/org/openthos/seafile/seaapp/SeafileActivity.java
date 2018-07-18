@@ -1,11 +1,11 @@
 package org.openthos.seafile.seaapp;
 
-import android.app.FragmentTransaction;
-import android.content.ComponentName;
 import android.content.Context;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.ResolveInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -39,16 +39,25 @@ public class SeafileActivity extends FragmentActivity {
     public static Account mAccount;
     public static DataManager mDataManager;
     private GenericListener mGenericListener;
-    public static TransferService txService = null;
-    private ArrayList<PendingUploadInfo> pendingUploads = new ArrayList<>();
-    public static FragmentTransaction mTransaction;
-    public static NavContext mNavContext = new NavContext();
-    public static List<Object> mStoredViews = new ArrayList<>();
+    public static NavContext mNavContext;
+    public static List<Object> mStoredViews;
     public static FileDialog mFileDialog;
     public String mViewTag = null;
     public static String TAG_LIST = "list";
     public static String TAG_GRID = "grid";
-    public static DownloadTaskManager mDownloadTaskManager = new DownloadTaskManager();
+    public static String TAG_NEW_REPO_DIALOG = "NewRepoDialog";
+    public static String TAG_RENAME_REPO_DIALOG = "RenameRepoDialog";
+    public static final String TAG_DELETE_REPO_DIALOG = "DeleteRepoDialog";
+    public static final String TAG_NEW_FILE_DIALOG = "NewFileDialog";
+    public static final String TAG_CHOOSE_APP_DIALOG = "ChooseAppDialog";
+    public static final String TAG_CHARE_LINK_PASSWORD_DIALOG = "ChareLinkPasswordDialog";
+    public static final String TAG_PASSWORD_DIALOG = "PasswordDialog";
+    public static final String TAG_OPEN_FILE_DIALOG = "OpenFileDialog";
+    public static final String TAG_RENAME_FILE_DIALOG = "RenameFileDialog";
+    public static final String TAG_DELETE_FILE_DIALOG = "DeleteFileDialog";
+    public static MenuDialog mMenuDialog;
+    public FetchFileDialog mFetchFileDialog;
+    public static DownloadTaskManager mDownloadTaskManager = new DownloadTaskManager();;
 
     public static Handler mHandler = new Handler() {
         @Override
@@ -67,54 +76,15 @@ public class SeafileActivity extends FragmentActivity {
         }
     };
 
-
-    ServiceConnection mConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName className, IBinder service) {
-            TransferService.TransferBinder binder = (TransferService.TransferBinder) service;
-            txService = binder.getService();
-
-            for (PendingUploadInfo info : pendingUploads) {
-                txService.addTaskToUploadQue(mAccount,
-                        info.repoID,
-                        info.repoName,
-                        info.targetDir,
-                        info.localFilePath,
-                        info.isUpdate,
-                        info.isCopyToLocal);
-            }
-            pendingUploads.clear();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-            txService = null;
-        }
-    };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_seafile);
         mActivity = this;
-        mTransaction = getFragmentManager().beginTransaction();
-        Intent txIntent = new Intent(this, TransferService.class);
-        startService(txIntent);
-        // bind transfer service
-        Intent bIntent = new Intent(this, TransferService.class);
-        bindService(bIntent, mConnection, Context.BIND_AUTO_CREATE);
-//        Intent monitorIntent = new Intent(this, FileMonitorService.class);
-//        startService(monitorIntent);
+        mNavContext = new NavContext();
+        mStoredViews = new ArrayList<>();
+        mDownloadTaskManager = new DownloadTaskManager();
         init();
-    }
-
-    @Override
-    protected void onDestroy() {
-        if (txService != null) {
-            unbindService(mConnection);
-            txService = null;
-        }
-        super.onDestroy();
     }
 
     private void init() {
@@ -147,7 +117,8 @@ public class SeafileActivity extends FragmentActivity {
         String authToken;
         boolean rememberDevice;
 
-        public LoginTask(Account loginAccount, String passwd, String authToken, boolean rememberDevice) {
+        public LoginTask(Account loginAccount,
+                String passwd, String authToken, boolean rememberDevice) {
             this.loginAccount = loginAccount;
             this.passwd = passwd;
             this.authToken = authToken;
@@ -169,12 +140,10 @@ public class SeafileActivity extends FragmentActivity {
         }
 
         private void resend() {
-//            ConcurrentAsyncTask.execute(new AccountDetailActivity.LoginTask(loginAccount, passwd, authToken, rememberDevice));
         }
 
         @Override
         protected void onPostExecute(final String result) {
-
             if (result != null && result.equals("Success")) {
                 ConcurrentAsyncTask.execute(new LoadTask(mDataManager));
             }
@@ -196,7 +165,8 @@ public class SeafileActivity extends FragmentActivity {
                     return "Unknown error";
 
                 // replace email address/username given by the user with the address known by the server.
-                loginAccount = new Account(loginAccount.server, accountInfo.getEmail(), loginAccount.token, false, loginAccount.sessionKey);
+                loginAccount = new Account(loginAccount.server, accountInfo.getEmail(),
+                        loginAccount.token, false, loginAccount.sessionKey);
 
                 return "Success";
 
@@ -308,11 +278,7 @@ public class SeafileActivity extends FragmentActivity {
         if (mStoredViews.size() > 1) {
             mStoredViews.remove(mStoredViews.size() - 1);
             Object o = mStoredViews.get(mStoredViews.size() - 1);
-            if (o instanceof List) {
-                mAdapter.setItemsAndRefresh((List) o);
-            } else if (o instanceof SeafRepo) {
-
-            }
+            mAdapter.setItemsAndRefresh((List) o);
 
         } else {
 //            super.onBackPressed();
@@ -327,6 +293,293 @@ public class SeafileActivity extends FragmentActivity {
         } else if (TAG_GRID.equals(mViewTag)) {
             mListView.setVisibility(View.GONE);
             mGridView.setVisibility(View.VISIBLE);
+        }
+    }
+
+    public void showNewRepoDialog() {
+        final NewRepoDialog dialog = new NewRepoDialog();
+        dialog.init(mAccount);
+        dialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
+            @Override
+            public void onTaskSuccess(){
+                mStoredViews.clear();
+                ConcurrentAsyncTask.execute(new LoadTask(mDataManager));
+                ToastUtil.showSingletonToast(SeafileActivity.this, String.format(getResources()
+                        .getString(R.string.create_new_repo_success), dialog.getRepoName()));
+            }
+        });
+        dialog.show(getSupportFragmentManager(), TAG_NEW_REPO_DIALOG);
+    }
+
+    public void showRenameRepoDialog(String repoID, String repoName) {
+        final RenameRepoDialog dialog = new RenameRepoDialog();
+        dialog.init(repoID, repoName, mAccount);
+        dialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
+            @Override
+            public void onTaskSuccess() {
+                mStoredViews.clear();
+                ConcurrentAsyncTask.execute(new LoadTask(mDataManager));
+                ToastUtil.showSingletonToast(
+                        SeafileActivity.this, getString(R.string.rename_successful));
+            }
+        });
+        dialog.show(getSupportFragmentManager(), TAG_RENAME_REPO_DIALOG);
+    }
+
+    public void deleteRepoDialog(String repoID) {
+        final DeleteRepoDialog dialog = new DeleteRepoDialog();
+        dialog.init(repoID, mAccount);
+        dialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
+            @Override
+            public void onTaskSuccess() {
+                mStoredViews.clear();
+                ConcurrentAsyncTask.execute(new LoadTask(mDataManager));
+                ToastUtil.showSingletonToast(
+                        SeafileActivity.this, getString(R.string.delete_successful));
+            }
+        });
+        dialog.show(getSupportFragmentManager(), TAG_DELETE_REPO_DIALOG);
+    }
+
+    public void showNewFileDialog() {
+        final NewFileDialog dialog = new NewFileDialog();
+        dialog.init(mNavContext.getRepoID(), mNavContext.getDirPath(), mAccount);
+        dialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
+            @Override
+            public void onTaskSuccess() {
+                ConcurrentAsyncTask.execute(new LoadDirTask(mDataManager),
+                        mNavContext.getRepoName(),
+                        mNavContext.getRepoID(),
+                        mNavContext.getDirPath());
+                final String message = String.format(getString(
+                        R.string.create_new_file_success), dialog.getNewFileName());
+                ToastUtil.showSingletonToast(SeafileActivity.this, message);
+            }
+        });
+        dialog.show(getSupportFragmentManager(), TAG_NEW_FILE_DIALOG);
+    }
+
+    public void showShareDialog(final SeafDirent dirent) {
+        final String repoID = mNavContext.getRepoID();
+        final String dir = mNavContext.getDirPath();
+        final String path = Utils.pathJoin(dir, dirent.name);
+        final boolean isDir = dirent.isDir();
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        String[] strings = getResources().getStringArray(R.array.file_action_share_array_zh);
+        builder.setItems(strings, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                WidgetUtils.chooseShareApp(SeafileActivity.this,
+                        repoID, path, isDir, mAccount, null, null);
+            }
+        }).show();
+    }
+
+    public void showNewDirDialog() {
+        final NewDirDialog dialog = new NewDirDialog();
+        dialog.init(mNavContext.getRepoID(), mNavContext.getDirPath(), mAccount);
+        dialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
+            @Override
+            public void onTaskSuccess() {
+                ConcurrentAsyncTask.execute(new LoadDirTask(mDataManager),
+                        mNavContext.getRepoName(),
+                        mNavContext.getRepoID(),
+                        mNavContext.getDirPath());
+                final String message = String.format(
+                        getString(R.string.create_new_folder_success), dialog.getNewDirName());
+                ToastUtil.showSingletonToast(SeafileActivity.this, message);
+            }
+        });
+        dialog.show(getSupportFragmentManager(), "NewDirDialogFragment");
+    }
+
+    public void showRenameFileDialog(String repoID, String path, boolean isdir) {
+        final RenameFileDialog dialog = new RenameFileDialog();
+        dialog.init(repoID, path, isdir, mAccount);
+        dialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
+            @Override
+            public void onTaskSuccess() {
+                ConcurrentAsyncTask.execute(new LoadDirTask(mDataManager),
+                        mNavContext.getRepoName(),
+                        mNavContext.getRepoID(),
+                        mNavContext.getDirPath());
+                ToastUtil.showSingletonToast(
+                        SeafileActivity.this, getString(R.string.rename_successful));
+            }
+        });
+        dialog.show(getSupportFragmentManager(), TAG_RENAME_FILE_DIALOG);
+    }
+
+    public void fetchFileAndExport(final ResolveInfo appInfo, final Intent intent,
+                                   final String repoName, final String repoID,
+                                   final String path, final long fileSize) {
+
+        mFetchFileDialog = new FetchFileDialog();
+        mFetchFileDialog.init(
+                repoName, repoID, path, fileSize, new FetchFileDialog.FetchFileListener() {
+            @Override
+            public void onSuccess() {
+                startActivity(intent);
+            }
+
+            @Override
+            public void onDismiss() {
+                mFetchFileDialog = null;
+            }
+
+            @Override
+            public void onFailure(SeafException err) {
+            }
+        });
+        mFetchFileDialog.show(getSupportFragmentManager(), TAG_OPEN_FILE_DIALOG);
+    }
+
+    public PasswordDialog showPasswordDialog(String repoName, String repoID,
+                                             TaskDialog.TaskDialogListener listener,
+                                             String password) {
+        PasswordDialog passwordDialog = new PasswordDialog();
+        passwordDialog.setRepo(repoName, repoID, mAccount);
+        if (password != null) {
+            passwordDialog.setPassword(password);
+        }
+        passwordDialog.setTaskDialogLisenter(listener);
+        passwordDialog.show(getSupportFragmentManager(), TAG_PASSWORD_DIALOG);
+        return passwordDialog;
+    }
+
+    public PasswordDialog showPasswordDialog(String repoName, String repoID,
+                                             TaskDialog.TaskDialogListener listener) {
+        return showPasswordDialog(repoName, repoID, listener, null);
+    }
+
+    public void showDeleteFileDialog(final String repoID, String path, boolean isdir) {
+        final DeleteFileDialog dialog = new DeleteFileDialog();
+        dialog.init(repoID, path, isdir, mAccount);
+        dialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
+            @Override
+            public void onTaskSuccess() {
+                ConcurrentAsyncTask.execute(new LoadDirTask(mDataManager),
+                        mNavContext.getRepoName(),
+                        mNavContext.getRepoID(),
+                        mNavContext.getDirPath());
+                ToastUtil.showSingletonToast(
+                        SeafileActivity.this, getString(R.string.delete_successful));
+            }
+        });
+        dialog.show(getSupportFragmentManager(), TAG_DELETE_FILE_DIALOG);
+    }
+
+    private class LoadDirTask extends AsyncTask<String, Void, List<SeafDirent>> {
+
+        SeafException err = null;
+        String myRepoName;
+        String myRepoID;
+        String myPath;
+
+        DataManager dataManager;
+
+        public LoadDirTask(DataManager dataManager) {
+            this.dataManager = dataManager;
+        }
+
+        @Override
+        protected void onPreExecute() {
+        }
+
+        @Override
+        protected List<SeafDirent> doInBackground(String... params) {
+            if (params.length != 3) {
+                return null;
+            }
+
+            myRepoName = params[0];
+            myRepoID = params[1];
+            myPath = params[2];
+            try {
+                return dataManager.getDirentsFromServer(myRepoID, myPath);
+            } catch (SeafException e) {
+                err = e;
+                return null;
+            }
+
+        }
+
+        private void resend() {
+            if (mActivity == null)
+                return;
+
+            if (!myRepoID.equals(mNavContext.getRepoID())
+                    || !myPath.equals(mNavContext.getDirPath())) {
+                return;
+            }
+
+            ConcurrentAsyncTask.execute(new LoadDirTask(dataManager), myRepoName, myRepoID, myPath);
+        }
+
+        private void displaySSLError() {
+            if (mActivity == null)
+                return;
+
+            if (!myRepoID.equals(mNavContext.getRepoID())
+                    || !myPath.equals(mNavContext.getDirPath())) {
+                return;
+            }
+            ToastUtil.showSingletonToast(mActivity,getString(R.string.ssl_error));
+        }
+
+        // onPostExecute displays the results of the AsyncTask.
+        @Override
+        protected void onPostExecute(List<SeafDirent> dirents) {
+            if (mActivity == null)
+                // this occurs if user navigation to another activity
+                return;
+
+            if (err == SeafException.sslException) {
+                SslConfirmDialog dialog = new SslConfirmDialog(dataManager.getAccount(),
+                        new SslConfirmDialog.Listener() {
+                            @Override
+                            public void onAccepted(boolean rememberChoice) {
+                                Account account = dataManager.getAccount();
+                                CertsManager.instance().saveCertForAccount(account, rememberChoice);
+                                resend();
+                            }
+
+                            @Override
+                            public void onRejected() {
+                                displaySSLError();
+                            }
+                        });
+                dialog.show(getFragmentManager(), SslConfirmDialog.FRAGMENT_TAG);
+                return;
+            } else if (err == SeafException.remoteWipedException) {
+            }
+
+            if (err != null) {
+                if (err.getCode() == SeafConnection.HTTP_STATUS_REPO_PASSWORD_REQUIRED) {
+                    // showPasswordDialog();
+                } else if (err.getCode() == HttpURLConnection.HTTP_UNAUTHORIZED) {
+                    // Token expired, should login again
+                    ToastUtil.showSingletonToast(mActivity,getString(R.string.err_token_expired));
+                } else if (err.getCode() == HttpURLConnection.HTTP_NOT_FOUND) {
+                    final String message = String.format(
+                            getString(R.string.op_exception_folder_deleted), myPath);
+                    ToastUtil.showSingletonToast(mActivity, message);
+                } else {
+                    err.printStackTrace();
+                    ToastUtil.showSingletonToast(
+                            mActivity,getString(R.string.error_when_load_dirents));
+                }
+                return;
+            }
+
+            if (dirents == null) {
+                ToastUtil.showSingletonToast(
+                        mActivity,getString(R.string.error_when_load_dirents));
+                return;
+            }
+            mDataManager.setDirsRefreshTimeStamp(myRepoID, myPath);
+            mAdapter.setItemsAndRefresh(dirents);
         }
     }
 }

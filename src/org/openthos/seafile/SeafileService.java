@@ -1215,6 +1215,7 @@ public class SeafileService extends Service {
                     }
                     break;
                 case ChangeUrlDialog.MSG_CHANGE_URL:
+                    mSp.edit().putString("url", SeafileUtils.mOpenthosUrl).commit();
                     for (IBinder iBinder : mIBinders) {
                         Parcel _data = Parcel.obtain();
                         Parcel _reply = Parcel.obtain();

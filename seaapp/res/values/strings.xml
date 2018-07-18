@@ -104,9 +104,7 @@
     <item>Other</item>
   </string-array>
   <string-array name="file_action_share_array_zh" translatable="false">
-    <item>@string/file_action_share_wechat</item>
     <item>@string/file_action_share_link</item>
-    <item>@string/file_action_share_encrypt</item>
   </string-array>
   <string-array name="file_action_share_array" translatable="false">
     <item>@string/file_action_share_link</item>

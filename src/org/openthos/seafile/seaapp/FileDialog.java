@@ -139,16 +139,6 @@ public class FileDialog extends Dialog {
         Intent txIntent = new Intent(SeafileActivity.mActivity, TransferService.class);
         SeafileActivity.mActivity.startService(txIntent);
         Log.d(DEBUG_TAG, "start TransferService");
-
-        // bind transfer service
-        // Intent bIntent = new Intent(this, TransferService.class);
-        if (SeafileActivity.txService == null) {
-            SeafileActivity.mActivity.bindService(txIntent, mConnection, Context.BIND_AUTO_CREATE);
-            Log.d(DEBUG_TAG, "try bind TransferService");
-        } else {
-            mTransferService = SeafileActivity.txService;
-        }
-
     }
 //
     private void onFileDownloadProgress(DownloadTaskInfo info) {

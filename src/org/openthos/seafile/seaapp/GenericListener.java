@@ -14,6 +14,7 @@ import org.openthos.seafile.seaapp.ssl.CertsManager;
 
 public class GenericListener implements View.OnTouchListener{
     private Object mPreSeaf;
+    public Object mCurParent;
     private Long mLastClickTime;
     private long DOUBLE_CLICK_INTERVAL_TIME = 1000; // 1.0 second
     private NavContext mNavContext;
@@ -23,14 +24,12 @@ public class GenericListener implements View.OnTouchListener{
     public boolean onTouch(View view, MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-//                if (event.getButtonState() == MotionEvent.BUTTON_PRIMARY) {
+                if (event.getButtonState() == MotionEvent.BUTTON_PRIMARY) {
                     switch (view.getId()) {
                         case R.id.list_item_container:
-                            if (mPreSeaf ==  view.getTag()
-                                    && (Math.abs(System.currentTimeMillis()) - mLastClickTime <= 1000)) {
-                                // enter
-//                                Toast.makeText(SeafileActivity.mActivity, "111", Toast.LENGTH_SHORT).show();
-                                open(mPreSeaf);
+                            if (mPreSeaf ==  view.getTag() && (Math.abs(System.currentTimeMillis())
+                                    - mLastClickTime <= DOUBLE_CLICK_INTERVAL_TIME)) {
+                                open(view.getTag());
                                 break;
                             }
                             mPreSeaf = view.getTag();
@@ -42,22 +41,51 @@ public class GenericListener implements View.OnTouchListener{
                             mLastClickTime = null;
                             break;
                     }
-
-
-//                } else if (event.getButtonState() == MotionEvent.BUTTON_SECONDARY) {
-
-
-//                }
-
-//                break;
+                } else if (event.getButtonState() == MotionEvent.BUTTON_SECONDARY) {
+                    // app getX, getY, openthos getRawX, getRawY
+                    int x = 0;
+                    int y = 0;
+                    mPreSeaf = null;
+                    mLastClickTime = null;
+                    switch (view.getId()) {
+                        case R.id.list_item_container:
+                            x = (int) event.getRawX();
+                            y = (int) event.getRawY();
+                            if (SeafileActivity.mStoredViews.size() > 1) {
+                                SeafDirent dirent = (SeafDirent) view.getTag();
+                                show("repo", x , y, dirent);
+                            } else {
+                                SeafRepo repo = (SeafRepo) view.getTag();
+                                show("library", x , y, repo);
+                            }
+                            break;
+                        case R.id.lv:
+                        case R.id.gv:
+                            x = (int) event.getRawX();
+                            y = (int) event.getRawY();
+                            if (SeafileActivity.mStoredViews.size() > 1) {
+                                show("repo_blank", x, y, null);
+                            } else {
+                                show("library_blank", x, y, null);
+                            }
+                            break;
+                    }
+                }
+                break;
         }
-
-
-
-        return false;
+//        return false;
+        return true;
     }
 
-    private void open(Object seaf) {
+    private void show(String type, int x, int y, Object seaf) {
+        if (mNavContext == null) {
+            mNavContext = SeafileActivity.mNavContext;
+        }
+        SeafileActivity.mMenuDialog = new MenuDialog(SeafileActivity.mActivity, type);
+        SeafileActivity.mMenuDialog.showDialog(x, y, seaf);
+    }
+
+    public void open(Object seaf) {
         if (mNavContext == null) {
             mNavContext = SeafileActivity.mNavContext;
         }
@@ -69,6 +97,7 @@ public class GenericListener implements View.OnTouchListener{
     }
 
     private void openLibrary(SeafRepo seafRepo) {
+        mCurParent = seafRepo;
         mNavContext.setDirPermission(seafRepo.permission);
         mNavContext.setRepoID(seafRepo.id);
         mNavContext.setRepoName(seafRepo.getName());
@@ -78,7 +107,7 @@ public class GenericListener implements View.OnTouchListener{
 
     private void openFile(SeafDirent seafDirent) {
         if (seafDirent.isDir()) {
-            SeafileActivity.mActivity.mStoredViews.add(seafDirent);
+            mCurParent = seafDirent;
             String currentPath = mNavContext.getDirPath();
             String newPath = currentPath.endsWith("/") ?
                     currentPath + seafDirent.name : currentPath + "/" + seafDirent.name;
@@ -101,8 +130,8 @@ public class GenericListener implements View.OnTouchListener{
                 IntentBuilder.viewFile(SeafileActivity.mActivity, localPath);
             } else {
                 SeafRepo repo = SeafileActivity.mDataManager.getCachedRepoByID(repoID);
-                int taskID = SeafileActivity.mDownloadTaskManager
-                        .addTask(SeafileActivity.mAccount, repoName, repoID, filePath, fileSize);
+                int taskID = SeafileActivity.mDownloadTaskManager.addTask(
+                        SeafileActivity.mAccount, repoName, repoID, filePath, fileSize);
                 SeafileActivity.mFileDialog = new FileDialog(
                         SeafileActivity.mActivity, repoName, repoID, filePath, taskID);
                 SeafileActivity.mFileDialog.show();
@@ -155,7 +184,8 @@ public class GenericListener implements View.OnTouchListener{
         }
 
         private void resend() {
-            if (!myRepoID.equals(mNavContext.getRepoID()) || !myPath.equals(mNavContext.getDirPath())) {
+            if (!myRepoID.equals(mNavContext.getRepoID())
+                    || !myPath.equals(mNavContext.getDirPath())) {
                 return;
             }
 
@@ -164,7 +194,8 @@ public class GenericListener implements View.OnTouchListener{
 
         private void displaySSLError() {
 
-            if (!myRepoID.equals(mNavContext.getRepoID()) || !myPath.equals(mNavContext.getDirPath())) {
+            if (!myRepoID.equals(mNavContext.getRepoID())
+                    || !myPath.equals(mNavContext.getDirPath())) {
                 return;
             }
 //            showError(R.string.ssl_error);
@@ -173,13 +204,8 @@ public class GenericListener implements View.OnTouchListener{
         // onPostExecute displays the results of the AsyncTask.
         @Override
         protected void onPostExecute(List<SeafDirent> dirents) {
-                String lastUpdate = dataManager.getLastPullToRefreshTime(DataManager.PULL_TO_REFRESH_LAST_TIME_FOR_REPOS_FRAGMENT);
-                //mListView.onRefreshComplete(lastUpdate);
-//                refreshLayout.setRefreshing(false);
-//                getDataManager().saveLastPullToRefreshTime(System.currentTimeMillis(), DataManager.PULL_TO_REFRESH_LAST_TIME_FOR_REPOS_FRAGMENT);
-//                mPullToRefreshStopRefreshing = 0;
-
-            if (!myRepoID.equals(mNavContext.getRepoID()) || !myPath.equals(mNavContext.getDirPath())) {
+            if (!myRepoID.equals(mNavContext.getRepoID())
+                    || !myPath.equals(mNavContext.getDirPath())) {
                 return;
             }
 

@@ -101,7 +101,7 @@ public abstract class TransferManager {
         }
     }
 
-    protected void cancel(int taskID) {
+    public void cancel(int taskID) {
         TransferTask task = getTask(taskID);
         if (task != null) {
             task.cancel();

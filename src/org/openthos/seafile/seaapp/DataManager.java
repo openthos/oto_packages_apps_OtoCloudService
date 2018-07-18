@@ -81,15 +81,15 @@ public class DataManager {
      * @return a newly created directory.
      * @throws IOException if the directory could not be created.
      */
-//    public static File createTempDir() throws IOException {
-//        String dirName = "dir-" + UUID.randomUUID();
-//        File dir = new File(storageManager.getTempDir(), dirName);
-//        if (dir.mkdir()) {
-//            return dir;
-//        } else {
-//            throw new IOException("Could not create temp directory");
-//        }
-//    }
+    public static File createTempDir() throws IOException {
+        String dirName = "dir-" + UUID.randomUUID();
+        File dir = new File(storageManager.getTempDir(), dirName);
+        if (dir.mkdir()) {
+            return dir;
+        } else {
+            throw new IOException("Could not create temp directory");
+        }
+    }
 
     public String getThumbnailLink(String repoName, String repoID, String filePath, int size) {
         File file = null;
@@ -556,24 +556,24 @@ public class DataManager {
 //        }
 //    }
 //
-//    public List<SeafDirent> getCachedDirents(String repoID, String path) {
-//        String dirID = dbHelper.getCachedDirents(repoID, path);
-//        if (dirID == null) {
-//            return null;
-//        }
-//
-//        File cache = getFileForDirentCache(dirID);
-//        if (!cache.exists()) {
-//            return null;
-//        }
-//
-//        String json = Utils.readFile(cache);
-//        if (json == null) {
-//            return null;
-//        }
-//
-//        return parseDirents(json);
-//    }
+    public List<SeafDirent> getCachedDirents(String repoID, String path) {
+        String dirID = dbHelper.getCachedDirents(repoID, path);
+        if (dirID == null) {
+            return null;
+        }
+
+        File cache = getFileForDirentCache(dirID);
+        if (!cache.exists()) {
+            return null;
+        }
+
+        String json = Utils.readFile(cache);
+        if (json == null) {
+            return null;
+        }
+
+        return parseDirents(json);
+    }
 
     /**
      * In four cases we need to visit the server for dirents
@@ -809,26 +809,25 @@ public class DataManager {
     }
 
 
-//    public ArrayList<SeafLink> getShareLink(String repoID, String path) {
-////        ArrayList<SeafLink> list = Lists.newArrayListWithCapacity(0);
-//        ArrayList<SeafLink> list = new ArrayList<>();
-//        try {
-//            String json = sc.getShareLink(repoID, path);
-//            if (json != null) {
-//                JSONArray jsonArray = Utils.parseJsonArray(json);
-//                for (int i = 0; i < jsonArray.length(); i++) {
-//                    JSONObject object = null;
-//                    object = (JSONObject) jsonArray.get(i);
-//                    SeafLink seafLink = SeafLink.fromJson(object);
-//                    list.add(seafLink);
-//                }
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        return list;
-//    }
-
+    public ArrayList<SeafLink> getShareLink(String repoID, String path) {
+//        ArrayList<SeafLink> list = Lists.newArrayListWithCapacity(0);
+        ArrayList<SeafLink> list = new ArrayList<>();
+        try {
+            String json = sc.getShareLink(repoID, path);
+            if (json != null) {
+                JSONArray jsonArray = Utils.parseJsonArray(json);
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject object = null;
+                    object = (JSONObject) jsonArray.get(i);
+                    SeafLink seafLink = SeafLink.fromJson(object);
+                    list.add(seafLink);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 
     public void delete(String repoID, String path, boolean isdir) throws SeafException{
         Pair<String, String> ret = sc.delete(repoID, path, isdir);

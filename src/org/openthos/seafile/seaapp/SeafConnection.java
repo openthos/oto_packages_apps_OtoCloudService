@@ -967,9 +967,9 @@ public class SeafConnection {
             req.form("desc", description);
         }
 
-        if (password.length() > 0) {
-            req.form("passwd", password);
-        }
+//        if (password.length() > 0) {
+//            req.form("passwd", password);
+//        }
 
         checkRequestResponseStatus(req, HttpURLConnection.HTTP_OK);
     }

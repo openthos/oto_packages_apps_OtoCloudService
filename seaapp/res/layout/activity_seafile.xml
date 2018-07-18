@@ -7,7 +7,7 @@
         android:id="@+id/lv"
         android:visibility="gone"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:dividerHeight="10dp"
         android:divider="@android:color/transparent"
         ></ListView>
@@ -16,7 +16,7 @@
         android:id="@+id/gv"
         android:visibility="gone"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:dividerHeight="5dp"
         android:columnWidth="135dp"
         android:horizontalSpacing="20dp"
