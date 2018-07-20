@@ -12,29 +12,17 @@ interface ISeafileService {
     void loginAccount(String userName, String password);
     void stopAccount();
 
-    void restoreSettings(boolean wallpaper, boolean wifi,
-            boolean appdata, in List<String> syncAppdata, boolean startupmenu,
-            boolean browser, in List<String> syncBrowsers, boolean appstore);
-    void saveSettings(boolean wallpaper, boolean wifi,
-            boolean appdata, in List<String> syncAppdata, boolean startupmenu,
-            boolean browser, in List<String> syncBrowsers, boolean appstore);
-    List<ResolveInfo> getAppsInfo(int tag);
     void setBinder(IBinder b);
     void unsetBinder(IBinder b);
 
     int getCodeSendInto();
     int getCodeSendOut();
-    int getCodeRestoreFinish();
     int getCodeDownloadFinish();
     int getCodeRegiestSuccess();
     int getCodeRegiestFailed();
     int getCodeLoginSuccess();
     int getCodeLoginFailed();
     int getCodeChangeUrl();
-    int getTagAppdataImport();
-    int getTagAppdataExport();
-    int getTagBrowserImport();
-    int getTagBrowserExport();
 
     void setOpenthosUrl(String url);
     String getOpenthosUrl();

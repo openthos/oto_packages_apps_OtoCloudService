@@ -12,6 +12,10 @@ public class BootBroadcastReceiver extends BroadcastReceiver {
             Intent intent = new Intent();
             intent.setClassName("org.openthos.seafile", "org.openthos.seafile.SeafileService");
             context.startService(intent);
+
+            Intent intents = new Intent();
+            intents.setClassName("org.openthos.seafile", "org.openthos.seafile.RecoveryService");
+            context.startService(intents);
         }
     }
 }

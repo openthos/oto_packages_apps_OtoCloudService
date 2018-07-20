@@ -5,4 +5,6 @@
     <dimen name="dialog_property_button_width">72sp</dimen>
     <dimen name="dialog_property_button_height">32sp</dimen>
     <dimen name="dialog_property_font_size">12sp</dimen>
+    <dimen name="actionbar_size">65dip</dimen>
+    <dimen name="actionbar_subsettings_contentInsetStart">130dp</dimen>
 </resources>

@@ -26,4 +26,29 @@
     <string name="cancel">Cancel</string>
     <string name="title_change_url">Change openthos url</string>
     <string name="toast_data_init">The data is initializing...</string>
+
+    <string name="wallpaper_settings_title">Wallpaper</string>
+    <string name="wifi_info_title">Wifi</string>
+    <string name="cloud_appdata">Apps Data</string>
+    <string name="cloud_startmenu">Start Menu</string>
+    <string name="cloud_import">Import</string>
+    <string name="cloud_export">Export</string>
+    <string name="cloud_browser">Browser</string>
+    <string name="cloud_appstore">App Store</string>
+    <string name="cloud_browser_import">Choose Import Browsers</string>
+    <string name="cloud_browser_export">Choose Export Browsers</string>
+    <string name="cloud_appdata_import">Choose Import Apps</string>
+    <string name="cloud_appdata_export">Choose Export Apps</string>
+    <string name="okay">OK</string>
+    <string name="warning_browser_import">Warning: Current browsers are imported list.</string>
+    <string name="warning_browser_export">Warning: Current browsers are exported list.</string>
+    <string name="warn_restore_startupmenu">Warning: Restoring this will close all applications and soft restart, please save works before doing this.</string>
+    <string name="cloud_service_dialog_confirm">Confirm</string>
+    <string name="cloud_service_dialog_cancel">Cancel</string>
+    <string name="cloudfolder_path">data/sea/data/sdcard/cloudFolder/</string>
+    <string name="export_confirm_dialog_info">Are you sure to sync current device related files to cloud?</string>
+    <string name="toast_network_not_connect">Network is not connect</string>
+
+    <item type="id" name="tag_list"></item>
+    <item type="id" name="tag_package"></item>
 </resources>

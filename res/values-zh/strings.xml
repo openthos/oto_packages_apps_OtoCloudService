@@ -22,4 +22,25 @@
     <string name="cancel">取消</string>
     <string name="title_change_url">修改openthos服务器</string>
     <string name="toast_data_init">正在加载数据...</string>
+    <string name="wallpaper_settings_title">壁纸</string>
+    <string name="wifi_info_title">无线网</string>
+    <string name="cloud_appdata">应用数据</string>
+    <string name="cloud_startmenu">开始菜单</string>
+    <string name="cloud_import">恢复</string>
+    <string name="cloud_export">备份</string>
+    <string name="cloud_browser">浏览器</string>
+    <string name="cloud_appstore">应用商店</string>
+    <string name="cloud_browser_import">选择还原浏览器</string>
+    <string name="cloud_browser_export">选择备份浏览器</string>
+    <string name="cloud_appdata_import">选择还原应用</string>
+    <string name="cloud_appdata_export">选择备份应用</string>
+    <string name="okay">OK</string>
+    <string name="warning_browser_import">提示：当前浏览器为待恢复列表</string>
+    <string name="warning_browser_export">提示：当前浏览器为待备份列表</string>
+    <string name="warn_restore_startupmenu">警告：恢复中将关闭所有应用并进行软重启，请事先保存工作再进行恢复！</string>
+    <string name="cloud_service_dialog_confirm">确认</string>
+    <string name="cloud_service_dialog_cancel">取消</string>
+    <string name="cloudfolder_path">data/sea/data/sdcard/cloudFolder/</string>
+    <string name="export_confirm_dialog_info">是否确定将当前设备相关信息同步到您的账户云服务上？</string>
+    <string name="toast_network_not_connect">请检查网络连接</string>
 </resources>

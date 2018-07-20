@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Theme with no local references, used by AccountPreferenceBase where we have to inflate
+         layouts against a remote context using our local theme colors. Due to the implementation
+         details of Theme, we can't reference any local resources and MUST instead use the values
+         directly. So use #ff263238 instead of @color/theme_primary and so on. -->
+
+    <style name="Theme.Settings" parent="@android:style/Theme.Material.Settings">
+        <!-- Redefine the ActionBar style for contentInsetStart -->
+        <item name="android:actionBarStyle">@style/Theme.ActionBar.SubSettings</item>
+        <item name="@*android:actionBarSize">@dimen/actionbar_size</item>
+
+    </style>
+
+    <style name="Theme.ActionBar.SubSettings" parent="@android:style/Widget.Material.Light.ActionBar.Solid">
+        <item name="android:contentInsetStart">@dimen/actionbar_subsettings_contentInsetStart</item>
+    </style>
+</resources>
