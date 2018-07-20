@@ -245,6 +245,7 @@ public class GenericListener implements View.OnTouchListener{
 //            updateAdapterWithDirents(dirents, false);
             SeafileActivity.mAdapter.setItemsAndRefresh(dirents);
             SeafileActivity.mActivity.mStoredViews.add(dirents);
+            SeafileActivity.mActivity.setBackTag();
         }
     }
 }

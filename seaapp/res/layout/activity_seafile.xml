@@ -22,7 +22,13 @@
         android:horizontalSpacing="20dp"
         android:verticalSpacing="20dp"
         android:numColumns="auto_fit"
-        android:divider="@android:color/transparent"
-        ></GridView>
+        android:divider="@android:color/transparent" />
+
+    <View
+        android:id="@+id/back"
+        android:tag="back"
+        android:visibility="invisible"
+        android:layout_width="0dp"
+        android:layout_height="0dp"/>
 
 </LinearLayout>

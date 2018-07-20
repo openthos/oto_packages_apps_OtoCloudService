@@ -98,6 +98,12 @@ public class SeafileActivity extends FragmentActivity {
         mGridView.setAdapter(mAdapter);
         switchView(TAG_LIST);
         getAccountAndLogin();
+        findViewById(R.id.back).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v){
+                onBackPressed();
+            }
+        });
     }
 
     public void getAccountAndLogin() {
@@ -279,10 +285,18 @@ public class SeafileActivity extends FragmentActivity {
             mStoredViews.remove(mStoredViews.size() - 1);
             Object o = mStoredViews.get(mStoredViews.size() - 1);
             mAdapter.setItemsAndRefresh((List) o);
-
-        } else {
-//            super.onBackPressed();
         }
+        if (mStoredViews.size() <= 1) {
+            removeBackTag();
+        }
+    }
+
+    public void setBackTag(){
+        findViewById(R.id.back).setVisibility(View.VISIBLE);
+    }
+
+    public void removeBackTag(){
+        findViewById(R.id.back).setVisibility(View.GONE);
     }
 
     public void switchView(String tag) {
