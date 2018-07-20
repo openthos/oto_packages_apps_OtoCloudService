@@ -18,6 +18,7 @@ import android.widget.ListView;
 
 import org.json.JSONException;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +57,7 @@ public class SeafileActivity extends FragmentActivity {
     public static final String TAG_RENAME_FILE_DIALOG = "RenameFileDialog";
     public static final String TAG_DELETE_FILE_DIALOG = "DeleteFileDialog";
     public static MenuDialog mMenuDialog;
+    public static UploadFileDialog mUploadFileDialog;
     public FetchFileDialog mFetchFileDialog;
     public static DownloadTaskManager mDownloadTaskManager = new DownloadTaskManager();;
 
@@ -71,6 +73,15 @@ public class SeafileActivity extends FragmentActivity {
                     ToastUtil.showSingletonToast(SeafileActivity.mActivity,
                             SeafileActivity.mActivity.getString(R.string.download_finished)
                                     + "  " + filePath);
+                    break;
+                case 2:
+                    if (mUploadFileDialog.isShowing()) {
+                        mUploadFileDialog.dismiss();
+                    }
+                    String path = (String) msg.obj;
+                    ToastUtil.showSingletonToast(SeafileActivity.mActivity,
+                            SeafileActivity.mActivity.getString(R.string.upload_finished) + path);
+                    break;
             }
             super.handleMessage(msg);
         }
@@ -482,6 +493,37 @@ public class SeafileActivity extends FragmentActivity {
             }
         });
         dialog.show(getSupportFragmentManager(), TAG_DELETE_FILE_DIALOG);
+    }
+
+    public void showUploadFileDialog(final String filePath) {
+        mUploadFileDialog = new UploadFileDialog(SeafileActivity.mActivity,
+                mNavContext.getRepoName(), mNavContext.getRepoID(), filePath);
+        mUploadFileDialog.show();
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    String newFileID = null;
+                    SeafConnection sc = new SeafConnection(mAccount);
+                    newFileID = sc.uploadFile(mNavContext.getRepoID(),
+                            mNavContext.getDirPath(), filePath, null, false);
+                    if (newFileID != null) {
+                        ConcurrentAsyncTask.execute(new LoadDirTask(mDataManager),
+                                mNavContext.getRepoName(),
+                                mNavContext.getRepoID(),
+                                mNavContext.getDirPath());
+                        Message msg = Message.obtain();
+                        msg.what = 2;
+                        msg.obj = filePath;
+                        SeafileActivity.mHandler.sendMessage(msg);
+                    }
+                } catch (SeafException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
     }
 
     private class LoadDirTask extends AsyncTask<String, Void, List<SeafDirent>> {

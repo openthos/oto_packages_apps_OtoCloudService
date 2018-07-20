@@ -2,6 +2,7 @@ package org.openthos.seafile.seaapp.httputils;
 
 import android.util.Log;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -10,12 +11,15 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
 
 import okhttp3.Interceptor;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
 import okhttp3.Response;
-//import okio.Buffer;
-//import okio.BufferedSink;
-//import okio.Okio;
-//import okio.Source;
+import okio.Buffer;
+import okio.BufferedSink;
+import okio.Okio;
+import okio.Source;
+import org.openthos.seafile.seaapp.ProgressMonitor;
 
 
 public class RequestManager {
@@ -88,7 +92,7 @@ public class RequestManager {
      * @param <T>
      * @return
      */
-    /*public <T> RequestBody createProgressRequestBody(final ProgressMonitor monitor, final File file) {
+    public <T> RequestBody createProgressRequestBody(final ProgressMonitor monitor, final File file) {
         return new RequestBody() {
 
             public long temp = System.currentTimeMillis();
@@ -116,15 +120,15 @@ public class RequestManager {
                         current += readCount;
                         long nowt = System.currentTimeMillis();
                         // 1s refresh progress
-                        if (nowt - temp >= 1000) {
-                            temp = nowt;
-                            monitor.onProgressNotify(current, false);
-                        }
+//                        if (nowt - temp >= 1000) {
+//                            temp = nowt;
+//                            monitor.onProgressNotify(current, false);
+//                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         };
-    }*/
+    }
 }

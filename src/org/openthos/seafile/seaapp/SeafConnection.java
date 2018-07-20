@@ -880,10 +880,10 @@ public class SeafConnection {
      * @return
      * @throws SeafException
      */
-    public String uploadFile(String repoID, String dir, String filePath, /*ProgressMonitor monitor,*/ boolean update)
+    public String uploadFile(String repoID, String dir, String filePath, ProgressMonitor monitor, boolean update)
             throws SeafException, IOException {
             String url = getUploadLink(repoID, update);
-            return uploadFileCommon(url, repoID, dir, filePath, /*monitor, */update);
+        return uploadFileCommon(url, repoID, dir, filePath, monitor, update);
     }
 
 
@@ -891,7 +891,7 @@ public class SeafConnection {
      * Upload a file to seafile httpserver
      */
     private String uploadFileCommon(String link, String repoID, String dir,
-                                    String filePath, /*ProgressMonitor monitor, */boolean update)
+                                    String filePath, ProgressMonitor monitor, boolean update)
             throws SeafException, IOException {
         File file = new File(filePath);
         if (!file.exists()) {
@@ -908,7 +908,7 @@ public class SeafConnection {
             builder.addFormDataPart("parent_dir", dir);
         }
 
-//        builder.addFormDataPart("file", file.getName(), RequestManager.getInstance().createProgressRequestBody(monitor, file));
+        builder.addFormDataPart("file", file.getName(), RequestManager.getInstance().createProgressRequestBody(monitor, file));
         //create RequestBody
         RequestBody body = builder.build();
         //create Request

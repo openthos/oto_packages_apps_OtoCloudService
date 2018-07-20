@@ -674,42 +674,42 @@ public class DataManager {
         }
     }
 
-//    public void uploadFile(String repoName, String repoID, String dir, String filePath,
-//                           ProgressMonitor monitor, boolean isUpdate, boolean isCopyToLocal) throws SeafException, IOException {
-//        uploadFileCommon(repoName, repoID, dir, filePath, monitor, isUpdate, isCopyToLocal);
-//    }
-//
-//    private void uploadFileCommon(String repoName, String repoID, String dir,
-//                                  String filePath, ProgressMonitor monitor,
-//                                  boolean isUpdate, boolean isCopyToLocal) throws SeafException, IOException {
-//        String newFileID  = sc.uploadFile(repoID, dir, filePath, monitor,isUpdate);
-//        if (newFileID == null || newFileID.length() == 0) {
-//            return;
-//        }
-//
-//        File srcFile = new File(filePath);
-//        String path = Utils.pathJoin(dir, srcFile.getName());
-//        File fileInRepo = null;
-//        try {
-//            fileInRepo = getLocalRepoFile(repoName, repoID, path);
-//        } catch (RuntimeException e) {
-//            e.printStackTrace();
-//            new SeafException(SeafException.OTHER_EXCEPTION, e.getMessage());
-//        }
-//
-//        if (isCopyToLocal) {
-//            if (!isUpdate) {
-//                // Copy the uploaded file to local repo cache
-//                try {
-//                    Utils.copyFile(srcFile, fileInRepo);
-//                } catch (IOException e) {
-//                    return;
-//                }
-//            }
-//        }
-//        // Update file cache entry
-//        addCachedFile(repoName, repoID, path, newFileID, fileInRepo);
-//    }
+    public void uploadFile(String repoName, String repoID, String dir, String filePath,
+                           ProgressMonitor monitor, boolean isUpdate, boolean isCopyToLocal) throws SeafException, IOException {
+        uploadFileCommon(repoName, repoID, dir, filePath, monitor, isUpdate, isCopyToLocal);
+    }
+
+    private void uploadFileCommon(String repoName, String repoID, String dir,
+                                  String filePath, ProgressMonitor monitor,
+                                  boolean isUpdate, boolean isCopyToLocal) throws SeafException, IOException {
+        String newFileID  = sc.uploadFile(repoID, dir, filePath, monitor,isUpdate);
+        if (newFileID == null || newFileID.length() == 0) {
+            return;
+        }
+
+        File srcFile = new File(filePath);
+        String path = Utils.pathJoin(dir, srcFile.getName());
+        File fileInRepo = null;
+        try {
+            fileInRepo = getLocalRepoFile(repoName, repoID, path);
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            new SeafException(SeafException.OTHER_EXCEPTION, e.getMessage());
+        }
+
+        if (isCopyToLocal) {
+            if (!isUpdate) {
+                // Copy the uploaded file to local repo cache
+                try {
+                    Utils.copyFile(srcFile, fileInRepo);
+                } catch (IOException e) {
+                    return;
+                }
+            }
+        }
+        // Update file cache entry
+        addCachedFile(repoName, repoID, path, newFileID, fileInRepo);
+    }
 
     public void createNewRepo(String repoName, String password) throws SeafException {
         sc.createNewRepo(repoName, "", password);

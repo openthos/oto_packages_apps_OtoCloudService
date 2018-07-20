@@ -1,8 +1,10 @@
 package org.openthos.seafile.seaapp;
 
 import android.app.Dialog;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +15,8 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import org.openthos.seafile.R;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +24,7 @@ public class MenuDialog extends Dialog implements ListView.OnItemClickListener {
     private ListView mListView;
     private List<String> mDatas;
     private Object mSeaf;
+    private String mark = "OtoFile:///";
 
     public MenuDialog(Context context, String type) {
         super(context);
@@ -74,7 +79,7 @@ public class MenuDialog extends Dialog implements ListView.OnItemClickListener {
             case "repo_blank":
                 mDatas.add(SeafileActivity.mActivity.getString(R.string.create_new_file));
                 mDatas.add(SeafileActivity.mActivity.getString(R.string.create_new_dir));
-//                mDatas.add("upload");
+                mDatas.add(SeafileActivity.mActivity.getString(R.string.upload));
                 break;
         }
         mListView.setAdapter(new MenuDialogAdapter(getContext(), mDatas));
@@ -122,6 +127,26 @@ public class MenuDialog extends Dialog implements ListView.OnItemClickListener {
         } else if (SeafileActivity.mActivity.getString(R.string.file_share).equals(content)) {
             dirent = (SeafDirent) mSeaf;
             SeafileActivity.mActivity.showShareDialog(dirent);
+        } else if (SeafileActivity.mActivity.getString(R.string.upload).equals(content)) {
+            ClipboardManager manager = (ClipboardManager) getContext()
+                    .getSystemService(Context.CLIPBOARD_SERVICE);
+            CharSequence text = manager.getText();
+            String filePath = null;
+            if (!TextUtils.isEmpty(text) && text.toString().
+                    startsWith(mark) && text.toString().lastIndexOf(mark) == 0) {
+                String[] split = text.toString().split(mark);
+                filePath = split[1];
+                File file = new File(filePath);
+                if (file.exists() && file.isFile()) {
+                    SeafileActivity.mActivity.showUploadFileDialog(filePath);
+                } else {
+                    ToastUtil.showSingletonToast(getContext(),
+                            SeafileActivity.mActivity.getString(R.string.upload_select_file_tip));
+                }
+            } else {
+                ToastUtil.showSingletonToast(getContext(),
+                        SeafileActivity.mActivity.getString(R.string.upload_select_file_tip));
+            }
         }
         dismiss();
     }

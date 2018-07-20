@@ -319,6 +319,11 @@ public final class MultipartBody extends RequestBody {
             return addPart(Part.createFormData(name, value));
         }
 
+        /** Add a form data part to the body. */
+        public Builder addFormDataPart(String name, String filename, RequestBody body) {
+            return addPart(Part.createFormData(name, filename, body));
+        }
+
         /**
          * Add a part to the body.
          */
