@@ -27,6 +27,7 @@
   <string name="unknown_file_type">Unknown file-type</string>
   <string name="activity_not_found">Can\`t find App to open this file</string>
   <string name="refresh">Refresh</string>
+  <string name="refresh_repo">Refresh repo</string>
   <string name="add_account">Add Account</string>
   <string name="personal">Personal</string>
   <string name="shared">Shared</string>
@@ -542,4 +543,9 @@
   <string name="add_auto_expiration">Add auto expiration</string>
   <string name="input_auto_expiration">Please enter the expiration dates</string>
   <string name="upload_select_file_tip">Please copy single file</string>
+  <string name="share_repo">Share library</string>
+  <string name="resource_not_available">Resource are not available</string>
+  <string name="resource_not_found">Resource not found</string>
+  <string name="server_conn_refused">Server connection refused</string>
+  <string name="server_timed_out">Server connection timed out</string>
 </resources>

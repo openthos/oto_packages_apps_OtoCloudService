@@ -38,6 +38,7 @@ import okhttp3.Response;
 import org.openthos.seafile.seaapp.httputils.RequestManager;
 import org.openthos.seafile.seaapp.ssl.SSLTrustManager;
 import org.openthos.seafile.seaapp.HttpRequest.HttpRequestException;
+import org.openthos.seafile.R;
 
 //import com.google.common.collect.Maps;
 
@@ -208,8 +209,47 @@ public class SeafConnection {
             account.token = obj.getString("token");
             return true;
         } catch (SeafException e) {
+            final int code = e.getCode();
+            SeafileActivity.mHandler.sendEmptyMessage(3);
+            SeafileActivity.mActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    switch (code) {
+                        case 403:
+                            ToastUtil.showSingletonToast(SeafileActivity.mActivity,
+                                    SeafileActivity.mActivity.getString(
+                                            R.string.resource_not_available));
+                            SeafileActivity.mActivity.showRepoError();
+                            break;
+                        case 404:
+                            ToastUtil.showSingletonToast(SeafileActivity.mActivity,
+                                    SeafileActivity.mActivity.getString(
+                                            R.string.resource_not_found));
+                            SeafileActivity.mActivity.showRepoError();
+                            break;
+                    }
+                    android.util.Log.i("chenp", code + "");
+                }
+            });
             throw e;
         } catch (HttpRequest.HttpRequestException e) {
+            final String message = e.getMessage();
+            SeafileActivity.mHandler.sendEmptyMessage(3);
+            SeafileActivity.mActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (message.contains("ECONNREFUSED")) {
+                        ToastUtil.showSingletonToast(SeafileActivity.mActivity,
+                                SeafileActivity.mActivity.getString(R.string.server_conn_refused));
+                        SeafileActivity.mActivity.showRepoError();
+                    } else if (message.contains("SocketTimeoutException")) {
+                        ToastUtil.showSingletonToast(SeafileActivity.mActivity,
+                                SeafileActivity.mActivity.getString(R.string.server_timed_out));
+                        SeafileActivity.mActivity.showRepoError();
+                    }
+                    android.util.Log.i("chenp", message);
+                }
+            });
 //            throw getSeafExceptionFromHttpRequestException(e);
         } catch (IOException e) {
             e.printStackTrace();
@@ -265,12 +305,7 @@ public class SeafConnection {
     }
 
     public boolean doLogin(String passwd, String authToken, boolean rememberDevice) throws SeafException {
-        try {
-            return realLogin(passwd, authToken, rememberDevice);
-        } catch (Exception e) {
-            // do again
-            return realLogin(passwd, authToken, rememberDevice);
-        }
+        return realLogin(passwd, authToken, rememberDevice);
     }
 
     public String getRepos() throws SeafException {
@@ -394,7 +429,7 @@ public class SeafConnection {
 //    }
 
     private static String encodeUriComponent(String src) throws UnsupportedEncodingException {
-        return URLEncoder.encode(src, "UTF-8");
+        return src == null ? src : URLEncoder.encode(src, "UTF-8");
     }
 
     /**
@@ -443,15 +478,46 @@ public class SeafConnection {
             return pair;
 
         } catch (SeafException e) {
+            final int code = e.getCode();
+            SeafileActivity.mHandler.sendEmptyMessage(3);
+            SeafileActivity.mActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    switch (code) {
+                        case 403:
+                            ToastUtil.showSingletonToast(SeafileActivity.mActivity,
+                                    SeafileActivity.mActivity.getString(
+                                            R.string.resource_not_available));
+                            break;
+                        case 404:
+                            ToastUtil.showSingletonToast(SeafileActivity.mActivity,
+                                    SeafileActivity.mActivity.getString(
+                                            R.string.resource_not_found));
+                            break;
+                    }
+                    SeafileActivity.mActivity.showDirentError();
+                }
+            });
+            final String message = e.getMessage();
+            SeafileActivity.mHandler.sendEmptyMessage(3);
+            SeafileActivity.mActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (message.contains("ECONNREFUSED")) {
+                        ToastUtil.showSingletonToast(SeafileActivity.mActivity,
+                                SeafileActivity.mActivity.getString(R.string.server_conn_refused));
+                    } else if (message.contains("SocketTimeoutException")) {
+                        ToastUtil.showSingletonToast(SeafileActivity.mActivity,
+                                SeafileActivity.mActivity.getString(R.string.server_timed_out));
+                    }
+                    SeafileActivity.mActivity.showDirentError();
+                }
+            });
             throw e;
-        } catch (UnsupportedEncodingException e) {
-            throw SeafException.encodingException;
-        } catch (HttpRequestException e) {
 //            throw getSeafExceptionFromHttpRequestException(e);
         } catch (IOException e) {
             throw SeafException.networkException;
         }
-        return pair;
     }
 
     public Pair<String, String> getDownloadLink(String repoID, String path , boolean isReUsed) throws SeafException {

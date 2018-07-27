@@ -15,6 +15,7 @@ import android.support.v4.app.FragmentActivity;
 import android.view.View;
 import android.widget.GridView;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import org.json.JSONException;
 
@@ -36,8 +37,10 @@ public class SeafileActivity extends FragmentActivity {
     public static SeafileActivity mActivity;
     private ListView mListView;
     private GridView mGridView;
+    private static TextView mErrorText;
     public static SeafItemAdapter mAdapter;
     public static Account mAccount;
+    private String mPassword;
     public static DataManager mDataManager;
     private GenericListener mGenericListener;
     public static NavContext mNavContext;
@@ -60,6 +63,7 @@ public class SeafileActivity extends FragmentActivity {
     public static UploadFileDialog mUploadFileDialog;
     public FetchFileDialog mFetchFileDialog;
     public static DownloadTaskManager mDownloadTaskManager = new DownloadTaskManager();;
+    public static LoadingDialog mLoadingDialog;
 
     public static Handler mHandler = new Handler() {
         @Override
@@ -82,6 +86,11 @@ public class SeafileActivity extends FragmentActivity {
                     ToastUtil.showSingletonToast(SeafileActivity.mActivity,
                             SeafileActivity.mActivity.getString(R.string.upload_finished) + path);
                     break;
+                case 3:
+                    mErrorText.setVisibility(View.GONE);
+                    if (mLoadingDialog != null && mLoadingDialog.isShowing()) {
+                        mLoadingDialog.dismiss();
+                    }
             }
             super.handleMessage(msg);
         }
@@ -99,6 +108,7 @@ public class SeafileActivity extends FragmentActivity {
     }
 
     private void init() {
+        mErrorText = (TextView) findViewById(R.id.error_message);
         mGenericListener = new GenericListener();
         mAdapter = new SeafItemAdapter(this);
         mListView = (ListView) findViewById(R.id.lv);
@@ -107,7 +117,6 @@ public class SeafileActivity extends FragmentActivity {
         mListView.setAdapter(mAdapter);
         mGridView.setOnTouchListener(mGenericListener);
         mGridView.setAdapter(mAdapter);
-        switchView(TAG_LIST);
         getAccountAndLogin();
         findViewById(R.id.back).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -125,6 +134,15 @@ public class SeafileActivity extends FragmentActivity {
         mAccount = new Account(serverURL, email, null, false, null);
         mDataManager = new DataManager(mAccount);
         ConcurrentAsyncTask.execute(new LoginTask(mAccount, passwd, null,false));
+        if (!Utils.isNetworkOn()) {
+            ToastUtil.showSingletonToast(this, getString(R.string.network_down));
+            showRepoError();
+        } else {
+            switchView(TAG_LIST);
+            mLoadingDialog = new LoadingDialog(this);
+            mLoadingDialog.show();
+            ConcurrentAsyncTask.execute(new LoginTask(mAccount, mPassword, null, false));
+        }
     }
 
     private class LoginTask extends AsyncTask<Void, Void, String> {
@@ -162,7 +180,7 @@ public class SeafileActivity extends FragmentActivity {
         @Override
         protected void onPostExecute(final String result) {
             if (result != null && result.equals("Success")) {
-                ConcurrentAsyncTask.execute(new LoadTask(mDataManager));
+                refreshRepo();
             }
         }
 
@@ -244,6 +262,19 @@ public class SeafileActivity extends FragmentActivity {
         // onPostExecute displays the results of the AsyncTask.
         @Override
         protected void onPostExecute(List<SeafRepo> rs) {
+            if (rs == null) {
+                return;
+            }
+
+            // filter library of "DATA" and "UserConfig"
+            for (int i = 0; i < rs.size(); i++) {
+                String name  = rs.get(i).getName();
+                if (name.equals("DATA") || name.equals("UserConfig")) {
+                    rs.remove(i);
+                    i--;
+                }
+            }
+
             // Prompt the user to accept the ssl certificate
             if (err == SeafException.sslException) {
                 SslConfirmDialog dialog = new SslConfirmDialog(dataManager.getAccount(),
@@ -293,6 +324,15 @@ public class SeafileActivity extends FragmentActivity {
     @Override
     public void onBackPressed() {
         if (mStoredViews.size() > 1) {
+            if (mNavContext.inRepo()) {
+                if (mNavContext.isRepoRoot()) {
+                    mNavContext.setRepoID(null);
+                } else {
+                    String parentPath = Utils.getParentPath(mNavContext
+                            .getDirPath());
+                    mNavContext.setDir(parentPath, null);
+                }
+            }
             mStoredViews.remove(mStoredViews.size() - 1);
             Object o = mStoredViews.get(mStoredViews.size() - 1);
             mAdapter.setItemsAndRefresh((List) o);
@@ -327,8 +367,7 @@ public class SeafileActivity extends FragmentActivity {
         dialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
             @Override
             public void onTaskSuccess(){
-                mStoredViews.clear();
-                ConcurrentAsyncTask.execute(new LoadTask(mDataManager));
+                refreshRepo();
                 ToastUtil.showSingletonToast(SeafileActivity.this, String.format(getResources()
                         .getString(R.string.create_new_repo_success), dialog.getRepoName()));
             }
@@ -342,8 +381,7 @@ public class SeafileActivity extends FragmentActivity {
         dialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
             @Override
             public void onTaskSuccess() {
-                mStoredViews.clear();
-                ConcurrentAsyncTask.execute(new LoadTask(mDataManager));
+                refreshRepo();
                 ToastUtil.showSingletonToast(
                         SeafileActivity.this, getString(R.string.rename_successful));
             }
@@ -357,8 +395,7 @@ public class SeafileActivity extends FragmentActivity {
         dialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
             @Override
             public void onTaskSuccess() {
-                mStoredViews.clear();
-                ConcurrentAsyncTask.execute(new LoadTask(mDataManager));
+                refreshRepo();
                 ToastUtil.showSingletonToast(
                         SeafileActivity.this, getString(R.string.delete_successful));
             }
@@ -372,10 +409,7 @@ public class SeafileActivity extends FragmentActivity {
         dialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
             @Override
             public void onTaskSuccess() {
-                ConcurrentAsyncTask.execute(new LoadDirTask(mDataManager),
-                        mNavContext.getRepoName(),
-                        mNavContext.getRepoID(),
-                        mNavContext.getDirPath());
+                refreshDirent();
                 final String message = String.format(getString(
                         R.string.create_new_file_success), dialog.getNewFileName());
                 ToastUtil.showSingletonToast(SeafileActivity.this, message);
@@ -407,10 +441,7 @@ public class SeafileActivity extends FragmentActivity {
         dialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
             @Override
             public void onTaskSuccess() {
-                ConcurrentAsyncTask.execute(new LoadDirTask(mDataManager),
-                        mNavContext.getRepoName(),
-                        mNavContext.getRepoID(),
-                        mNavContext.getDirPath());
+                refreshDirent();
                 final String message = String.format(
                         getString(R.string.create_new_folder_success), dialog.getNewDirName());
                 ToastUtil.showSingletonToast(SeafileActivity.this, message);
@@ -425,10 +456,7 @@ public class SeafileActivity extends FragmentActivity {
         dialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
             @Override
             public void onTaskSuccess() {
-                ConcurrentAsyncTask.execute(new LoadDirTask(mDataManager),
-                        mNavContext.getRepoName(),
-                        mNavContext.getRepoID(),
-                        mNavContext.getDirPath());
+                refreshDirent();
                 ToastUtil.showSingletonToast(
                         SeafileActivity.this, getString(R.string.rename_successful));
             }
@@ -484,10 +512,7 @@ public class SeafileActivity extends FragmentActivity {
         dialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
             @Override
             public void onTaskSuccess() {
-                ConcurrentAsyncTask.execute(new LoadDirTask(mDataManager),
-                        mNavContext.getRepoName(),
-                        mNavContext.getRepoID(),
-                        mNavContext.getDirPath());
+                refreshDirent();
                 ToastUtil.showSingletonToast(
                         SeafileActivity.this, getString(R.string.delete_successful));
             }
@@ -508,10 +533,7 @@ public class SeafileActivity extends FragmentActivity {
                     newFileID = sc.uploadFile(mNavContext.getRepoID(),
                             mNavContext.getDirPath(), filePath, null, false);
                     if (newFileID != null) {
-                        ConcurrentAsyncTask.execute(new LoadDirTask(mDataManager),
-                                mNavContext.getRepoName(),
-                                mNavContext.getRepoID(),
-                                mNavContext.getDirPath());
+                        refreshDirent();
                         Message msg = Message.obtain();
                         msg.what = 2;
                         msg.obj = filePath;
@@ -618,9 +640,6 @@ public class SeafileActivity extends FragmentActivity {
                     // Token expired, should login again
                     ToastUtil.showSingletonToast(mActivity,getString(R.string.err_token_expired));
                 } else if (err.getCode() == HttpURLConnection.HTTP_NOT_FOUND) {
-                    final String message = String.format(
-                            getString(R.string.op_exception_folder_deleted), myPath);
-                    ToastUtil.showSingletonToast(mActivity, message);
                 } else {
                     err.printStackTrace();
                     ToastUtil.showSingletonToast(
@@ -637,5 +656,57 @@ public class SeafileActivity extends FragmentActivity {
             mDataManager.setDirsRefreshTimeStamp(myRepoID, myPath);
             mAdapter.setItemsAndRefresh(dirents);
         }
+    }
+
+    public void refreshRepo() {
+        mStoredViews.clear();
+        ConcurrentAsyncTask.execute(new LoadTask(mDataManager));
+    }
+
+    public void refreshDirent() {
+        ConcurrentAsyncTask.execute(new LoadDirTask(mDataManager),
+                    mNavContext.getRepoName(),
+                    mNavContext.getRepoID(),
+                    mNavContext.getDirPath());
+    }
+
+    public void showRepoError() {
+        mListView.setVisibility(View.GONE);
+        mGridView.setVisibility(View.GONE);
+        mErrorText.setText(getString(R.string.error_when_load_repos));
+        mErrorText.setVisibility(View.VISIBLE);
+        mErrorText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!Utils.isNetworkOn()) {
+                    ToastUtil.showSingletonToast(SeafileActivity.this, getString(R.string.network_down));
+                } else {
+                    switchView(TAG_LIST);
+                    mLoadingDialog = new LoadingDialog(SeafileActivity.this);
+                    mLoadingDialog.show();
+                    ConcurrentAsyncTask.execute(new LoginTask(mAccount, mPassword, null,false));
+                }
+            }
+        });
+    }
+
+    public void showDirentError() {
+        mListView.setVisibility(View.GONE);
+        mGridView.setVisibility(View.GONE);
+        mErrorText.setText(getString(R.string.error_when_load_dirents));
+        mErrorText.setVisibility(View.VISIBLE);
+        mErrorText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!Utils.isNetworkOn()) {
+                    ToastUtil.showSingletonToast(SeafileActivity.this, getString(R.string.network_down));
+                } else {
+                    switchView(TAG_LIST);
+                    mLoadingDialog = new LoadingDialog(SeafileActivity.this);
+                    mLoadingDialog.show();
+                    refreshDirent();
+                }
+            }
+        });
     }
 }

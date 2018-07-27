@@ -15,6 +15,8 @@ import org.openthos.seafile.seaapp.SeafException;
 import org.openthos.seafile.seaapp.SeafRepo;
 import org.openthos.seafile.seaapp.SeafileActivity;
 import org.openthos.seafile.seaapp.IntentBuilder;
+import org.openthos.seafile.seaapp.ToastUtil;
+import org.openthos.seafile.R;
 
 /**
  * Download task
@@ -90,6 +92,26 @@ public class DownloadTask extends TransferTask {
                 );
                 return file;
         } catch (SeafException e) {
+            final int code = e.getCode();
+            SeafileActivity.mHandler.sendEmptyMessage(3);
+            SeafileActivity.mActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    switch (code) {
+                        case 403:
+                            ToastUtil.showSingletonToast(SeafileActivity.mActivity,
+                                    SeafileActivity.mActivity.getString(
+                                            R.string.resource_not_available));
+                            break;
+                        case 404:
+                            ToastUtil.showSingletonToast(SeafileActivity.mActivity,
+                                    SeafileActivity.mActivity.getString(
+                                            R.string.resource_not_found));
+                            break;
+                    }
+                    SeafileActivity.mActivity.showDirentError();
+                }
+            });
             err = e;
             return file;
 //        } catch (JSONException e) {

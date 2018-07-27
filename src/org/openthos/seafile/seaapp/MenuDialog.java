@@ -67,9 +67,11 @@ public class MenuDialog extends Dialog implements ListView.OnItemClickListener {
             case "library":
                 mDatas.add(SeafileActivity.mActivity.getString(R.string.rename_repo));
                 mDatas.add(SeafileActivity.mActivity.getString(R.string.delete_repo_title));
+                mDatas.add(SeafileActivity.mActivity.getString(R.string.share_repo));
                 break;
             case "library_blank":
                 mDatas.add(SeafileActivity.mActivity.getString(R.string.create_new_repo));
+                mDatas.add(SeafileActivity.mActivity.getString(R.string.refresh_repo));
                 break;
             case "repo":
                 mDatas.add(SeafileActivity.mActivity.getString(R.string.file_share));
@@ -80,6 +82,7 @@ public class MenuDialog extends Dialog implements ListView.OnItemClickListener {
                 mDatas.add(SeafileActivity.mActivity.getString(R.string.create_new_file));
                 mDatas.add(SeafileActivity.mActivity.getString(R.string.create_new_dir));
                 mDatas.add(SeafileActivity.mActivity.getString(R.string.upload));
+                mDatas.add(SeafileActivity.mActivity.getString(R.string.refresh));
                 break;
         }
         mListView.setAdapter(new MenuDialogAdapter(getContext(), mDatas));
@@ -147,6 +150,14 @@ public class MenuDialog extends Dialog implements ListView.OnItemClickListener {
                 ToastUtil.showSingletonToast(getContext(),
                         SeafileActivity.mActivity.getString(R.string.upload_select_file_tip));
             }
+        } else if (SeafileActivity.mActivity.getString(R.string.refresh_repo).equals(content)) {
+                SeafileActivity.mActivity.refreshRepo();
+        } else if (SeafileActivity.mActivity.getString(R.string.refresh).equals(content)) {
+                SeafileActivity.mActivity.refreshDirent();
+        } else if (SeafileActivity.mActivity.getString(R.string.share_repo).equals(content)) {
+                repo = (SeafRepo) mSeaf;
+                WidgetUtils.chooseShareApp(SeafileActivity.mActivity, repo.getID(),
+                        "/", true, SeafileActivity.mAccount, null, null);
         }
         dismiss();
     }

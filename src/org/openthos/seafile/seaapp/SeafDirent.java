@@ -61,13 +61,10 @@ public class SeafDirent implements SeafItem, Serializable {
     @Override
     public int getIcon() {
         if (isDir()) {
-            if (!hasWritePermission()) {
-                return R.drawable.folder_read_only;
-            } else {
-                return R.drawable.folder;
-            }
+            return R.drawable.folder;
+        } else {
+            return Utils.getFileIcon(name);
         }
-        return Utils.getFileIcon(name);
     }
 
     public boolean hasWritePermission() {

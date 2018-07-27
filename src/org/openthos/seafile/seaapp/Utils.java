@@ -224,13 +224,39 @@ public class Utils {
 
         if (mimetype.contains("pdf")) {
             return R.drawable.file_pdf;
-        } else if (mimetype.contains("image/")) {
+        } else if (mimetype.contains("mp3")
+                || mimetype.contains("wma")
+                || mimetype.contains("wav")
+                || mimetype.contains("mid")) {
+            return R.drawable.file_music;
+        } else if (mimetype.contains("image/")
+                || mimetype.contains("jpg")
+                || mimetype.contains("jpeg")
+                || mimetype.contains("gif")
+                || mimetype.contains("png")
+                || mimetype.contains("bmp")
+                || mimetype.contains("wbmp")) {
             return R.drawable.file_image;
-        } else if (mimetype.contains("text")) {
+        } else if (mimetype.contains("text")
+                || mimetype.contains("txt")
+                || mimetype.contains("log")
+                || mimetype.contains("xml")
+                || mimetype.contains("ini")
+                || mimetype.contains("lrc")) {
             return R.drawable.file_text;
         } else if (mimetype.contains("audio")) {
             return R.drawable.file_audio;
-        } else if (mimetype.contains("video")) {
+        } else if (mimetype.contains("video")
+                || mimetype.contains("mp4")
+                || mimetype.contains("wmv")
+                || mimetype.contains("mpeg")
+                || mimetype.contains("m4v")
+                || mimetype.contains("3gp")
+                || mimetype.contains("3gpp")
+                || mimetype.contains("3g2")
+                || mimetype.contains("3gpp2")
+                || mimetype.contains("rmvb")
+                || mimetype.contains("asf")) {
             return R.drawable.file_video;
         } if (mimetype.contains("pdf")) {
             return R.drawable.file_pdf;
@@ -282,7 +308,11 @@ public class Utils {
             return i;
 
         String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(suffix);
-        return getResIdforMimetype(mime);
+        if (mime == null) {
+            return getResIdforMimetype(name);
+        } else {
+            return getResIdforMimetype(mime);
+        }
     }
 
     public static boolean isViewableImage(String name) {

@@ -25,6 +25,7 @@
   <string name="unknown_file_type">未知文件类型</string>
   <string name="activity_not_found">找不到相关应用打开此类文件</string>
   <string name="refresh">刷新</string>
+  <string name="refresh_repo">刷新库</string>
   <string name="add_account">添加账户</string>
   <string name="personal">个人</string>
   <string name="shared">共享给我的</string>
@@ -519,4 +520,9 @@
   <string name="add_auto_expiration">增加自动过期</string>
   <string name="input_auto_expiration">请输入自动过期天数</string>
   <string name="upload_select_file_tip">请选择单个文件</string>
+  <string name="share_repo">分享资料库</string>
+  <string name="resource_not_available">资源不可用</string>
+  <string name="resource_not_found">资溪找到</string>
+  <string name="server_conn_refused">服务器连接拒绝</string>
+  <string name="server_timed_out">服务器连接超时</string>
 </resources>

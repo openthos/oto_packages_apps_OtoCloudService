@@ -54,6 +54,7 @@ public class SeafItemAdapter extends BaseAdapter {
     public static final int SORT_ORDER_DESCENDING = 12;
 
     public void setItemsAndRefresh(List items) {
+        SeafileActivity.mHandler.sendEmptyMessage(3);
         this.items = items;
         refresh();
     }
@@ -173,6 +174,7 @@ public class SeafItemAdapter extends BaseAdapter {
         } else {
             viewHolder.downloadStatusIcon.setVisibility(View.GONE);
             viewHolder.progressBar.setVisibility(View.GONE);
+            viewHolder.icon.setImageResource(dirent.getIcon());
 //            setFileView(dirent, viewHolder, position);
         }
         viewHolder.container.setTag(dirent);

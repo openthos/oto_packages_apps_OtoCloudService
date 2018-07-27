@@ -86,17 +86,25 @@ public class GenericListener implements View.OnTouchListener{
     }
 
     public void open(Object seaf) {
-        if (mNavContext == null) {
-            mNavContext = SeafileActivity.mNavContext;
-        }
-        if (seaf instanceof SeafRepo) {
-            openLibrary((SeafRepo) seaf);
-        } else if (seaf instanceof SeafDirent) {
-            openFile((SeafDirent) seaf);
+        if (!Utils.isNetworkOn()) {
+            ToastUtil.showSingletonToast(SeafileActivity.mActivity,
+                    SeafileActivity.mActivity.getString(R.string.network_down));
+            SeafileActivity.mActivity.showDirentError();
+        } else {
+            if (mNavContext == null) {
+                mNavContext = SeafileActivity.mNavContext;
+            }
+            if (seaf instanceof SeafRepo) {
+                openLibrary((SeafRepo) seaf);
+            } else if (seaf instanceof SeafDirent) {
+                openFile((SeafDirent) seaf);
+            }
         }
     }
 
     private void openLibrary(SeafRepo seafRepo) {
+        SeafileActivity.mLoadingDialog = new LoadingDialog(SeafileActivity.mActivity);
+        SeafileActivity.mLoadingDialog.show();
         mCurParent = seafRepo;
         mNavContext.setDirPermission(seafRepo.permission);
         mNavContext.setRepoID(seafRepo.id);
@@ -107,6 +115,8 @@ public class GenericListener implements View.OnTouchListener{
 
     private void openFile(SeafDirent seafDirent) {
         if (seafDirent.isDir()) {
+            SeafileActivity.mLoadingDialog = new LoadingDialog(SeafileActivity.mActivity);
+            SeafileActivity.mLoadingDialog.show();
             mCurParent = seafDirent;
             String currentPath = mNavContext.getDirPath();
             String newPath = currentPath.endsWith("/") ?

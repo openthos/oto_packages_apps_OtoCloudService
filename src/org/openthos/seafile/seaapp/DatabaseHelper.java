@@ -496,34 +496,34 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public String getCachedDirents(String repoID, String path) {
-        String[] projection = {
-            DIRENTS_CACHE_COLUMN_DIR_ID
-        };
-
-        String selectClause = String.format("%s = ? and %s = ?",
-                                            DIRENTS_CACHE_COLUMN_REPO_ID,
-                                            DIRENTS_CACHE_COLUMN_PATH);
-
-        String[] selectArgs = { repoID, path };
-
-        Cursor cursor = database.query(
-            DIRENTS_CACHE_TABLE_NAME,
-            projection,
-            selectClause,
-            selectArgs,
-            null,   // don't group the rows
-            null,   // don't filter by row groups
-            null);  // The sort order
-
-        if (!cursor.moveToFirst()) {
-            cursor.close();
+//        String[] projection = {
+//            DIRENTS_CACHE_COLUMN_DIR_ID
+//        };
+//
+//        String selectClause = String.format("%s = ? and %s = ?",
+//                                            DIRENTS_CACHE_COLUMN_REPO_ID,
+//                                            DIRENTS_CACHE_COLUMN_PATH);
+//
+//        String[] selectArgs = { repoID, path };
+//
+//        Cursor cursor = database.query(
+//            DIRENTS_CACHE_TABLE_NAME,
+//            projection,
+//            selectClause,
+//            selectArgs,
+//            null,   // don't group the rows
+//            null,   // don't filter by row groups
+//            null);  // The sort order
+//
+//        if (!cursor.moveToFirst()) {
+//            cursor.close();
             return null;
-        }
-
-        String dirID = cursor.getString(0);
-        cursor.close();
-
-        return dirID;
+//        }
+//
+//        String dirID = cursor.getString(0);
+//        cursor.close();
+//
+//        return dirID;
     }
 
     /**

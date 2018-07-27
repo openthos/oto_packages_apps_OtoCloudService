@@ -71,12 +71,7 @@ public class SeafRepo implements SeafItem {
 
     @Override
     public int getIcon() {
-        if (encrypted)
-            return R.drawable.repo_encrypted;
-        if (!hasWritePermission())
-            return R.drawable.repo_readonly;
-
-        return R.drawable.repo;
+        return R.drawable.folder;
     }
 
 //    public boolean canLocalDecrypt() {

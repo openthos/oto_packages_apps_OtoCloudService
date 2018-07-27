@@ -114,10 +114,10 @@ public class FileDialog extends Dialog {
         mButtonCancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (mTaskID > 0) {
-                    mTransferService.cancelDownloadTask(mTaskID);
-                    mTransferService.cancelNotification();
-                }
+//                if (mTaskID > 0) {
+//                    mTransferService.cancelDownloadTask(mTaskID);
+//                    mTransferService.cancelNotification();
+//                }
 //                if (mTransferService != null) {
 //                    SeafileActivity.mActivity.unbindService(mConnection);
 //                    mTransferService = null;
