@@ -150,6 +150,9 @@ public class SeafileService extends Service {
                 postDelayedThread();
                 return;
             }
+            Intent intent = new Intent(SeafileService.this, RecoveryService.class);
+            intent.putExtra("backup", true);
+            startService(intent);
             mAccount = new SeafileAccount();
             mAccount.mUserName = SeafileUtils.mUserId;
             mConsole = new SeafileUtils.SeafileSQLConsole(SeafileService.this);
@@ -483,6 +486,9 @@ public class SeafileService extends Service {
 
         @Override
         protected void onPostExecute(Void avoid) {
+            Intent intent = new Intent(SeafileService.this, RecoveryService.class);
+            intent.putExtra("restore", true);
+            startService(intent);
         }
     }
 
@@ -610,12 +616,27 @@ public class SeafileService extends Service {
             mSp.edit().putString("user", "").putString("password", "").commit();
             mAccount = null;
             SeafileUtils.stop();
-            //stopTimer();
+            if (mStatusTask != null) {
+                mStatusTask.cancel();
+            }
+            if (mStatusTimer != null) {
+                mStatusTimer.cancel();
+            }
+            Intent intent = new Intent(SeafileService.this, RecoveryService.class);
+            intent.putExtra("timer", true);
+            startService(intent);
             if (mInitLibrarysThread != null) {
                 mInitLibrarysThread = null;
             }
             mScheduledService.shutdown();
             mScheduledService = null;
+            getSharedPreferences("config", Context.MODE_PRIVATE).edit()
+                    .putBoolean("wallpaper", false)
+                    .putBoolean("wifi", false)
+                    .putBoolean("appdata", false)
+                    .putBoolean("startupmenu", false)
+                    .putBoolean("browser", false)
+                    .putBoolean("appstore", false).commit();
         }
 
 
@@ -784,7 +805,7 @@ public class SeafileService extends Service {
                         }
                     }
                     break;
-                case ChangeUrlDialog.MSG_CHANGE_URL:
+                case OpenthosIDActivity.MSG_CHANGE_URL:
                     mSp.edit().putString("url", SeafileUtils.mOpenthosUrl).commit();
                     for (IBinder iBinder : mIBinders) {
                         Parcel _data = Parcel.obtain();

@@ -9,6 +9,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageInfo;
 import android.content.pm.ResolveInfo;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Binder;
@@ -62,12 +63,38 @@ public class RecoveryService extends Service {
     private Timer mTimer;
     private AutoBackupTask mAutoTask;
     private boolean mIsTimer;
+    public SharedPreferences mSp;
     public static String mConfigPath;
 
     @Override
     public void onCreate() {
         super.onCreate();
         mPackageManager = getPackageManager();
+        mSp = getSharedPreferences("config", Context.MODE_PRIVATE);
+        mWallpaper = mSp.getBoolean("wallpaper", false);
+        mWifi = mSp.getBoolean("wifi", false);
+        mAppdata = mSp.getBoolean("appdata", false);
+        mStartupmenu = mSp.getBoolean("startupmenu", false);
+        mBrowser = mSp.getBoolean("browser", false);
+        mAppstore = mSp.getBoolean("appstore", false);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent != null) {
+            boolean restore = intent.getBooleanExtra("restore", false);
+            boolean backup = intent.getBooleanExtra("backup", false);
+            boolean timer = intent.getBooleanExtra("timer", false);
+            if (restore) {
+                restoreFinish();
+            } else if (backup) {
+                stopTimer();
+                startTimer();
+            } else if (timer) {
+                stopTimer();
+            }
+        }
+        return super.onStartCommand(intent, flags, startId);
     }
 
     @Override
@@ -186,6 +213,8 @@ public class RecoveryService extends Service {
                     "org.openthos.appstore.download.DownloadService"));
             intent.putStringArrayListExtra("packageNames", pkgNames);
             startService(intent);
+        } else {
+            restoreFinish();
         }
         mImportBusy = false;
     }
@@ -208,6 +237,12 @@ public class RecoveryService extends Service {
         mAppstore = appstore;
         mSyncBrowsers = syncBrowsers;
         mSyncAppdata = syncAppdata;
+        mSp.edit().putBoolean("wallpaper", wallpaper)
+                .putBoolean("wifi", wifi)
+                .putBoolean("appdata", appdata)
+                .putBoolean("startupmenu", startupmenu)
+                .putBoolean("browser", browser)
+                .putBoolean("appstore", appstore).commit();
         if (mIsTimer) {
             if (wallpaper) {
                 exportWallpaperFiles();
@@ -352,6 +387,49 @@ public class RecoveryService extends Service {
         }
     }
 
+    private void restoreFinish(){
+        if (mTempStartupMenu) {
+            List<String> packages = new ArrayList();
+            packages.add(SYSTEM_PATH_STATUSBAR);
+            importFiles(packages, "/");
+            new Handler().post(new Runnable() {
+                public void run(){
+                    Process pro = null;
+                    BufferedReader in = null;
+                    ArrayList<String> temp = new ArrayList();
+                    try {
+                        pro = Runtime.getRuntime().exec(new String[]{"su", "-c", "netcfg"});
+                        in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
+                        String line;
+
+                        while ((line = in.readLine()) != null) {
+                            String tempStr = line.split("\\s+")[0];
+                            if (tempStr.startsWith("eth")) {
+                                temp.add(tempStr);
+                            }
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } finally {
+                        if (in != null) {
+                            try {
+                                in.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                    StringBuffer sb = new StringBuffer();
+                    for (String str : temp) {
+                        sb.append("netcfg ").append(str).append(" down;");
+                    }
+                    SeafileUtils.exec(new String[]{"su", "-c",
+                            sb.toString() + "kill " + Jni.nativeKillPid()});
+                }
+            });
+        }
+    }
+
     public void startTimer() {
         mTimer = new Timer();
         mAutoTask = new AutoBackupTask();
@@ -376,5 +454,11 @@ public class RecoveryService extends Service {
             saveSettings(mWallpaper, mWifi, mAppdata, mSyncAppdata,
                     mStartupmenu, mBrowser, mSyncBrowsers, mAppstore);
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        stopTimer();
+        super.onDestroy();
     }
 }

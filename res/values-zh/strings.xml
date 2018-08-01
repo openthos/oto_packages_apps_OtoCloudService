@@ -43,4 +43,21 @@
     <string name="cloudfolder_path">data/sea/data/sdcard/cloudFolder/</string>
     <string name="export_confirm_dialog_info">是否确定将当前设备相关信息同步到您的账户云服务上？</string>
     <string name="toast_network_not_connect">请检查网络连接</string>
+
+    <string name="account_email">邮箱</string>
+    <string name="account_user_password">密码</string>
+    <string name="account_bind">绑定OpenthosID</string>
+    <string name="account_unbund">解除OpenthosID绑定</string>
+    <string name="account_judge">这将解除所有媒体和数据的绑定,并还原所有设置,是否继续？</string>
+    <string name="account_user_register">注册</string>
+    <string name="account_yes">是</string>
+    <string name="account_no">否</string>
+    <string name="account_dialog_cancel">取消</string>
+    <string name="account_register">注册OpenthosID</string>
+    <string name="toast_register_successful">注册成功</string>
+    <string name="toast_registe_failed">注册失败（邮箱格式错误或邮箱被占用）</string>
+    <string name="toast_bind_failed">绑定失败！</string>
+    <string name="openthos_id_settings_title">openthos ID</string>
+    <string name="openthos_id">openthosId</string>
+    <string name="toast_relogin">请重新登录</string>
 </resources>

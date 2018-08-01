@@ -30,7 +30,6 @@ import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.support.v4.app.FragmentActivity;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -54,7 +53,7 @@ import java.util.ArrayList;
 import org.openthos.seafile.ISeafileService;
 import org.openthos.seafile.R;
 
-public class RecoveryActivity extends FragmentActivity {
+public class RecoveryActivity extends Activity {
     private Switch mSwitchWallpaper;
     private Switch mSwitchWifi;
     private Switch mSwitchAppdata;

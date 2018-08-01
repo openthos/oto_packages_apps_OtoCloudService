@@ -64,6 +64,14 @@
             </intent-filter>
         </activity>
 
+        <activity android:name="org.openthos.seafile.OpenthosIDActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Settings">
+            <intent-filter>
+                <action android:name="org.openthos.seafile.OPENTHOSID_ACTIVITY" />
+            </intent-filter>
+        </activity>
+
         <service android:name="org.openthos.seafile.RecoveryService" > </service>
 
         <service android:name=".seaapp.transfer.TransferService" > </service>

@@ -14,7 +14,6 @@ import android.widget.TextView;
 import org.openthos.seafile.R;
 
 public class ChangeUrlDialog extends Dialog {
-    public static final int MSG_CHANGE_URL = 0x1005;
     private Context mContext;
     private String mUrl = SeafileUtils.mOpenthosUrl;
     private ButtonClickListener mClickListener;
@@ -64,7 +63,7 @@ public class ChangeUrlDialog extends Dialog {
                 case R.id.confirm:
                     if (!SeafileUtils.mOpenthosUrl.equals(mUrl)) {
                         SeafileUtils.mOpenthosUrl = mUrl;
-                        mHandler.sendEmptyMessage(MSG_CHANGE_URL);
+                        mHandler.sendEmptyMessage(OpenthosIDActivity.MSG_CHANGE_URL);
                     }
                     dismiss();
                     break;

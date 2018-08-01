@@ -7,4 +7,5 @@
     <dimen name="dialog_property_font_size">12sp</dimen>
     <dimen name="actionbar_size">65dip</dimen>
     <dimen name="actionbar_subsettings_contentInsetStart">130dp</dimen>
+    <dimen name="settings_side_margin">112dip</dimen>
 </resources>
