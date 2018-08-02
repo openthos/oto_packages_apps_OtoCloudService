@@ -23,7 +23,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -36,7 +35,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.openthos.seafile.seaapp.httputils.RequestManager;
-import org.openthos.seafile.seaapp.ssl.SSLTrustManager;
 import org.openthos.seafile.seaapp.HttpRequest.HttpRequestException;
 import org.openthos.seafile.R;
 
@@ -54,9 +52,11 @@ public class SeafConnection {
     private static final int READ_TIMEOUT = 30000;
 
     private Account account;
+    private SeafileActivity mActivity;
 
-    public SeafConnection(Account act) {
+    public SeafConnection(Account act, SeafileActivity activity) {
         account = act;
+        mActivity = activity;
     }
 
     public Account getAccount() {
@@ -93,7 +93,6 @@ public class SeafConnection {
             // This is handled by SSLTrustManager and CertsManager
             req.trustAllHosts();
             HttpsURLConnection sconn = (HttpsURLConnection) conn;
-            sconn.setSSLSocketFactory(SSLTrustManager.instance().getSSLSocketFactory(account));
         }
 
         return req;
@@ -178,17 +177,15 @@ public class SeafConnection {
             req.form("password", passwd);
 
             String appVersion = "";
-//            Context context = SeadroidApplication.getAppContext();
-            Context context = SeafileActivity.mActivity;
             try {
-                PackageInfo pInfo = context.getPackageManager().
-                        getPackageInfo(context.getPackageName(), 0);
+                PackageInfo pInfo = mActivity.getPackageManager().
+                        getPackageInfo(mActivity.getPackageName(), 0);
                 appVersion = pInfo.versionName;
             } catch (NameNotFoundException e) {
                 // ignore
             }
 
-            String deviceId = Secure.getString(context.getContentResolver(),
+            String deviceId = Secure.getString(mActivity.getContentResolver(),
                     Secure.ANDROID_ID);
 
             req.form("platform", "android");
@@ -210,44 +207,40 @@ public class SeafConnection {
             return true;
         } catch (SeafException e) {
             final int code = e.getCode();
-            SeafileActivity.mHandler.sendEmptyMessage(3);
-            SeafileActivity.mActivity.runOnUiThread(new Runnable() {
+            mActivity.getHandler().sendEmptyMessage(3);
+            mActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     switch (code) {
                         case 403:
-                            ToastUtil.showSingletonToast(SeafileActivity.mActivity,
-                                    SeafileActivity.mActivity.getString(
-                                            R.string.resource_not_available));
-                            SeafileActivity.mActivity.showRepoError();
+                            ToastUtil.showSingletonToast(mActivity,
+                                    mActivity.getString(R.string.resource_not_available));
+                            mActivity.showRepoError();
                             break;
                         case 404:
-                            ToastUtil.showSingletonToast(SeafileActivity.mActivity,
-                                    SeafileActivity.mActivity.getString(
-                                            R.string.resource_not_found));
-                            SeafileActivity.mActivity.showRepoError();
+                            ToastUtil.showSingletonToast(mActivity,
+                                    mActivity.getString(R.string.resource_not_found));
+                            mActivity.showRepoError();
                             break;
                     }
-                    android.util.Log.i("chenp", code + "");
                 }
             });
             throw e;
         } catch (HttpRequest.HttpRequestException e) {
             final String message = e.getMessage();
-            SeafileActivity.mHandler.sendEmptyMessage(3);
-            SeafileActivity.mActivity.runOnUiThread(new Runnable() {
+            mActivity.getHandler().sendEmptyMessage(3);
+            mActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     if (message.contains("ECONNREFUSED")) {
-                        ToastUtil.showSingletonToast(SeafileActivity.mActivity,
-                                SeafileActivity.mActivity.getString(R.string.server_conn_refused));
-                        SeafileActivity.mActivity.showRepoError();
+                        ToastUtil.showSingletonToast(mActivity,
+                                mActivity.getString(R.string.server_conn_refused));
+                        mActivity.showRepoError();
                     } else if (message.contains("SocketTimeoutException")) {
-                        ToastUtil.showSingletonToast(SeafileActivity.mActivity,
-                                SeafileActivity.mActivity.getString(R.string.server_timed_out));
-                        SeafileActivity.mActivity.showRepoError();
+                        ToastUtil.showSingletonToast(mActivity,
+                                mActivity.getString(R.string.server_timed_out));
+                        mActivity.showRepoError();
                     }
-                    android.util.Log.i("chenp", message);
                 }
             });
 //            throw getSeafExceptionFromHttpRequestException(e);
@@ -429,7 +422,7 @@ public class SeafConnection {
 //    }
 
     private static String encodeUriComponent(String src) throws UnsupportedEncodingException {
-        return src == null ? src : URLEncoder.encode(src, "UTF-8");
+        return URLEncoder.encode(src, "UTF-8");
     }
 
     /**
@@ -479,38 +472,39 @@ public class SeafConnection {
 
         } catch (SeafException e) {
             final int code = e.getCode();
-            SeafileActivity.mHandler.sendEmptyMessage(3);
-            SeafileActivity.mActivity.runOnUiThread(new Runnable() {
+            mActivity.getHandler().sendEmptyMessage(3);
+            mActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     switch (code) {
                         case 403:
-                            ToastUtil.showSingletonToast(SeafileActivity.mActivity,
-                                    SeafileActivity.mActivity.getString(
-                                            R.string.resource_not_available));
+                            ToastUtil.showSingletonToast(mActivity,
+                                    mActivity.getString(R.string.resource_not_available));
+                            mActivity.showDirentError();
                             break;
                         case 404:
-                            ToastUtil.showSingletonToast(SeafileActivity.mActivity,
-                                    SeafileActivity.mActivity.getString(
+                            ToastUtil.showSingletonToast(mActivity,
+                                    mActivity.getString(
                                             R.string.resource_not_found));
+                            mActivity.showDirentError();
                             break;
                     }
-                    SeafileActivity.mActivity.showDirentError();
                 }
             });
             final String message = e.getMessage();
-            SeafileActivity.mHandler.sendEmptyMessage(3);
-            SeafileActivity.mActivity.runOnUiThread(new Runnable() {
+            mActivity.getHandler().sendEmptyMessage(3);
+            mActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     if (message.contains("ECONNREFUSED")) {
-                        ToastUtil.showSingletonToast(SeafileActivity.mActivity,
-                                SeafileActivity.mActivity.getString(R.string.server_conn_refused));
+                        ToastUtil.showSingletonToast(mActivity,
+                                mActivity.getString(R.string.server_conn_refused));
+                        mActivity.showDirentError();
                     } else if (message.contains("SocketTimeoutException")) {
-                        ToastUtil.showSingletonToast(SeafileActivity.mActivity,
-                                SeafileActivity.mActivity.getString(R.string.server_timed_out));
+                        ToastUtil.showSingletonToast(mActivity,
+                                mActivity.getString(R.string.server_timed_out));
+                        mActivity.showDirentError();
                     }
-                    SeafileActivity.mActivity.showDirentError();
                 }
             });
             throw e;
@@ -690,7 +684,7 @@ public class SeafConnection {
                 }
             }
 
-            File tmp = DataManager.createTempFile();
+            File tmp = mActivity.getDataManager().createTempFile();
             // Log.d(DEBUG_TAG, "write to " + tmp.getAbsolutePath());
             if (monitor == null) {
                 req.receive(tmp);

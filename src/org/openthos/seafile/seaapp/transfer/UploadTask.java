@@ -1,14 +1,12 @@
 package org.openthos.seafile.seaapp.transfer;
 
-import android.util.Log;
-
-
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
 import org.openthos.seafile.seaapp.Account;
 import org.openthos.seafile.seaapp.DataManager;
+import org.openthos.seafile.seaapp.SeafileActivity;
 
 /**
  * Upload task
@@ -24,10 +22,11 @@ public class UploadTask extends TransferTask {
     private UploadStateListener uploadStateListener;
 
     private DataManager dataManager;
+    private SeafileActivity activity;
 
     public UploadTask(int taskID, Account account, String repoID, String repoName,
                       String dir, String filePath, boolean isUpdate, boolean isCopyToLocal, boolean byBlock,
-                      UploadStateListener uploadStateListener) {
+                      UploadStateListener uploadStateListener, SeafileActivity activity) {
         super(taskID, account, repoName, repoID, filePath);
         this.dir = dir;
         this.isUpdate = isUpdate;
@@ -36,7 +35,7 @@ public class UploadTask extends TransferTask {
         this.uploadStateListener = uploadStateListener;
         this.totalSize = new File(filePath).length();
         this.finished = 0;
-        this.dataManager = new DataManager(account);
+        this.dataManager = activity.getDataManager();
     }
 
     public UploadTaskInfo getTaskInfo() {
@@ -69,35 +68,6 @@ public class UploadTask extends TransferTask {
 
     @Override
     protected File doInBackground(Void... params) {
-//        try {
-//            ProgressMonitor monitor = new ProgressMonitor() {
-//                @Override
-//                public void onProgressNotify(long uploaded, boolean updateTotal) {
-//                    publishProgress(uploaded);
-//                }
-//
-//                @Override
-//                public boolean isCancelled() {
-//                    return UploadTask.this.isCancelled();
-//                }
-//            };
-//
-//            if (byBlock) {
-//                dataManager.uploadByBlocks(repoName, repoID, dir, path, monitor, isUpdate, isCopyToLocal);
-//            } else {
-//                dataManager.uploadFile(repoName, repoID, dir, path, monitor, isUpdate, isCopyToLocal);
-//            }
-//
-//        } catch (SeafException e) {
-//            Log.e(DEBUG_TAG, "Upload exception " + e.getCode() + " " + e.getMessage());
-//            e.printStackTrace();
-//            err = e;
-//        } catch (NoSuchAlgorithmException | IOException e) {
-//            Log.e(DEBUG_TAG, "Upload exception " + e.getMessage());
-//            err = SeafException.unknownException;
-//            e.printStackTrace();
-//        }
-
         return null;
     }
 

@@ -1,5 +1,6 @@
 package org.openthos.seafile.seaapp;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -32,6 +33,7 @@ class NewDirTask extends TaskDialog.Task {
     }
 }
 
+@SuppressLint("ValidFragment")
 public class NewDirDialog extends TaskDialog {
 
     private static final String STATE_TASK_REPO_ID = "new_dir_task.repo_id";
@@ -44,6 +46,14 @@ public class NewDirDialog extends TaskDialog {
 
     private String repoID;
     private String parentDir;
+    private SeafileActivity mActivity;
+    private boolean isContinue;
+
+    @SuppressLint("ValidFragment")
+    public NewDirDialog(SeafileActivity activity) {
+        super();
+        mActivity = activity;
+    }
 
     public String getNewDirName() {
         return dirNameText.getText().toString().trim();
@@ -56,11 +66,7 @@ public class NewDirDialog extends TaskDialog {
     }
 
     private DataManager getDataManager() {
-        if (dataManager == null) {
-            dataManager = new DataManager(account);
-        }
-
-        return dataManager;
+        return mActivity.getDataManager();
     }
 
     @Override
@@ -89,6 +95,10 @@ public class NewDirDialog extends TaskDialog {
 
         if (dirName.length() == 0) {
             String err = getActivity().getResources().getString(R.string.dir_name_empty);
+            throw new Exception(err);
+        } else if (!isContinue && mActivity.getCurDirNames().contains(dirName)) {
+            isContinue = true;
+            String err = getActivity().getResources().getString(R.string.dir_name_exists);
             throw new Exception(err);
         }
     }

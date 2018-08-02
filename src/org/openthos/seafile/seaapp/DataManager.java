@@ -52,15 +52,18 @@ public class DataManager {
 
     private SeafConnection sc;
     private Account account;
+    private SeafileActivity mActivity;
     private static DatabaseHelper dbHelper;
-    private static final StorageManager storageManager = StorageManager.getInstance();
+    private StorageManager storageManager = new StorageManagerLollipop(mActivity);
 
     private List<SeafRepo> reposCache = null;
 
-    public DataManager(Account act) {
+    public DataManager(Account act, SeafileActivity activity) {
         account = act;
-        sc = new SeafConnection(act);
-        dbHelper = DatabaseHelper.getDatabaseHelper();
+        mActivity = activity;
+        sc = new SeafConnection(act, mActivity);
+        dbHelper = new DatabaseHelper(mActivity);
+        dbHelper.database = dbHelper.getWritableDatabase();
     }
 
     /**
@@ -70,25 +73,8 @@ public class DataManager {
      * @return a newly created file.
      * @throws IOException if the file could not be created.
      */
-    public static File createTempFile() throws IOException {
+    public File createTempFile() throws IOException {
         return File.createTempFile("file-", ".tmp", storageManager.getTempDir());
-    }
-
-    /**
-     * Creates and returns a temporary directory. It is guarantied that the directory is unique and
-     * empty. The caller has to delete that directory himself.
-     *
-     * @return a newly created directory.
-     * @throws IOException if the directory could not be created.
-     */
-    public static File createTempDir() throws IOException {
-        String dirName = "dir-" + UUID.randomUUID();
-        File dir = new File(storageManager.getTempDir(), dirName);
-        if (dir.mkdir()) {
-            return dir;
-        } else {
-            throw new IOException("Could not create temp directory");
-        }
     }
 
     public String getThumbnailLink(String repoName, String repoID, String filePath, int size) {
@@ -159,17 +145,17 @@ public class DataManager {
 
     private File getFile4RepoCache(String repoID) {
         String filename = "repo-" + (account.server + account.email + repoID).hashCode() + ".dat";
-        return new File(storageManager.getJsonCacheDir(), filename);
+        return new File(storageManager.getJsonCacheDir(mActivity), filename);
     }
 
     private File getFileForReposCache() {
         String filename = "repos-" + (account.server + account.email).hashCode() + ".dat";
-        return new File(storageManager.getJsonCacheDir(), filename);
+        return new File(storageManager.getJsonCacheDir(mActivity), filename);
     }
 
     private File getFileForDirentCache(String dirID) {
         String filename = "dirent-" + dirID + ".dat";
-        return new File(storageManager.getJsonCacheDir() + "/" + filename);
+        return new File(storageManager.getJsonCacheDir(mActivity) + "/" + filename);
     }
 
 //    private File getFileForBlockCache(String blockId) {
@@ -290,7 +276,8 @@ public class DataManager {
             ArrayList<SeafRepo> repos = new ArrayList<>();
             for (int i = 0; i < array.length(); i++) {
                 JSONObject obj = array.getJSONObject(i);
-                SeafRepo repo = SeafRepo.fromJson(obj);
+                SeafRepo repo = new SeafRepo(mActivity);
+                repo.fromJson(obj);
                 if (repo != null)
                     repos.add(repo);
             }
@@ -524,7 +511,8 @@ public class DataManager {
             ArrayList<SeafDirent> dirents = new ArrayList<>();
             for (int i = 0; i < array.length(); i++) {
                 JSONObject obj = array.getJSONObject(i);
-                SeafDirent de = SeafDirent.fromJson(obj);
+                SeafDirent de = new SeafDirent(mActivity);
+                de.fromJson(obj);
                 if (de != null)
                     dirents.add(de);
             }
@@ -647,9 +635,6 @@ public class DataManager {
     public void addCachedFile(String repoName, String repoID, String path, String fileID, File file) {
         // notify Android Gallery that a new file has appeared
 
-        // file does not always reside in Seadroid directory structure (e.g. camera upload)
-        if (file.exists())
-            storageManager.notifyAndroidGalleryFileChange(file);
 
         SeafCachedFile item = new SeafCachedFile();
         item.repoName = repoName;
@@ -1086,11 +1071,11 @@ public class DataManager {
         }
         StringBuilder sb = new StringBuilder();
 //        sb.append(SeadroidApplication.getAppContext().getString(R.string.pull_to_refresh_last_update));
-        sb.append(SeafileActivity.mActivity.getString(R.string.pull_to_refresh_last_update));
+        sb.append(mActivity.getString(R.string.pull_to_refresh_last_update));
 
         if (seconds < 60) {
 //            sb.append(SeadroidApplication.getAppContext().getString(R.string.pull_to_refresh_last_update_seconds_ago, seconds));
-            sb.append(SeafileActivity.mActivity.getString(R.string.pull_to_refresh_last_update_seconds_ago, seconds));
+            sb.append(mActivity.getString(R.string.pull_to_refresh_last_update_seconds_ago, seconds));
         } else {
             int minutes = (seconds / 60);
             if (minutes > 60) {
@@ -1100,12 +1085,12 @@ public class DataManager {
                     sb.append(ptrDataFormat.format(date));
                 } else {
 //                    sb.append(SeadroidApplication.getAppContext().getString(R.string.pull_to_refresh_last_update_hours_ago, hours));
-                    sb.append(SeafileActivity.mActivity.getString(R.string.pull_to_refresh_last_update_hours_ago, hours));
+                    sb.append(mActivity.getString(R.string.pull_to_refresh_last_update_hours_ago, hours));
                 }
 
             } else {
 //                sb.append(SeadroidApplication.getAppContext().getString(R.string.pull_to_refresh_last_update_minutes_ago, minutes));
-                sb.append(SeafileActivity.mActivity.getString(R.string.pull_to_refresh_last_update_minutes_ago, minutes));
+                sb.append(mActivity.getString(R.string.pull_to_refresh_last_update_minutes_ago, minutes));
             }
         }
         return sb.toString();

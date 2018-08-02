@@ -525,4 +525,6 @@
   <string name="resource_not_found">资溪找到</string>
   <string name="server_conn_refused">服务器连接拒绝</string>
   <string name="server_timed_out">服务器连接超时</string>
+  <string name="file_name_exists">文件名已存在, 你想继续吗?</string>
+  <string name="dir_name_exists">文件夹名已存在, 你想继续吗?</string>
 </resources>

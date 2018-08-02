@@ -105,19 +105,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     // Use only single dbHelper to prevent multi-thread issue and db is closed exception
     // Reference http://stackoverflow.com/questions/2493331/what-are-the-best-practices-for-sqlite-on-android
     private static DatabaseHelper dbHelper = null;
-    private SQLiteDatabase database = null;
+    public SQLiteDatabase database = null;
+    private SeafileActivity mActivity;
 
-    public static synchronized DatabaseHelper getDatabaseHelper() {
-        if (dbHelper != null)
-            return dbHelper;
-//        dbHelper = new DatabaseHelper(SeadroidApplication.getAppContext());
-        dbHelper = new DatabaseHelper(SeafileActivity.mActivity);
-        dbHelper.database = dbHelper.getWritableDatabase();
-        return dbHelper;
-    }
-
-    private DatabaseHelper(Context context) {
-        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    public DatabaseHelper(SeafileActivity activity) {
+        super(activity, DATABASE_NAME, null, DATABASE_VERSION);
+        mActivity = activity;
     }
 
     @Override
@@ -138,7 +131,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("CREATE INDEX account_index ON " + FILECACHE_TABLE_NAME
                 + " (" + FILECACHE_COLUMN_ACCOUNT + ");");
     }
-    
+
     private void createRepoDirTable(SQLiteDatabase db) {
         db.execSQL(SQL_CREATE_REPODIR_TABLE);
 
@@ -192,7 +185,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public final File getJsonCacheDir() {
-        File base = SeafileActivity.mActivity.getCacheDir();
+        File base = mActivity.getCacheDir();
         return getDirectoryCreateIfNeeded(base);
     }
 
@@ -261,7 +254,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         c.close();
         return item;
     }
-    
+
     // XXX: Here we can use SQLite3  "INSERT OR REPLACE" for convience
     public void saveFileCacheItem(SeafCachedFile item, DataManager dataManager) {
         SeafCachedFile old = getFileCacheItem(item.repoID, item.path, dataManager);

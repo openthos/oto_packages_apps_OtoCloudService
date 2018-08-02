@@ -25,9 +25,11 @@ public class MenuDialog extends Dialog implements ListView.OnItemClickListener {
     private List<String> mDatas;
     private Object mSeaf;
     private String mark = "OtoFile:///";
+    private SeafileActivity mActivity;
 
     public MenuDialog(Context context, String type) {
         super(context);
+        mActivity = (SeafileActivity) context;
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.dialog_menu);
         mListView = (ListView) findViewById(R.id.dialog_base_lv);
@@ -65,24 +67,24 @@ public class MenuDialog extends Dialog implements ListView.OnItemClickListener {
         mDatas = new ArrayList();
         switch (type) {
             case "library":
-                mDatas.add(SeafileActivity.mActivity.getString(R.string.rename_repo));
-                mDatas.add(SeafileActivity.mActivity.getString(R.string.delete_repo_title));
-                mDatas.add(SeafileActivity.mActivity.getString(R.string.share_repo));
+                mDatas.add(mActivity.getString(R.string.rename_repo));
+                mDatas.add(mActivity.getString(R.string.delete_repo_title));
+                mDatas.add(mActivity.getString(R.string.share_repo));
                 break;
             case "library_blank":
-                mDatas.add(SeafileActivity.mActivity.getString(R.string.create_new_repo));
-                mDatas.add(SeafileActivity.mActivity.getString(R.string.refresh_repo));
+                mDatas.add(mActivity.getString(R.string.create_new_repo));
+                mDatas.add(mActivity.getString(R.string.refresh_repo));
                 break;
             case "repo":
-                mDatas.add(SeafileActivity.mActivity.getString(R.string.file_share));
-                mDatas.add(SeafileActivity.mActivity.getString(R.string.rename_file));
-                mDatas.add(SeafileActivity.mActivity.getString(R.string.delete));
+                mDatas.add(mActivity.getString(R.string.file_share));
+                mDatas.add(mActivity.getString(R.string.rename_file));
+                mDatas.add(mActivity.getString(R.string.delete));
                 break;
             case "repo_blank":
-                mDatas.add(SeafileActivity.mActivity.getString(R.string.create_new_file));
-                mDatas.add(SeafileActivity.mActivity.getString(R.string.create_new_dir));
-                mDatas.add(SeafileActivity.mActivity.getString(R.string.upload));
-                mDatas.add(SeafileActivity.mActivity.getString(R.string.refresh));
+                mDatas.add(mActivity.getString(R.string.create_new_file));
+                mDatas.add(mActivity.getString(R.string.create_new_dir));
+                mDatas.add(mActivity.getString(R.string.upload));
+                mDatas.add(mActivity.getString(R.string.refresh));
                 break;
         }
         mListView.setAdapter(new MenuDialogAdapter(getContext(), mDatas));
@@ -92,45 +94,42 @@ public class MenuDialog extends Dialog implements ListView.OnItemClickListener {
         mListView.setOnItemClickListener(this);
     }
 
-    private void prepareData(String[] sArr) {
-        for (int i = 0; i < sArr.length; i++) {
-            mDatas.add(sArr[i]);
-        }
-    }
-
     @Override
     public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
         String content = (String) view.getTag();
         SeafDirent dirent = null;
         SeafRepo repo = null;
-        if (SeafileActivity.mActivity.getString(R.string.create_new_repo).equals(content)) {
-            SeafileActivity.mActivity.showNewRepoDialog();
-        } else if (SeafileActivity.mActivity.getString(R.string.rename_repo).equals(content)) {
+        if (mActivity.getString(R.string.create_new_repo).equals(content)) {
+            mActivity.showNewRepoDialog();
+        } else if (mActivity.getString(R.string.rename_repo).equals(content)) {
             repo = (SeafRepo) mSeaf;
-            SeafileActivity.mActivity.showRenameRepoDialog(repo.getID(), repo.getName());
-        } else if (SeafileActivity.mActivity.getString(R.string.delete_repo_title).equals(content)) {
+            mActivity.showRenameRepoDialog(repo.getID(), repo.getName());
+        } else if (mActivity.getString(R.string.delete_repo_title).equals(content)) {
             repo = (SeafRepo) mSeaf;
-            SeafileActivity.mActivity.deleteRepoDialog(repo.getID());
-        } else if (SeafileActivity.mActivity.getString(R.string.create_new_file).equals(content)) {
-            SeafileActivity.mActivity.showNewFileDialog();
-        } else if (SeafileActivity.mActivity.getString(R.string.create_new_dir).equals(content)) {
-            SeafileActivity.mActivity.showNewDirDialog();
-        } else if (SeafileActivity.mActivity.getString(R.string.rename_file).equals(content)) {
+            mActivity.deleteRepoDialog(repo.getID());
+        } else if (mActivity.getString(R.string.create_new_file).equals(content)) {
+            mActivity.mStoredViews.remove(mActivity.mStoredViews.size() - 1);
+            mActivity.showNewFileDialog();
+        } else if (mActivity.getString(R.string.create_new_dir).equals(content)) {
+            mActivity.mStoredViews.remove(mActivity.mStoredViews.size() - 1);
+            mActivity.showNewDirDialog();
+        } else if (mActivity.getString(R.string.rename_file).equals(content)) {
+            mActivity.mStoredViews.remove(mActivity.mStoredViews.size() - 1);
             dirent = (SeafDirent)mSeaf;
-            SeafileActivity.mActivity.showRenameFileDialog(
-                    SeafileActivity.mNavContext.getRepoID(),
-                    Utils.pathJoin(SeafileActivity.mNavContext.getDirPath(), dirent.name),
+            mActivity.showRenameFileDialog(mActivity.getNavContext().getRepoID(),
+                    Utils.pathJoin(mActivity.getNavContext().getDirPath(), dirent.name),
                     dirent.isDir());
-        } else if (SeafileActivity.mActivity.getString(R.string.delete).equals(content)) {
+        } else if (mActivity.getString(R.string.delete).equals(content)) {
+            mActivity.mStoredViews.remove(mActivity.mStoredViews.size() - 1);
             dirent = (SeafDirent)mSeaf;
-            SeafileActivity.mActivity.showDeleteFileDialog(
-                    SeafileActivity.mNavContext.getRepoID(),
-                    Utils.pathJoin(SeafileActivity.mNavContext.getDirPath(), dirent.name),
+            mActivity.showDeleteFileDialog(mActivity.getNavContext().getRepoID(),
+                    Utils.pathJoin(mActivity.getNavContext().getDirPath(), dirent.name),
                     dirent.isDir());
-        } else if (SeafileActivity.mActivity.getString(R.string.file_share).equals(content)) {
+        } else if (mActivity.getString(R.string.file_share).equals(content)) {
             dirent = (SeafDirent) mSeaf;
-            SeafileActivity.mActivity.showShareDialog(dirent);
-        } else if (SeafileActivity.mActivity.getString(R.string.upload).equals(content)) {
+            mActivity.showShareDialog(dirent);
+        } else if (mActivity.getString(R.string.upload).equals(content)) {
+            mActivity.mStoredViews.remove(mActivity.mStoredViews.size() - 1);
             ClipboardManager manager = (ClipboardManager) getContext()
                     .getSystemService(Context.CLIPBOARD_SERVICE);
             CharSequence text = manager.getText();
@@ -141,23 +140,24 @@ public class MenuDialog extends Dialog implements ListView.OnItemClickListener {
                 filePath = split[1];
                 File file = new File(filePath);
                 if (file.exists() && file.isFile()) {
-                    SeafileActivity.mActivity.showUploadFileDialog(filePath);
+                    mActivity.showUploadFileDialog(filePath);
                 } else {
                     ToastUtil.showSingletonToast(getContext(),
-                            SeafileActivity.mActivity.getString(R.string.upload_select_file_tip));
+                            mActivity.getString(R.string.upload_select_file_tip));
                 }
             } else {
                 ToastUtil.showSingletonToast(getContext(),
-                        SeafileActivity.mActivity.getString(R.string.upload_select_file_tip));
+                        mActivity.getString(R.string.upload_select_file_tip));
             }
-        } else if (SeafileActivity.mActivity.getString(R.string.refresh_repo).equals(content)) {
-                SeafileActivity.mActivity.refreshRepo();
-        } else if (SeafileActivity.mActivity.getString(R.string.refresh).equals(content)) {
-                SeafileActivity.mActivity.refreshDirent();
-        } else if (SeafileActivity.mActivity.getString(R.string.share_repo).equals(content)) {
+        } else if (mActivity.getString(R.string.refresh_repo).equals(content)) {
+                mActivity.refreshRepo();
+        } else if (mActivity.getString(R.string.refresh).equals(content)) {
+                mActivity.mStoredViews.remove(mActivity.mStoredViews.size() - 1);
+                mActivity.refreshDirent();
+        } else if (mActivity.getString(R.string.share_repo).equals(content)) {
                 repo = (SeafRepo) mSeaf;
-                WidgetUtils.chooseShareApp(SeafileActivity.mActivity, repo.getID(),
-                        "/", true, SeafileActivity.mAccount, null, null);
+                WidgetUtils.chooseShareApp(mActivity, repo.getID(),
+                        "/", true, mActivity.getAccount(), null, null);
         }
         dismiss();
     }

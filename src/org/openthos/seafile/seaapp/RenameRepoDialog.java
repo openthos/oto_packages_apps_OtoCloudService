@@ -1,5 +1,6 @@
 package org.openthos.seafile.seaapp;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -34,6 +35,7 @@ class RenameRepoTask extends TaskDialog.Task {
     }
 }
 
+@SuppressLint("ValidFragment")
 public class RenameRepoDialog extends TaskDialog {
 
     private final static String STATE_REPO_ID = "rename_repo_dialog.repo_id";
@@ -43,9 +45,15 @@ public class RenameRepoDialog extends TaskDialog {
     private String mRepoID;
     private String mCurrentName;
     private Account mAccount;
-    private DataManager mDataManager;
 
     private EditText mRepoNameText;
+    private SeafileActivity mActivity;
+
+    @SuppressLint("ValidFragment")
+    public RenameRepoDialog(SeafileActivity activity) {
+        super();
+        mActivity = activity;
+    }
 
     public void init(String repoID, String currentName, Account account) {
         mRepoID = repoID;
@@ -54,11 +62,7 @@ public class RenameRepoDialog extends TaskDialog {
     }
 
     private DataManager getDataManager() {
-        if (mDataManager == null) {
-            mDataManager = new DataManager(mAccount);
-        }
-
-        return mDataManager;
+        return mActivity.getDataManager();
     }
 
     private String getNewName() { return mRepoNameText.getText().toString().trim(); }

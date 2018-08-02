@@ -11,14 +11,9 @@ import java.util.Map;
 import org.openthos.seafile.seaapp.Account;
 import org.openthos.seafile.seaapp.ConcurrentAsyncTask;
 import org.openthos.seafile.seaapp.FileDialog;
-import org.openthos.seafile.R;
-import org.openthos.seafile.seaapp.SeafileActivity;
 import org.openthos.seafile.seaapp.Utils;
-import org.openthos.seafile.seaapp.monitor.SeafileObserver;
-import org.openthos.seafile.seaapp.notification.DownloadNotificationProvider;
-
-//import com.google.common.collect.Lists;
-
+import org.openthos.seafile.seaapp.SeafileActivity;
+import org.openthos.seafile.R;
 /**
  * Download task manager
  * <p/>
@@ -29,15 +24,20 @@ public class DownloadTaskManager extends TransferManager implements DownloadStat
     public static final String BROADCAST_FILE_DOWNLOAD_SUCCESS = "downloaded";
     public static final String BROADCAST_FILE_DOWNLOAD_FAILED = "downloadFailed";
     public static final String BROADCAST_FILE_DOWNLOAD_PROGRESS = "downloadProgress";
+    private SeafileActivity mActivity;
 
-    private static DownloadNotificationProvider mNotifProvider;
+    public DownloadTaskManager(SeafileActivity activity) {
+        super();
+        mActivity = activity;
+    }
 
     /**
      * Add a new download task.
      * call this method to execute a task immediately.
      */
     public int addTask(Account account, String repoName, String repoID, String path, long fileSize) {
-        TransferTask task = new DownloadTask(++notificationID, account, repoName, repoID, path, this);
+        TransferTask task = new DownloadTask(
+                ++notificationID, account, repoName, repoID, path, this, mActivity);
         task.totalSize = fileSize;
         TransferTask oldTask = null;
         if (allTaskList.contains(task)) {
@@ -127,30 +127,6 @@ public class DownloadTaskManager extends TransferManager implements DownloadStat
         DownloadTaskInfo info = (DownloadTaskInfo) getTaskInfo(taskID);
         if (info == null)
             return;
-
-        if (mNotifProvider != null)
-            mNotifProvider.updateNotification();
-
-    }
-
-    public void saveNotifProvider(DownloadNotificationProvider provider) {
-        mNotifProvider = provider;
-    }
-
-    public boolean hasNotifProvider() {
-        return mNotifProvider != null;
-    }
-//
-    public DownloadNotificationProvider getNotifProvider() {
-        if (hasNotifProvider())
-            return mNotifProvider;
-        else
-            return null;
-    }
-
-    public void cancelAllDownloadNotification() {
-        if (mNotifProvider != null)
-            mNotifProvider.cancelNotification();
     }
 
     // -------------------------- listener method --------------------//
@@ -159,13 +135,12 @@ public class DownloadTaskManager extends TransferManager implements DownloadStat
         Intent localIntent = new Intent(BROADCAST_ACTION).putExtra("type",
                 BROADCAST_FILE_DOWNLOAD_PROGRESS).putExtra("taskID", taskID);
 //        LocalBroadcastManager.getInstance(SeadroidApplication.getAppContext()).sendBroadcast(localIntent);
-        LocalBroadcastManager.getInstance(SeafileActivity.mActivity).sendBroadcast(localIntent);
+        LocalBroadcastManager.getInstance(mActivity).sendBroadcast(localIntent);
         notifyProgress(taskID);
 
 
     }
 
-    Map<Account, SeafileObserver> observers = new HashMap<>();
     @Override
     public void onFileDownloaded(int taskID) {
         remove(taskID);
@@ -173,9 +148,8 @@ public class DownloadTaskManager extends TransferManager implements DownloadStat
         Intent localIntent = new Intent(BROADCAST_ACTION).putExtra("type",
                 BROADCAST_FILE_DOWNLOAD_SUCCESS).putExtra("taskID", taskID);
 //        LocalBroadcastManager.getInstance(SeadroidApplication.getAppContext()).sendBroadcast(localIntent);
-        LocalBroadcastManager.getInstance(SeafileActivity.mActivity).sendBroadcast(localIntent);
+        LocalBroadcastManager.getInstance(mActivity).sendBroadcast(localIntent);
         notifyProgress(taskID);
-
     }
 
     @Override
@@ -185,7 +159,7 @@ public class DownloadTaskManager extends TransferManager implements DownloadStat
         Intent localIntent = new Intent(BROADCAST_ACTION).putExtra("type",
                 BROADCAST_FILE_DOWNLOAD_FAILED).putExtra("taskID", taskID);
 //        LocalBroadcastManager.getInstance(SeadroidApplication.getAppContext()).sendBroadcast(localIntent);
-        LocalBroadcastManager.getInstance(SeafileActivity.mActivity).sendBroadcast(localIntent);
+        LocalBroadcastManager.getInstance(mActivity).sendBroadcast(localIntent);
         notifyProgress(taskID);
     }
 }

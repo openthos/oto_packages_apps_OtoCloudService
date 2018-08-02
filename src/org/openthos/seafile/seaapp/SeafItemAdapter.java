@@ -10,13 +10,7 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.nostra13.universalimageloader.core.DisplayImageOptions;
-import com.nostra13.universalimageloader.core.ImageLoader;
-import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
-
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.openthos.seafile.R;
 
@@ -28,6 +22,7 @@ public class SeafItemAdapter extends BaseAdapter {
     private boolean actionModeOn;
 
     private SparseBooleanArray mSelectedItemsIds;
+//    private List<Integer> mSelectedItemsPositions = Lists.newArrayList();
     private List<Integer> mSelectedItemsPositions = new ArrayList<>();
 
     public SeafItemAdapter(SeafileActivity activity) {
@@ -54,13 +49,19 @@ public class SeafItemAdapter extends BaseAdapter {
     public static final int SORT_ORDER_DESCENDING = 12;
 
     public void setItemsAndRefresh(List items) {
-        SeafileActivity.mHandler.sendEmptyMessage(3);
-        this.items = items;
+        mActivity.getCurDirNames().clear();
+        mActivity.getCurFileNames().clear();
+        mActivity.getHandler().sendEmptyMessage(3);
+        if (items == null) {
+            this.items.clear();
+        } else {
+            this.items = items;
+        }
         refresh();
     }
 
     public void refresh () {
-        SeafileActivity.mActivity.runOnUiThread(new Runnable() {
+        mActivity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 notifyDataSetChanged();
@@ -90,7 +91,7 @@ public class SeafItemAdapter extends BaseAdapter {
         if (convertView == null) {
             view = LayoutInflater.from(mActivity).inflate(R.layout.list_item, null);
             RelativeLayout container = (RelativeLayout) view.findViewById(R.id.list_item_container);
-            container.setOnTouchListener(new GenericListener());
+            container.setOnTouchListener(new GenericListener(mActivity));
 //            view = LayoutInflater.from(mainActivity).inflate(R.layout.list_item_entry, null);
             TextView title = (TextView) view.findViewById(R.id.list_item_title);
             TextView subtitle = (TextView) view.findViewById(R.id.list_item_subtitle);
@@ -148,7 +149,7 @@ public class SeafItemAdapter extends BaseAdapter {
             view = LayoutInflater.from(mActivity).inflate(R.layout.list_item, null);
 //            view = LayoutInflater.from(mainActivity).inflate(R.layout.list_item_entry, null);
             RelativeLayout container = (RelativeLayout) view.findViewById(R.id.list_item_container);
-            container.setOnTouchListener(new GenericListener());
+            container.setOnTouchListener(new GenericListener(mActivity));
             TextView title = (TextView) view.findViewById(R.id.list_item_title);
             TextView subtitle = (TextView) view.findViewById(R.id.list_item_subtitle);
             ImageView icon = (ImageView) view.findViewById(R.id.list_item_icon);
@@ -164,14 +165,13 @@ public class SeafItemAdapter extends BaseAdapter {
 
         viewHolder.title.setText(dirent.getTitle());
         if (dirent.isDir()) {
+            mActivity.getCurDirNames().add(dirent.name);
             viewHolder.downloadStatusIcon.setVisibility(View.GONE);
             viewHolder.progressBar.setVisibility(View.GONE);
-
             viewHolder.subtitle.setText(dirent.getSubtitle());
-
-
             viewHolder.icon.setImageResource(dirent.getIcon());
         } else {
+            mActivity.getCurFileNames().add(dirent.name);
             viewHolder.downloadStatusIcon.setVisibility(View.GONE);
             viewHolder.progressBar.setVisibility(View.GONE);
             viewHolder.icon.setImageResource(dirent.getIcon());

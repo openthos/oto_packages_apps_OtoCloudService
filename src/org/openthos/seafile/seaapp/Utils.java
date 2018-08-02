@@ -55,14 +55,11 @@ import java.security.cert.X509Certificate;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.TreeMap;
 
 //import com.google.common.collect.Lists;
@@ -357,11 +354,9 @@ public class Utils {
         return false;
     }
 
-    public static boolean isNetworkOn() {
-        ConnectivityManager connMgr = (ConnectivityManager)
-//                SeadroidApplication.getAppContext().getSystemService(
-                SeafileActivity.mActivity.getSystemService(
-                        Context.CONNECTIVITY_SERVICE);
+    public static boolean isNetworkOn(SeafileActivity activity) {
+        ConnectivityManager connMgr = (ConnectivityManager) activity
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
 
         NetworkInfo wifi = connMgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
         if(wifi != null && wifi.isAvailable()
@@ -433,11 +428,10 @@ public class Utils {
     /**
      * Translate commit time to human readable time description
      */
-    public static String translateCommitTime(long timestampInMillis) {
+    public static String translateCommitTime(long timestampInMillis, SeafileActivity activity) {
         long now = Calendar.getInstance().getTimeInMillis();
         if (now <= timestampInMillis) {
-            return SeafileActivity.mActivity.getString(R.string.just_now);
-//            return SeadroidApplication.getAppContext().getString(R.string.just_now);
+            return activity.getString(R.string.just_now);
         }
 
         long delta = (now - timestampInMillis) / 1000;
@@ -452,22 +446,17 @@ public class Utils {
             SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
             return fmt.format(d);
         } else if (days > 0) {
-//            return SeadroidApplication.getAppContext().getString(R.string.days_ago, days);
-            return SeafileActivity.mActivity.getString(R.string.days_ago, days);
+            return activity.getString(R.string.days_ago, days);
         } else if (seconds >= 60 * 60) {
             long hours = seconds / 3600;
-//            return SeadroidApplication.getAppContext().getString(R.string.hours_ago, hours);
-            return SeafileActivity.mActivity.getString(R.string.hours_ago, hours);
+            return activity.getString(R.string.hours_ago, hours);
         } else if (seconds >= 60) {
             long minutes = seconds / 60;
-//            return SeadroidApplication.getAppContext().getString(R.string.minutes_ago, minutes);
-            return SeafileActivity.mActivity.getString(R.string.minutes_ago, minutes);
+            return activity.getString(R.string.minutes_ago, minutes);
         } else if (seconds > 0) {
-//            return SeadroidApplication.getAppContext().getString(R.string.seconds_ago, seconds);
-            return SeafileActivity.mActivity.getString(R.string.seconds_ago, seconds);
+            return activity.getString(R.string.seconds_ago, seconds);
         } else {
-//            return SeadroidApplication.getAppContext().getString(R.string.just_now);
-            return SeafileActivity.mActivity.getString(R.string.just_now);
+            return activity.getString(R.string.just_now);
         }
     }
 
@@ -698,15 +687,6 @@ public class Utils {
         return info;
     }
 
-    public static void hideSoftKeyboard(View view) {
-        if (view == null)
-            return;
-//        ((InputMethodManager) SeadroidApplication.getAppContext().getSystemService(
-        ((InputMethodManager) SeafileActivity.mActivity.getSystemService(
-                Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(
-                view.getWindowToken(), 0);
-    }
-
     public static String cleanServerURL(String serverURL) throws MalformedURLException {
         if (!serverURL.endsWith("/")) {
             serverURL = serverURL + "/";
@@ -720,9 +700,8 @@ public class Utils {
         return serverURL;
     }
 
-    public static ResolveInfo getWeChatIntent(Intent intent) {
-//        PackageManager pm = SeadroidApplication.getAppContext().getPackageManager();
-        PackageManager pm = SeafileActivity.mActivity.getPackageManager();
+    public static ResolveInfo getWeChatIntent(Intent intent, SeafileActivity activity) {
+        PackageManager pm = activity.getPackageManager();
         List<ResolveInfo> infos = pm.queryIntentActivities(intent, 0);
 
         ResolveInfo info = null;
@@ -736,14 +715,13 @@ public class Utils {
         return info;
     }
 
-    public static List<ResolveInfo> getAppsByIntent(Intent intent) {
-//        PackageManager pm = SeadroidApplication.getAppContext().getPackageManager();
-        PackageManager pm = SeafileActivity.mActivity.getPackageManager();
+    public static List<ResolveInfo> getAppsByIntent(Intent intent, SeafileActivity activity) {
+        PackageManager pm = activity.getPackageManager();
         List<ResolveInfo> infos = pm.queryIntentActivities(intent, 0);
 
         // Remove seafile app from the list
 //        String seadroidPackageName = SeadroidApplication.getAppContext().getPackageName();
-        String seadroidPackageName = SeafileActivity.mActivity.getPackageName();
+        String seadroidPackageName = activity.getPackageName();
         ResolveInfo info;
         Iterator<ResolveInfo> iter = infos.iterator();
         while (iter.hasNext()) {

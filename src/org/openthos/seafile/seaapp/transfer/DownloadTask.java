@@ -1,12 +1,8 @@
 package org.openthos.seafile.seaapp.transfer;
 
-
 import android.os.Message;
-import org.json.JSONException;
 
 import java.io.File;
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 
 import org.openthos.seafile.seaapp.Account;
 import org.openthos.seafile.seaapp.DataManager;
@@ -28,11 +24,13 @@ public class DownloadTask extends TransferTask {
     private String localPath;
     private DownloadStateListener downloadStateListener;
     private boolean updateTotal;
+    private SeafileActivity mActivity;
 
     public DownloadTask(int taskID, Account account, String repoName, String repoID, String path,
-                        DownloadStateListener downloadStateListener) {
+                        DownloadStateListener downloadStateListener, SeafileActivity activity) {
         super(taskID, account, repoName, repoID, path);
         this.downloadStateListener = downloadStateListener;
+        mActivity = activity;
     }
 
     /**
@@ -54,29 +52,7 @@ public class DownloadTask extends TransferTask {
     protected File doInBackground(Void... params) {
         File file = null;
         try {
-            DataManager dataManager = new DataManager(account);
-            final SeafRepo repo = dataManager.getCachedRepoByID(repoID);
-//            if (repo != null && repo.canLocalDecrypt()) {
-//                return dataManager.getFileByBlocks(repoName, repoID, path, totalSize,
-            /*file = dataManager.getFileByBlocks(repoName, repoID, path, totalSize,
-                    new ProgressMonitor() {
-
-                        @Override
-                        public void onProgressNotify(long total, boolean updateTotal) {
-                            DownloadTask.this.updateTotal = updateTotal;
-                            publishProgress(total);
-                        }
-
-                        @Override
-                        public boolean isCancelled() {
-                            return DownloadTask.this.isCancelled();
-                        }
-                    }
-            );
-            return file;*/
-//            } else
-//                return dataManager.getFile(repoName, repoID, path,
-                file =  dataManager.getFile(repoName, repoID, path,
+                file =  mActivity.getDataManager().getFile(repoName, repoID, path,
                         new ProgressMonitor() {
 
                             @Override
@@ -93,23 +69,21 @@ public class DownloadTask extends TransferTask {
                 return file;
         } catch (SeafException e) {
             final int code = e.getCode();
-            SeafileActivity.mHandler.sendEmptyMessage(3);
-            SeafileActivity.mActivity.runOnUiThread(new Runnable() {
+            mActivity.getHandler().sendEmptyMessage(3);
+            mActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     switch (code) {
                         case 403:
-                            ToastUtil.showSingletonToast(SeafileActivity.mActivity,
-                                    SeafileActivity.mActivity.getString(
-                                            R.string.resource_not_available));
+                            ToastUtil.showSingletonToast(mActivity,
+                                    mActivity.getString(R.string.resource_not_available));
                             break;
                         case 404:
-                            ToastUtil.showSingletonToast(SeafileActivity.mActivity,
-                                    SeafileActivity.mActivity.getString(
-                                            R.string.resource_not_found));
+                            ToastUtil.showSingletonToast(mActivity,
+                                    mActivity.getString(R.string.resource_not_found));
                             break;
                     }
-                    SeafileActivity.mActivity.showDirentError();
+                    mActivity.showDirentError();
                 }
             });
             err = e;
@@ -139,8 +113,8 @@ public class DownloadTask extends TransferTask {
                 Message msg = Message.obtain();
                 msg.what = 1;
                 msg.obj = file.getAbsolutePath();
-                SeafileActivity.mHandler.sendMessage(msg);
-                IntentBuilder.viewFile(SeafileActivity.mActivity, file.getAbsolutePath());
+                mActivity.getHandler().sendMessage(msg);
+                IntentBuilder.viewFile( mActivity, file.getAbsolutePath());
             } else {
                 state = TaskState.FAILED;
                 if (err == null)

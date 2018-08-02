@@ -12,6 +12,10 @@ import java.io.File;
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class StorageManagerLollipop extends StorageManager {
 
+    public StorageManagerLollipop(SeafileActivity activity) {
+        mActivity = activity;
+    }
+
     @Override
     protected File[] getSystemMediaDirs() {
         /*

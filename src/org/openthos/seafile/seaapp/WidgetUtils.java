@@ -29,7 +29,7 @@ public class WidgetUtils {
         shareIntent.setType("text/plain");
 
         // Get a list of apps
-        List<ResolveInfo> infos = Utils.getAppsByIntent(shareIntent);
+        List<ResolveInfo> infos = Utils.getAppsByIntent(shareIntent, activity);
 
         String title = activity.getString(isdir ? R.string.share_dir_link : R.string.share_file_link);
 
@@ -40,7 +40,7 @@ public class WidgetUtils {
             @Override
             public void onCustomActionSelected(AppChoiceDialog.CustomAction action) {
                 final GetShareLinkDialog gdialog = new GetShareLinkDialog();
-                gdialog.init(repoID, path, isdir, account, password, days);
+                gdialog.init(repoID, path, isdir, account, password, days, activity);
                 gdialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
                     @Override
                     @SuppressWarnings("deprecation")
@@ -63,7 +63,7 @@ public class WidgetUtils {
                 shareIntent.setClassName(packageName, className);
 
                 final GetShareLinkDialog gdialog = new GetShareLinkDialog();
-                gdialog.init(repoID, path, isdir, account,password, days);
+                gdialog.init(repoID, path, isdir, account,password, days, activity);
                 gdialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
                     @Override
                     public void onTaskSuccess() {
@@ -75,7 +75,7 @@ public class WidgetUtils {
             }
 
         });
-        dialog.show(activity.getSupportFragmentManager(), SeafileActivity.TAG_CHOOSE_APP_DIALOG);
+        dialog.show(activity.getSupportFragmentManager(), "ChooseAppDialog");
     }
 
     public static void inputSharePassword(final SeafileActivity activity,
@@ -92,7 +92,7 @@ public class WidgetUtils {
                 chooseShareApp(activity,repoID,path,isdir,account,password,days);
             }
         });
-        dialog.show(activity.getSupportFragmentManager(),SeafileActivity.TAG_CHARE_LINK_PASSWORD_DIALOG);
+        dialog.show(activity.getSupportFragmentManager(), "ChareLinkPasswordDialog");
 
     }
 
@@ -118,7 +118,7 @@ public class WidgetUtils {
             final Intent shareIntent = new Intent();
             shareIntent.setAction(Intent.ACTION_SEND);
             shareIntent.setType("text/plain");
-            ResolveInfo weChatInfo = Utils.getWeChatIntent(shareIntent);
+            ResolveInfo weChatInfo = Utils.getWeChatIntent(shareIntent, activity);
             if (weChatInfo == null) {
                 ToastUtil.showSingletonToast(activity, activity.getString(R.string.no_app_available));
                 return;
@@ -127,7 +127,7 @@ public class WidgetUtils {
             String packageName = weChatInfo.activityInfo.packageName;
             shareIntent.setClassName(packageName, className);
             final GetShareLinkDialog gdialog = new GetShareLinkDialog();
-            gdialog.init(repoID, path, isdir, account, null, null);
+            gdialog.init(repoID, path, isdir, account, null, null, activity);
             gdialog.setTaskDialogLisenter(new TaskDialog.TaskDialogListener() {
                 @Override
                 public void onTaskSuccess() {
@@ -137,11 +137,11 @@ public class WidgetUtils {
             });
             gdialog.show(activity.getSupportFragmentManager(), "DialogFragment");
         } else {//share  files
-            String repoName = activity.mNavContext.getRepoName();
-            String dirPath = activity.mNavContext.getDirPath();
+            String repoName = activity.getNavContext().getRepoName();
+            String dirPath = activity.getNavContext().getDirPath();
 
             String fullPath = Utils.pathJoin(dirPath, fileName);
-            final File file = activity.mDataManager.getLocalRepoFile(repoName, repoID, fullPath);
+            final File file = activity.getDataManager().getLocalRepoFile(repoName, repoID, fullPath);
             Uri uri = null;
             if (android.os.Build.VERSION.SDK_INT > 23) {
                 uri = FileProvider.getUriForFile(activity, activity.getApplicationContext().getPackageName() + ".provider", file);
@@ -152,7 +152,7 @@ public class WidgetUtils {
             sendIntent.setAction(Intent.ACTION_SEND);
             sendIntent.setType(Utils.getFileMimeType(file));
             sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
-            ResolveInfo weChatInfo = Utils.getWeChatIntent(sendIntent);
+            ResolveInfo weChatInfo = Utils.getWeChatIntent(sendIntent, activity);
             if (weChatInfo == null) {
                 ToastUtil.showSingletonToast(activity, activity.getString(R.string.no_app_available));
                 return;
@@ -160,11 +160,11 @@ public class WidgetUtils {
             String className = weChatInfo.activityInfo.name;
             String packageName = weChatInfo.activityInfo.packageName;
             sendIntent.setClassName(packageName, className);
-            if (!Utils.isNetworkOn() && file.exists()) {
+            if (!Utils.isNetworkOn(activity) && file.exists()) {
                 activity.startActivity(sendIntent);
                 return;
             }
-            SeafileActivity.mActivity.fetchFileAndExport(weChatInfo, sendIntent, repoName, repoID, path, fileSize);
+//            SeafileActivity.mActivity.fetchFileAndExport(weChatInfo, sendIntent, repoName, repoID, path, fileSize);
         }
     }
 }

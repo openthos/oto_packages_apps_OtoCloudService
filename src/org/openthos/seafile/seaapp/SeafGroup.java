@@ -38,22 +38,4 @@ public class SeafGroup implements SeafItem {
         if (!repos.contains(repo))
             this.repos.add(repo);
     }
-
-    /**
-     * sort collections by repository name or last modified time
-     */
-    public void sortByType(int type, int order) {
-        if (type == SeafItemAdapter.SORT_BY_NAME) {
-            Collections.sort(repos, new SeafRepo.RepoNameComparator());
-            if (order == SeafItemAdapter.SORT_ORDER_DESCENDING) {
-                Collections.reverse(repos);
-            }
-        } else if (type == SeafItemAdapter.SORT_BY_LAST_MODIFIED_TIME) {
-            Collections.sort(repos, new SeafRepo.RepoLastMTimeComparator());
-            if (order == SeafItemAdapter.SORT_ORDER_DESCENDING) {
-                Collections.reverse(repos);
-            }
-        }
-    }
-
 }

@@ -25,6 +25,12 @@ public class UploadTaskManager extends TransferManager implements UploadStateLis
     public static final String BROADCAST_FILE_UPLOAD_CANCELLED = "uploadCancelled";
 
 //    private static UploadNotificationProvider mNotifyProvider;
+    private SeafileActivity mActivity;
+
+    public UploadTaskManager(SeafileActivity activity) {
+        super();
+        mActivity = activity;
+    }
 
 
     public int addTaskToQue(Account account, String repoID, String repoName, String dir, String filePath, boolean isUpdate, boolean isCopyToLocal, boolean byBlock) {
@@ -104,7 +110,7 @@ public class UploadTaskManager extends TransferManager implements UploadStateLis
         Intent localIntent = new Intent(BROADCAST_ACTION).putExtra("type",
                 BROADCAST_FILE_UPLOAD_PROGRESS).putExtra("taskID", taskID);
 //        LocalBroadcastManager.getInstance(SeadroidApplication.getAppContext()).sendBroadcast(localIntent);
-        LocalBroadcastManager.getInstance(SeafileActivity.mActivity).sendBroadcast(localIntent);
+        LocalBroadcastManager.getInstance(mActivity).sendBroadcast(localIntent);
         notifyProgress(taskID);
     }
 
@@ -115,7 +121,7 @@ public class UploadTaskManager extends TransferManager implements UploadStateLis
         Intent localIntent = new Intent(BROADCAST_ACTION).putExtra("type",
                 BROADCAST_FILE_UPLOAD_SUCCESS).putExtra("taskID", taskID);
 //        LocalBroadcastManager.getInstance(SeadroidApplication.getAppContext()).sendBroadcast(localIntent);
-        LocalBroadcastManager.getInstance(SeafileActivity.mActivity).sendBroadcast(localIntent);
+        LocalBroadcastManager.getInstance(mActivity).sendBroadcast(localIntent);
         notifyProgress(taskID);
     }
 
@@ -124,7 +130,7 @@ public class UploadTaskManager extends TransferManager implements UploadStateLis
         Intent localIntent = new Intent(BROADCAST_ACTION).putExtra("type",
                 BROADCAST_FILE_UPLOAD_CANCELLED).putExtra("taskID", taskID);
 //        LocalBroadcastManager.getInstance(SeadroidApplication.getAppContext()).sendBroadcast(localIntent);
-        LocalBroadcastManager.getInstance(SeafileActivity.mActivity).sendBroadcast(localIntent);
+        LocalBroadcastManager.getInstance(mActivity).sendBroadcast(localIntent);
         notifyProgress(taskID);
     }
 
@@ -135,7 +141,7 @@ public class UploadTaskManager extends TransferManager implements UploadStateLis
         Intent localIntent = new Intent(BROADCAST_ACTION).putExtra("type",
                 BROADCAST_FILE_UPLOAD_FAILED).putExtra("taskID", taskID);
 //        LocalBroadcastManager.getInstance(SeadroidApplication.getAppContext()).sendBroadcast(localIntent);
-        LocalBroadcastManager.getInstance(SeafileActivity.mActivity).sendBroadcast(localIntent);
+        LocalBroadcastManager.getInstance(mActivity).sendBroadcast(localIntent);
         notifyProgress(taskID);
     }
 

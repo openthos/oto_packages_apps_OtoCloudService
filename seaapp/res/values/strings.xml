@@ -548,4 +548,6 @@
   <string name="resource_not_found">Resource not found</string>
   <string name="server_conn_refused">Server connection refused</string>
   <string name="server_timed_out">Server connection timed out</string>
+  <string name="file_name_exists">Filename already exists, do you want to continue?</string>
+  <string name="dir_name_exists">Dirname already exists, do you want to continue?</string>
 </resources>

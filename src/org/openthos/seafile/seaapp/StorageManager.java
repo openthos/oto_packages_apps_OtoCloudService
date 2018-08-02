@@ -60,6 +60,7 @@ public abstract class StorageManager implements MediaScannerConnection.OnScanCom
     private static StorageManager instance = null;
 
     private final Location CLASSIC_LOCATION;
+    protected SeafileActivity mActivity;
 
     public StorageManager() {
         CLASSIC_LOCATION = buildClassicLocation();
@@ -69,10 +70,10 @@ public abstract class StorageManager implements MediaScannerConnection.OnScanCom
      * Fetch instance of the StorageManager
      * @return
      */
-    public final static StorageManager getInstance() {
+    public final static StorageManager getInstance(SeafileActivity activity) {
         if (instance == null) {
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                instance = new StorageManagerLollipop();
+                instance = new StorageManagerLollipop(activity);
 //            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
 //                instance = new StorageManagerKitKat();
 //            } else {
@@ -362,7 +363,7 @@ public abstract class StorageManager implements MediaScannerConnection.OnScanCom
 
     protected final Context getContext() {
 //        return SeadroidApplication.getAppContext();
-        return SeafileActivity.mActivity;
+        return mActivity;
     }
 
     /**
@@ -388,8 +389,8 @@ public abstract class StorageManager implements MediaScannerConnection.OnScanCom
      *
      * @return base of where to store JSON cache files
      */
-    public final File getJsonCacheDir() {
-        File base = getContext().getCacheDir();
+    public final File getJsonCacheDir(SeafileActivity activity) {
+        File base = activity.getCacheDir();
         return getDirectoryCreateIfNeeded(base);
     }
 
@@ -409,12 +410,12 @@ public abstract class StorageManager implements MediaScannerConnection.OnScanCom
      *
      * @param file
      */
-    public final void notifyAndroidGalleryFileChange(File file) {
-        MediaScannerConnection.scanFile(getContext(),
-            new String[]{file.toString()},
-            null,
-            this);
-    }
+//    public final void notifyAndroidGalleryFileChange(File file) {
+//        MediaScannerConnection.scanFile(mActivity,
+//            new String[]{file.toString()},
+//            null,
+//            this);
+//    }
 
     /**
      * A directory was added, changed or removed. Notify the gallery.

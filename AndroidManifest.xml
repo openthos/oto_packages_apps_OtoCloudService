@@ -74,8 +74,6 @@
 
         <service android:name="org.openthos.seafile.RecoveryService" > </service>
 
-        <service android:name=".seaapp.transfer.TransferService" > </service>
-        <service android:name=".seaapp.monitor.FileMonitorService" > </service>
     </application>
 
 </manifest>

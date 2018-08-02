@@ -19,24 +19,26 @@ public class SeafDirent implements SeafItem, Serializable {
     public String name;
     public long size;    // size of file, 0 if type is dir
     public long mtime;   // last modified timestamp
+    private SeafileActivity mActivity;
 
-    static SeafDirent fromJson(JSONObject obj) {
-        SeafDirent dirent = new SeafDirent();
+    public SeafDirent(SeafileActivity activity) {
+        mActivity = activity;
+    }
+
+    public void fromJson(JSONObject obj) {
         try {
-            dirent.id = obj.getString("id");
-            dirent.name = obj.getString("name");
-            dirent.mtime = obj.getLong("mtime");
-            dirent.permission = obj.getString("permission");
-            String type = obj.getString("type");
-            if (type.equals("file")) {
-                dirent.type = DirentType.FILE;
-                dirent.size = obj.getLong("size");
+            id = obj.getString("id");
+            name = obj.getString("name");
+            mtime = obj.getLong("mtime");
+            permission = obj.getString("permission");
+            String t = obj.getString("type");
+            if (t.equals("file")) {
+                type = DirentType.FILE;
+                size = obj.getLong("size");
             } else
-                dirent.type = DirentType.DIR;
-            return dirent;
+                type = DirentType.DIR;
         } catch (JSONException e) {
             Log.d(DEBUG_TAG, e.getMessage());
-            return null;
         }
     }
 
@@ -51,7 +53,7 @@ public class SeafDirent implements SeafItem, Serializable {
 
     @Override
     public String getSubtitle() {
-        String timestamp = Utils.translateCommitTime(mtime * 1000);
+        String timestamp = Utils.translateCommitTime(mtime * 1000, mActivity);
         if (isDir())
             return timestamp;
         return Utils.readableFileSize(size) + ", " + timestamp;
@@ -85,7 +87,7 @@ public class SeafDirent implements SeafItem, Serializable {
     /**
      * SeafDirent name comparator class
      */
-    public static class DirentNameComparator implements Comparator<SeafDirent> {
+    public class DirentNameComparator implements Comparator<SeafDirent> {
 
         @Override
         public int compare(SeafDirent itemA, SeafDirent itemB) {
@@ -98,9 +100,9 @@ public class SeafDirent implements SeafItem, Serializable {
             // both are Chinese words
             if ((19968 < unicodeA && unicodeA < 40869) && (19968 < unicodeB && unicodeB < 40869)) {
 //                strA = PinyinUtils.toPinyin(SeadroidApplication.getAppContext(), itemA.name).toLowerCase();
-                strA = PinyinUtils.toPinyin(SeafileActivity.mActivity, itemA.name).toLowerCase();
+                strA = PinyinUtils.toPinyin(mActivity, itemA.name).toLowerCase();
 //                strB = PinyinUtils.toPinyin(SeadroidApplication.getAppContext(), itemB.name).toLowerCase();
-                strB = PinyinUtils.toPinyin(SeafileActivity.mActivity, itemB.name).toLowerCase();
+                strB = PinyinUtils.toPinyin(mActivity, itemB.name).toLowerCase();
             } else if ((19968 < unicodeA && unicodeA < 40869) && !(19968 < unicodeB && unicodeB < 40869)) {
                 // itemA is Chinese and itemB is English
                 return 1;

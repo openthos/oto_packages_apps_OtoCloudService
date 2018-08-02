@@ -1,5 +1,6 @@
 package org.openthos.seafile.seaapp;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -8,6 +9,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
 import org.openthos.seafile.R;
+import java.util.List;
 
 class RenameTask extends TaskDialog.Task {
     String repoID;
@@ -38,11 +40,12 @@ class RenameTask extends TaskDialog.Task {
     }
 }
 
+@SuppressLint("ValidFragment")
 public class RenameFileDialog extends TaskDialog {
     private EditText fileNameText;
     private String repoID;
     private String path;
-    private boolean isdir;
+    private boolean isdir, isContinue;
 
     private DataManager dataManager;
     private Account account;
@@ -51,6 +54,12 @@ public class RenameFileDialog extends TaskDialog {
     private static final String STATE_PATH = "rename_task.repo_id";
     private static final String STATE_ISDIR = "rename_task.account";
     private static final String STATE_ACCOUNT = "rename_task.account";
+    private SeafileActivity mActivity;
+
+    public RenameFileDialog(SeafileActivity activity) {
+        super();
+        mActivity = activity;
+    }
 
     public void init(String repoID, String path, boolean isdir, Account account) {
         this.repoID = repoID;
@@ -60,11 +69,7 @@ public class RenameFileDialog extends TaskDialog {
     }
 
     private DataManager getDataManager() {
-        if (dataManager == null) {
-            dataManager = new DataManager(account);
-        }
-
-        return dataManager;
+        return mActivity.getDataManager();
     }
 
     public String getNewFileName() {
@@ -102,9 +107,17 @@ public class RenameFileDialog extends TaskDialog {
     @Override
     protected void onValidateUserInput() throws Exception {
         String fileName = fileNameText.getText().toString().trim();
-
+        if (fileName.equals(Utils.fileNameFromPath(path))) {
+            return;
+        }
+        List<String> itemNames = isdir ? mActivity.getCurDirNames() : mActivity.getCurFileNames();
         if (fileName.length() == 0) {
             String err = getActivity().getResources().getString(R.string.file_name_empty);
+            throw new Exception(err);
+        } else if (!isContinue && itemNames.contains(fileName)) {
+            isContinue = true;
+            String err = getActivity().getResources().getString(
+                    isdir ? R.string.dir_name_exists : R.string.file_name_exists);
             throw new Exception(err);
         }
     }

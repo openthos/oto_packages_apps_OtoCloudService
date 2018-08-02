@@ -25,26 +25,26 @@ public class SeafRepo implements SeafItem {
     public String encKey;
     public long    size;
     public String root; // the id of root directory
+    private SeafileActivity mActivity;
 
-    static SeafRepo fromJson(JSONObject obj) throws JSONException {
-        SeafRepo repo = new SeafRepo();
-        repo.id = obj.getString("id");
-        repo.name = obj.getString("name");
-        repo.owner = obj.getString("owner");
-        repo.permission = obj.getString("permission");
-        repo.mtime = obj.getLong("mtime");
-        repo.encrypted = obj.getBoolean("encrypted");
-        repo.root = obj.getString("root");
-        repo.size = obj.getLong("size");
-        repo.isGroupRepo = obj.getString("type").equals("grepo");
-        repo.isPersonalRepo = obj.getString("type").equals("repo");
-        repo.isSharedRepo = obj.getString("type").equals("srepo");
-        repo.magic = obj.optString("magic");
-        repo.encKey = obj.optString("random_key");
-        return repo;
+    public void  fromJson(JSONObject obj) throws JSONException {
+        id = obj.getString("id");
+        name = obj.getString("name");
+        owner = obj.getString("owner");
+        permission = obj.getString("permission");
+        mtime = obj.getLong("mtime");
+        encrypted = obj.getBoolean("encrypted");
+        root = obj.getString("root");
+        size = obj.getLong("size");
+        isGroupRepo = obj.getString("type").equals("grepo");
+        isPersonalRepo = obj.getString("type").equals("repo");
+        isSharedRepo = obj.getString("type").equals("srepo");
+        magic = obj.optString("magic");
+        encKey = obj.optString("random_key");
     }
 
-    public SeafRepo() {
+    public SeafRepo(SeafileActivity activity) {
+        mActivity = activity;
     }
 
     public String getID() {
@@ -66,7 +66,7 @@ public class SeafRepo implements SeafItem {
 
     @Override
     public String getSubtitle() {
-        return Utils.translateCommitTime(mtime * 1000);
+        return Utils.translateCommitTime(mtime * 1000, mActivity);
     }
 
     @Override
@@ -96,7 +96,7 @@ public class SeafRepo implements SeafItem {
     /**
      * Repository name comparator class
      */
-    public static class RepoNameComparator implements Comparator<SeafRepo> {
+    public class RepoNameComparator implements Comparator<SeafRepo> {
 
         @Override
         public int compare(SeafRepo itemA, SeafRepo itemB) {
@@ -109,9 +109,9 @@ public class SeafRepo implements SeafItem {
             // both are Chinese words
             if ((19968 < unicodeA && unicodeA < 40869) && (19968 < unicodeB && unicodeB < 40869)) {
 //                strA = PinyinUtils.toPinyin(SeadroidApplication.getAppContext(), itemA.name).toLowerCase();
-                strA = PinyinUtils.toPinyin(SeafileActivity.mActivity, itemA.name).toLowerCase();
+                strA = PinyinUtils.toPinyin(mActivity, itemA.name).toLowerCase();
 //                strB = PinyinUtils.toPinyin(SeadroidApplication.getAppContext(), itemB.name).toLowerCase();
-                strB = PinyinUtils.toPinyin(SeafileActivity.mActivity, itemB.name).toLowerCase();
+                strB = PinyinUtils.toPinyin(mActivity, itemB.name).toLowerCase();
             } else if ((19968 < unicodeA && unicodeA < 40869) && !(19968 < unicodeB && unicodeB < 40869)) {
                 // itemA is Chinese and itemB is English
                 return 1;

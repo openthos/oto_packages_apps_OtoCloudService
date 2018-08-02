@@ -17,8 +17,11 @@ class GetShareLinkTask extends TaskDialog.Task {
     Account account;
     String password;
     String days;
+    SeafileActivity activity;
 
-    public GetShareLinkTask(String repoID, String path, boolean isdir, SeafConnection conn, Account account, String password, String days) {
+    public GetShareLinkTask(String repoID, String path, boolean isdir,
+                            SeafConnection conn, Account account, String password,
+                            String days, SeafileActivity activity) {
         this.repoID = repoID;
         this.path = path;
         this.isdir = isdir;
@@ -26,13 +29,14 @@ class GetShareLinkTask extends TaskDialog.Task {
         this.account = account;
         this.password = password;
         this.days = days;
+        this.activity = activity;
     }
 
     @Override
     protected void runTask() {
 
         // If you has  Shared links to delete Shared links
-        DataManager dataManager = new DataManager(account);
+        DataManager dataManager = new DataManager(account, activity);
         ArrayList<SeafLink> shareLinks = dataManager.getShareLink(repoID, path);
         for (SeafLink shareLink : shareLinks) {
             //delete link
@@ -59,15 +63,18 @@ public class GetShareLinkDialog extends TaskDialog {
     Account account;
     private String password;
     private String days;
+    private SeafileActivity activity;
 
-    public void init(String repoID, String path, boolean isdir, Account account, String password, String days) {
+    public void init(String repoID, String path, boolean isdir, Account account, String password,
+                     String days, SeafileActivity activity) {
         this.repoID = repoID;
         this.path = path;
         this.isdir = isdir;
-        this.conn = new SeafConnection(account);
+        this.conn = new SeafConnection(account, activity);
         this.account = account;
         this.password = password;
         this.days = days;
+        this.activity = activity;
     }
 
     @Override
@@ -96,7 +103,8 @@ public class GetShareLinkDialog extends TaskDialog {
         android.util.Log.i("123", "account--" + account);
         android.util.Log.i("123", "password--" + password);
         android.util.Log.i("123", "days--" + days);
-        GetShareLinkTask task = new GetShareLinkTask(repoID, path, isdir, conn, account, password, days);
+        GetShareLinkTask task = new GetShareLinkTask(
+                repoID, path, isdir, conn, account, password, days, activity);
         return task;
     }
 

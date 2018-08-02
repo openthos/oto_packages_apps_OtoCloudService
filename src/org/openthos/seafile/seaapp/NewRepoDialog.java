@@ -1,5 +1,6 @@
 package org.openthos.seafile.seaapp;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -30,6 +31,7 @@ class NewRepoTask extends TaskDialog.Task {
     }
 }
 
+@SuppressLint("ValidFragment")
 public class NewRepoDialog extends TaskDialog {
 
     private final static String STATE_ACCOUNT = "new_repo_dialog.account";
@@ -38,7 +40,13 @@ public class NewRepoDialog extends TaskDialog {
     private EditText mRepoNameText;
 
     private Account mAccount;
-    private DataManager mDataManager;
+    private SeafileActivity mActivity;
+
+    @SuppressLint("ValidFragment")
+    public NewRepoDialog(SeafileActivity activity) {
+        super();
+        mActivity = activity;
+    }
 
     public void init(Account account) {
         // The DataManager is not parcelable, so we save the intermediate Account instead
@@ -46,11 +54,7 @@ public class NewRepoDialog extends TaskDialog {
     }
 
     private DataManager getDataManager() {
-        if (mDataManager == null) {
-            mDataManager = new DataManager(mAccount);
-        }
-
-        return mDataManager;
+        return mActivity.getDataManager();
     }
 
     public String getRepoName() { return mRepoNameText.getText().toString().trim(); }

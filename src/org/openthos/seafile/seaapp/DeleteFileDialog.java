@@ -1,5 +1,6 @@
 package org.openthos.seafile.seaapp;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -125,6 +126,7 @@ class DeleteTask extends TaskDialog.Task {
     }
 }
 
+@SuppressLint("ValidFragment")
 public class DeleteFileDialog extends TaskDialog {
     private String repoID;
     private String path;
@@ -133,6 +135,13 @@ public class DeleteFileDialog extends TaskDialog {
 
     private DataManager dataManager;
     private Account account;
+    private SeafileActivity mActivity;
+
+    @SuppressLint("ValidFragment")
+    public DeleteFileDialog(SeafileActivity activity) {
+        super();
+        mActivity = activity;
+    }
 
     public void init(String repoID, String path, boolean isdir, Account account) {
         this.repoID = repoID;
@@ -149,10 +158,7 @@ public class DeleteFileDialog extends TaskDialog {
     }
 
     private DataManager getDataManager() {
-        if (dataManager == null) {
-            dataManager = new DataManager(account);
-        }
-        return dataManager;
+        return mActivity.getDataManager();
     }
 
     @Override
