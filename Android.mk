@@ -1,9 +1,6 @@
 LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
-
-LOCAL_MODULE_TAGS := optional
-
 LOCAL_STATIC_JAVA_LIBRARIES := android-support-v4
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-v7-appcompat
 LOCAL_STATIC_JAVA_LIBRARIES += jsoup
@@ -11,6 +8,11 @@ LOCAL_STATIC_JAVA_LIBRARIES += imageloader1.9.5
 
 LOCAL_SRC_FILES := $(call all-java-files-under, src) \
                    src/org/openthos/seafile/ISeafileService.aidl
+
+## Target API 23 or later
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 23 && echo need add library), need add library)
+    LOCAL_STATIC_JAVA_LIBRARIES += org.apache.http.legacy
+endif
 
 LOCAL_RESOURCE_DIR := $(LOCAL_PATH)/seaapp/res $(LOCAL_PATH)/res
 LOCAL_AAPT_FLAGS := --auto-add-overlay

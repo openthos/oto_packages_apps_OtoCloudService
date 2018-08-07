@@ -421,7 +421,7 @@ public class SeafileService extends Service {
     private String getAppName(File sourceFile) {
         try {
             PackageParser.Package pkg = parser.parseMonolithicPackage(sourceFile, 0);
-            parser.collectManifestDigest(pkg);
+            //parser.collectManifestDigest(pkg);
             PackageInfo info = PackageParser.generatePackageInfo(pkg, null,
                      PackageManager.GET_PERMISSIONS, 0, 0, null,
                      new PackageUserState());
