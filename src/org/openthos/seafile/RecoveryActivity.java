@@ -257,11 +257,11 @@ public class RecoveryActivity extends Activity {
             holder.check.setTag(R.id.tag_list, syncList);
             holder.check.setTag(R.id.tag_package, allList.get(i).activityInfo.packageName);
             holder.check.setOnCheckedChangeListener(mCheckedChangeListener);
+            holder.check.setChecked(false);
             try {
                 if ((mPackageManager.getPackageInfo(allList.get(i).activityInfo.packageName, 0).
                         applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) > 0) {
                     holder.check.setChecked(true);
-                    holder.check.setClickable(false);
                 }
             } catch (PackageManager.NameNotFoundException e) {
                 e.printStackTrace();

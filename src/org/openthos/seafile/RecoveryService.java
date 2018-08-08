@@ -364,14 +364,13 @@ public class RecoveryService extends Service {
     }
 
     private void importFiles(List<String> packages, String configPath) {
+        HashMap<String, String> map = SeafileUtils.execCommands("ls -l /data/data");
         for (int i = 0; i < packages.size(); i++) {
-            HashMap<String, String> map = SeafileUtils.execCommands("ls -l /data/data");
             String uid = map.get(packages.get(i));
             if (!TextUtils.isEmpty(uid)) {
                 SeafileUtils.untarFile(mConfigPath +
                         configPath + packages.get(i) + ".tar.gz");
-                SeafileUtils.chownFile(mConfigPath +
-                        configPath + packages.get(i), uid);
+                SeafileUtils.chownFile(SYSTEM_PATH_DATA + packages.get(i), uid);
             }
         }
     }

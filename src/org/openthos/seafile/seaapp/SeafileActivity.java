@@ -18,6 +18,7 @@ import android.widget.TextView;
 
 import org.json.JSONException;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
@@ -34,7 +35,6 @@ public class SeafileActivity extends FragmentActivity {
     private TextView mErrorText;
     private SeafItemAdapter mAdapter;
     private Account mAccount;
-    private String mPassword;
     private DataManager mDataManager;
     private GenericListener mGenericListener;
     private NavContext mNavContext;
@@ -61,6 +61,9 @@ public class SeafileActivity extends FragmentActivity {
     public LoadingDialog mLoadingDialog;
     private List<String> mCurDirNames = new ArrayList<>();
     private List<String> mCurFileNames = new ArrayList<>();
+    private String mServerURL = SeafileUtils.SEAFILE_URL_LIBRARY;
+    private String mUserId = "";
+    private String mPassword = "";
 
     private Handler mHandler = new Handler() {
         @Override
@@ -113,7 +116,18 @@ public class SeafileActivity extends FragmentActivity {
         mListView.setAdapter(mAdapter);
         mGridView.setOnTouchListener(mGenericListener);
         mGridView.setAdapter(mAdapter);
-        getAccountAndLogin();
+        try {
+            String[] account = SeafileUtils.readAccount(this,
+                    openFileInput(SeafileUtils.ACCOUNT_INFO_FILE));
+            if (account != null) {
+                mServerURL = account[0];
+                mUserId = account[1];
+                mPassword = account[2];
+                getAccountAndLogin();
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
         findViewById(R.id.back).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v){
@@ -123,13 +137,9 @@ public class SeafileActivity extends FragmentActivity {
     }
 
     public void getAccountAndLogin() {
-        SharedPreferences sp = getSharedPreferences("account",Context.MODE_PRIVATE);
-        String serverURL = sp.getString("url", SeafileUtils.SEAFILE_URL_LIBRARY);
-        String email = sp.getString("user", "");
-        String passwd = sp.getString("password", "");
-        mAccount = new Account(serverURL, email, null, false, null);
+        mAccount = new Account(mServerURL, mUserId, null, false, null);
         mDataManager = new DataManager(mAccount, this);
-        ConcurrentAsyncTask.execute(new LoginTask(mAccount, passwd, null,false));
+        ConcurrentAsyncTask.execute(new LoginTask(mAccount, mPassword, null,false));
         if (!Utils.isNetworkOn(this)) {
             ToastUtil.showSingletonToast(this, getString(R.string.network_down));
             showRepoError();

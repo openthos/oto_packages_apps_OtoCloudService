@@ -8,7 +8,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageInfo;
@@ -38,6 +37,7 @@ import org.json.JSONObject;
 
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,7 +91,7 @@ public class SeafileService extends Service {
     private boolean DEBUG = false;
     private Handler mHandler;
     private ScheduledExecutorService mScheduledService;
-    public static SharedPreferences mSp;
+    private String mTempOpenthosUrl = SeafileUtils.mOpenthosUrl;
 
     private Timer mStatusTimer;
     private StatusTask mStatusTask;
@@ -108,9 +108,20 @@ public class SeafileService extends Service {
         super.onCreate();
         mHandler = new SeafileHandler(Looper.getMainLooper());
         SeafileUtils.init();
-        mSp = getSharedPreferences("account",Context.MODE_PRIVATE);
-        SeafileUtils.mOpenthosUrl = mSp.getString("url", SeafileUtils.SEAFILE_URL_LIBRARY);
-        initAccount(mSp.getString("user", ""), mSp.getString("password", ""));
+        try {
+            String[] account = SeafileUtils.readAccount(this,
+                    openFileInput(SeafileUtils.ACCOUNT_INFO_FILE));
+            if (account != null) {
+                SeafileUtils.mOpenthosUrl = account[0];
+                SeafileUtils.mUserId = account[1];
+                SeafileUtils.mUserPassword = account[2];
+                if (SeafileUtils.isExistsAccount()) {
+                    initAccount(SeafileUtils.mUserId, SeafileUtils.mUserPassword);
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     private void initAccount(String userName, String password) {
@@ -492,11 +503,6 @@ public class SeafileService extends Service {
         }
     }
 
-    public void updateAccount(String name, String password) {
-        mSp.edit().putString("user", name).putString("password", password).commit();
-        initAccount(name, password);
-    }
-
     private void installSlient(String apkPath) {
         apkPath = apkPath.replace(Environment.getExternalStorageDirectory().getAbsolutePath(),
                 "/storage/emulated/legacy");
@@ -613,7 +619,14 @@ public class SeafileService extends Service {
                 SeafileUtils.desync(mAccount.mDataLibrary.filePath);
                 SeafileUtils.desync(mAccount.mSettingLibrary.filePath);
             }
-            mSp.edit().putString("user", "").putString("password", "").commit();
+            try {
+                if (!SeafileUtils.writeAccount(SeafileService.this, "", "",
+                        openFileOutput(SeafileUtils.ACCOUNT_INFO_FILE, MODE_PRIVATE))) {
+                    deleteFile(SeafileUtils.ACCOUNT_INFO_FILE);
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
             mAccount = null;
             SeafileUtils.stop();
             if (mStatusTask != null) {
@@ -711,6 +724,7 @@ public class SeafileService extends Service {
         }
 
         public void setOpenthosUrl(String url) {
+            mTempOpenthosUrl = SeafileUtils.mOpenthosUrl;
             mHandler.post(new Runnable() {
                 @Override
                 public void run () {
@@ -775,7 +789,16 @@ public class SeafileService extends Service {
                     break;
                 case LibraryRequestThread.MSG_LOGIN_SEAFILE_OK:
                     Bundle bundle = msg.getData();
-                    updateAccount(bundle.getString("user"), bundle.getString("password"));
+                    try {
+                        if (!SeafileUtils.writeAccount(SeafileService.this,
+                                bundle.getString("user"), bundle.getString("password"),
+                                openFileOutput(SeafileUtils.ACCOUNT_INFO_FILE, MODE_PRIVATE))) {
+                            break;
+                        }
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    initAccount(bundle.getString("user"), bundle.getString("password"));
                     for (IBinder iBinder : mIBinders) {
                         Parcel _data = Parcel.obtain();
                         Parcel _reply = Parcel.obtain();
@@ -806,7 +829,16 @@ public class SeafileService extends Service {
                     }
                     break;
                 case OpenthosIDActivity.MSG_CHANGE_URL:
-                    mSp.edit().putString("url", SeafileUtils.mOpenthosUrl).commit();
+                    try {
+                        if (!SeafileUtils.writeAccount(SeafileService.this,
+                                SeafileUtils.mUserId, SeafileUtils.mUserPassword,
+                                openFileOutput(SeafileUtils.ACCOUNT_INFO_FILE, MODE_PRIVATE))) {
+                            SeafileUtils.mOpenthosUrl = mTempOpenthosUrl;
+                            break;
+                        }
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
                     for (IBinder iBinder : mIBinders) {
                         Parcel _data = Parcel.obtain();
                         Parcel _reply = Parcel.obtain();

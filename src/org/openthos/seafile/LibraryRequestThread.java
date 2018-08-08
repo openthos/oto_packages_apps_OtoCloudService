@@ -79,8 +79,6 @@ public class LibraryRequestThread extends Thread {
                 message = new Message();
                 boolean success = loginStep1Get();
                 if (success) {
-                    SeafileService.mSp.edit()
-                            .putString("user", name).putString("password", pass).commit();
                     message.what = MSG_LOGIN_SEAFILE_OK;
                     Bundle bundle = new Bundle();
                     bundle.putString("user", name + "@openthos.org");

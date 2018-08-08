@@ -65,6 +65,8 @@
     <string name="toast_bind_failed">Bind failed!</string>
     <string name="openthos_id">openthosId</string>
     <string name="toast_relogin">Please re-login</string>
+    <string name="read_error">Read account infomation failure.</string>
+    <string name="write_error">Save account infomation failure.</string>
 
     <item type="id" name="tag_list"></item>
     <item type="id" name="tag_package"></item>

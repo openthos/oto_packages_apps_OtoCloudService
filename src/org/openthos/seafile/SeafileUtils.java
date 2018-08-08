@@ -11,16 +11,20 @@ import android.os.Build;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,6 +51,7 @@ public class SeafileUtils {
     public static final String DATA_SEAFILE_NAME = "DATA";
 
     public static final String SEAFILE_URL_LIBRARY = "http://dev.openthos.org/";
+    public static final String ACCOUNT_INFO_FILE = "account";
     public static String mOpenthosUrl = SEAFILE_URL_LIBRARY;
     public static String mUserId = "";
     public static String mUserPassword = "";
@@ -659,5 +664,53 @@ public class SeafileUtils {
         } catch (Exception e) {
             return 0;
         }
+    }
+
+    public static boolean writeAccount(Context context,
+            String id, String password, FileOutputStream output) {
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output));
+        try {
+            writer.write(mOpenthosUrl + System.getProperty("line.separator") +
+                    id + System.getProperty("line.separator") + password);
+            writer.flush();
+        } catch (IOException e) {
+            Toast.makeText(context, context.getString(R.string.write_error), 0).show();
+            return false;
+        } finally {
+            if (writer != null) {
+                try {
+                    writer.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return true;
+    }
+
+    public static String[] readAccount(Context context, FileInputStream input) {
+        String[] account = new String[3];
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(input));
+            account[0] = reader.readLine(); //url
+            account[1] = reader.readLine(); //username
+            account[2] = reader.readLine(); //password
+        } catch (IOException e) {
+            Toast.makeText(context, context.getString(R.string.read_error), 0).show();
+            return null;
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        if (TextUtils.isEmpty(account[0])) {
+            return null;
+        }
+        return account;
     }
 }

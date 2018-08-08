@@ -60,4 +60,6 @@
     <string name="openthos_id_settings_title">openthos ID</string>
     <string name="openthos_id">openthosId</string>
     <string name="toast_relogin">请重新登录</string>
+    <string name="read_error">获取账号信息失败</string>
+    <string name="write_error">保存账号信息失败</string>
 </resources>
