@@ -20,13 +20,13 @@ import org.json.JSONException;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.File;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.openthos.seafile.R;
 import org.openthos.seafile.SeafileUtils;
-import org.openthos.seafile.seaapp.transfer.PendingUploadInfo;
 import org.openthos.seafile.seaapp.transfer.DownloadTaskManager;
 
 public class SeafileActivity extends FragmentActivity {
@@ -56,7 +56,6 @@ public class SeafileActivity extends FragmentActivity {
 
     public MenuDialog mMenuDialog;
     private DownloadTaskManager mDownloadTaskManager;
-    private ArrayList<PendingUploadInfo> pendingUploads = new ArrayList<>();
     private UploadFileDialog mUploadFileDialog;
     public LoadingDialog mLoadingDialog;
     private List<String> mCurDirNames = new ArrayList<>();
@@ -65,11 +64,16 @@ public class SeafileActivity extends FragmentActivity {
     private String mUserId = "";
     private String mPassword = "";
 
-    private Handler mHandler = new Handler() {
+    private SeaHandler mHandler = new SeaHandler();
+
+    public class SeaHandler extends Handler{
+        public final int MSG_WHAT_DOWNLOAD_FINISHED = 1;
+        public final int MSG_WHAT_LOAD_FINISHED = 2;
+
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case 1:
+                case MSG_WHAT_DOWNLOAD_FINISHED:
                     if (mFileDialog != null && mFileDialog.isShowing()) {
                         mFileDialog.dismiss();
                     }
@@ -78,15 +82,7 @@ public class SeafileActivity extends FragmentActivity {
                             SeafileActivity.this.getString(R.string.download_finished)
                                     + "  " + filePath);
                     break;
-                case 2:
-                    if (mUploadFileDialog.isShowing()) {
-                        mUploadFileDialog.dismiss();
-                    }
-                    String path = (String) msg.obj;
-                    ToastUtil.showSingletonToast(SeafileActivity.this,
-                            SeafileActivity.this.getString(R.string.upload_finished) + path);
-                    break;
-                case 3:
+                case MSG_WHAT_LOAD_FINISHED:
                     mErrorText.setVisibility(View.GONE);
                     if (mLoadingDialog != null && mLoadingDialog.isShowing()) {
                         mLoadingDialog.dismiss();
@@ -94,7 +90,7 @@ public class SeafileActivity extends FragmentActivity {
             }
             super.handleMessage(msg);
         }
-    };
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -450,32 +446,10 @@ public class SeafileActivity extends FragmentActivity {
         dialog.show(getSupportFragmentManager(), TAG_DELETE_FILE_DIALOG);
     }
 
-    public void showUploadFileDialog(final String filePath) {
+    public void showUploadFileDialog(File file) {
         mUploadFileDialog = new UploadFileDialog(this,
-                mNavContext.getRepoName(), mNavContext.getRepoID(), filePath);
+                mNavContext.getRepoName(), mNavContext.getRepoID(), file);
         mUploadFileDialog.show();
-        final SeafConnection sc = new SeafConnection(mAccount, this);
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    String newFileID = null;
-                    newFileID = sc.uploadFile(mNavContext.getRepoID(),
-                            mNavContext.getDirPath(), filePath, null, false);
-                    if (newFileID != null) {
-                        refreshDirent();
-                        Message msg = Message.obtain();
-                        msg.what = 2;
-                        msg.obj = filePath;
-                        mHandler.sendMessage(msg);
-                    }
-                } catch (SeafException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }.start();
     }
 
     private class LoadDirTask extends AsyncTask<String, Void, List<SeafDirent>> {
@@ -612,7 +586,7 @@ public class SeafileActivity extends FragmentActivity {
         });
     }
 
-    public Handler getHandler() {
+    public SeaHandler getHandler() {
         return mHandler;
     }
 

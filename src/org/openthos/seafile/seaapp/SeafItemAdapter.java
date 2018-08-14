@@ -13,6 +13,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 import org.openthos.seafile.R;
+import org.openthos.seafile.seaapp.SeafileActivity.SeaHandler;
 
 public class SeafItemAdapter extends BaseAdapter {
 
@@ -51,7 +52,8 @@ public class SeafItemAdapter extends BaseAdapter {
     public void setItemsAndRefresh(List items) {
         mActivity.getCurDirNames().clear();
         mActivity.getCurFileNames().clear();
-        mActivity.getHandler().sendEmptyMessage(3);
+        SeaHandler handler = mActivity.getHandler();
+        handler.sendEmptyMessage(handler.MSG_WHAT_LOAD_FINISHED);
         if (items == null) {
             this.items.clear();
         } else {

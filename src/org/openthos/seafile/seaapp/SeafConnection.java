@@ -36,6 +36,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.openthos.seafile.seaapp.httputils.RequestManager;
 import org.openthos.seafile.seaapp.HttpRequest.HttpRequestException;
+import org.openthos.seafile.seaapp.SeafileActivity.SeaHandler;
 import org.openthos.seafile.R;
 
 //import com.google.common.collect.Maps;
@@ -207,7 +208,8 @@ public class SeafConnection {
             return true;
         } catch (SeafException e) {
             final int code = e.getCode();
-            mActivity.getHandler().sendEmptyMessage(3);
+            SeaHandler handler = mActivity.getHandler();
+            handler.sendEmptyMessage(handler.MSG_WHAT_LOAD_FINISHED);
             mActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -228,7 +230,8 @@ public class SeafConnection {
             throw e;
         } catch (HttpRequest.HttpRequestException e) {
             final String message = e.getMessage();
-            mActivity.getHandler().sendEmptyMessage(3);
+            SeaHandler seaHandler = mActivity.getHandler();
+            seaHandler.sendEmptyMessage(seaHandler.MSG_WHAT_LOAD_FINISHED);
             mActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -472,7 +475,8 @@ public class SeafConnection {
 
         } catch (SeafException e) {
             final int code = e.getCode();
-            mActivity.getHandler().sendEmptyMessage(3);
+            SeaHandler handler = mActivity.getHandler();
+            handler.sendEmptyMessage(handler.MSG_WHAT_LOAD_FINISHED);
             mActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -492,7 +496,7 @@ public class SeafConnection {
                 }
             });
             final String message = e.getMessage();
-            mActivity.getHandler().sendEmptyMessage(3);
+            handler.sendEmptyMessage(handler.MSG_WHAT_LOAD_FINISHED);
             mActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {

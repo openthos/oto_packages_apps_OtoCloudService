@@ -139,8 +139,8 @@ public class MenuDialog extends Dialog implements ListView.OnItemClickListener {
                 String[] split = text.toString().split(mark);
                 filePath = split[1];
                 File file = new File(filePath);
-                if (file.exists() && file.isFile()) {
-                    mActivity.showUploadFileDialog(filePath);
+                if (file.exists()) {
+                    mActivity.showUploadFileDialog(file);
                 } else {
                     ToastUtil.showSingletonToast(getContext(),
                             mActivity.getString(R.string.upload_select_file_tip));

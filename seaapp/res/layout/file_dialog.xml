@@ -44,12 +44,13 @@
                 android:lines="1"
                 android:paddingBottom="4dp"
                 android:singleLine="true"
-                android:textSize="12dp" />
+                android:textSize="16dp" />
 
             <ProgressBar
                 android:id="@+id/progress_bar"
                 android:layout_width="fill_parent"
                 android:layout_height="12dp"
+                style="@android:style/Widget.Material.Light.ProgressBar.Horizontal"
                 android:indeterminate="true" />
 
         </LinearLayout>

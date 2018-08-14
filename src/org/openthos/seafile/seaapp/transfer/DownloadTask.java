@@ -12,6 +12,7 @@ import org.openthos.seafile.seaapp.SeafRepo;
 import org.openthos.seafile.seaapp.SeafileActivity;
 import org.openthos.seafile.seaapp.IntentBuilder;
 import org.openthos.seafile.seaapp.ToastUtil;
+import org.openthos.seafile.seaapp.SeafileActivity.SeaHandler;
 import org.openthos.seafile.R;
 
 /**
@@ -69,7 +70,8 @@ public class DownloadTask extends TransferTask {
                 return file;
         } catch (SeafException e) {
             final int code = e.getCode();
-            mActivity.getHandler().sendEmptyMessage(3);
+            SeaHandler handler = mActivity.getHandler();
+            handler.sendEmptyMessage(handler.MSG_WHAT_LOAD_FINISHED);
             mActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -111,9 +113,10 @@ public class DownloadTask extends TransferTask {
                 downloadStateListener.onFileDownloaded(taskID);
 
                 Message msg = Message.obtain();
-                msg.what = 1;
+                SeaHandler handler = mActivity.getHandler();
+                msg.what = handler.MSG_WHAT_DOWNLOAD_FINISHED;
                 msg.obj = file.getAbsolutePath();
-                mActivity.getHandler().sendMessage(msg);
+                handler.sendMessage(msg);
                 IntentBuilder.viewFile( mActivity, file.getAbsolutePath());
             } else {
                 state = TaskState.FAILED;
