@@ -57,6 +57,7 @@ public class SeafileActivity extends FragmentActivity {
     public MenuDialog mMenuDialog;
     private DownloadTaskManager mDownloadTaskManager;
     private UploadFileDialog mUploadFileDialog;
+    private DownloadFileDialog mDownloadFileDialog;
     public LoadingDialog mLoadingDialog;
     private List<String> mCurDirNames = new ArrayList<>();
     private List<String> mCurFileNames = new ArrayList<>();
@@ -74,8 +75,8 @@ public class SeafileActivity extends FragmentActivity {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case MSG_WHAT_DOWNLOAD_FINISHED:
-                    if (mFileDialog != null && mFileDialog.isShowing()) {
-                        mFileDialog.dismiss();
+                    if (mDownloadFileDialog != null && mDownloadFileDialog.isShowing()) {
+                        mDownloadFileDialog.dismiss();
                     }
                     String filePath = (String) msg.obj;
                     ToastUtil.showSingletonToast(SeafileActivity.this,
@@ -450,6 +451,12 @@ public class SeafileActivity extends FragmentActivity {
         mUploadFileDialog = new UploadFileDialog(this,
                 mNavContext.getRepoName(), mNavContext.getRepoID(), file);
         mUploadFileDialog.show();
+    }
+
+    public void showDownloadFileDialog(String filePath) {
+        mDownloadFileDialog = new DownloadFileDialog(this,
+                mNavContext.getRepoName(), mNavContext.getRepoID(), filePath);
+        mDownloadFileDialog.show();
     }
 
     private class LoadDirTask extends AsyncTask<String, Void, List<SeafDirent>> {

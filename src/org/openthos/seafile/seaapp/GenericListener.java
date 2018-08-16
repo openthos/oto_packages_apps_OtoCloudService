@@ -135,10 +135,7 @@ public class GenericListener implements View.OnTouchListener{
                 if (localFile.exists()) {
                     localFile.delete();
                 }
-                int taskID = mActivity.getDownloadTaskManager().addTask(
-                        mActivity.getAccount(), repoName, repoID, filePath, fileSize);
-                mActivity.mFileDialog = new FileDialog(mActivity, repoName, repoID, filePath);
-                mActivity.mFileDialog.show();
+                mActivity.showDownloadFileDialog(filePath);
             }
         }
     }
