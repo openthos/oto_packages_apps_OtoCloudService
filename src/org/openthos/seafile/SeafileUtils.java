@@ -5,45 +5,31 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Build;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
-import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by Wang Zhixu on 12/23/16.
  */
 
 public class SeafileUtils {
-    public static final String OPENTHOS_URI = "content://com.otosoft.tools.myprovider/openthosID";
 
     public static final String SEAFILE_SOURCECODE_PATH = "/system/opt/sea.tar.bz";
     public static final String SEAFILE_CONFIG_PATH = "/data/seafile-config";
     public static final String SEAFILE_PROOT_PATH = "/data/sea";
-    public static final String SEAFILE_PROOT_BASEPATH = "/data";
     public static final String SEAFILE_DATA_ROOT_PATH = "/sdcard/seafile";
 
-    public static final String SEAFILE_COMMAND_SEAFILE = "seaf-cli";
     public static final String SEAFILE_COMMAND_BASE
             = "./data/sea/proot.sh -b /data/seafile-config:/data/seafile-config seaf-cli ";
 
@@ -51,28 +37,13 @@ public class SeafileUtils {
     public static final String DATA_SEAFILE_NAME = "DATA";
 
     public static final String SEAFILE_URL_LIBRARY = "http://dev.openthos.org/";
-    public static final String ACCOUNT_INFO_FILE = "account";
-    public static String mOpenthosUrl = SEAFILE_URL_LIBRARY;
-    public static String mUserId = "";
-    public static String mUserPassword = "";
     public static String getUserAccount() {
-        return " -u " + mUserId + " -p " + mUserPassword;
+        return " -u " + SeafileService.mAccount.mUserName +
+                " -p " + SeafileService.mAccount.mUserPassword;
     }
 
-    public static final int SEAFILE_ID_LENGTH = 36;
     public static final int UNSYNC = 0;
     public static final int SYNC = 1;
-
-    public static final String SEAFILE_DATA = "seeafile_data";
-
-    public static final int TAG_APPDATA_IMPORT = 0;
-    public static final int TAG_APPDATA_EXPORT = 1;
-    public static final int TAG_BROWSER_IMPORT = 2;
-    public static final int TAG_BROWSER_EXPORT = 3;
-
-    public static boolean isExistsAccount() {
-        return !TextUtils.isEmpty(mUserId) || !TextUtils.isEmpty(mUserPassword);
-    }
 
     public static void init() {
         File seafileAtDisk = new File(SEAFILE_DATA_ROOT_PATH);
@@ -84,54 +55,24 @@ public class SeafileUtils {
         int i = 0;
         while (!seafile.exists()) {
             i++;
-            exec(new String[]{"su", "-c", "rm -r /data/sea"
+            Utils.exec(new String[]{"su", "-c", "rm -r /data/sea"
                     + ";" + "tar xvf " + SEAFILE_SOURCECODE_PATH + " -C /data"
                     + ";" + "chmod -R 777 /data/sea"
                     + ";" + "busybox mkdir -m 777 -p /data/sea/sdcard/seafile"});
         }
         Log.i("wwww", i+"");
-        exec(new String[]{"su", "-c", "busybox mount --bind " + seafileAtDisk.getAbsolutePath()
+        Utils.exec(new String[]{"su",
+                "-c", "busybox mount --bind " + seafileAtDisk.getAbsolutePath()
                 + " /data/sea/sdcard/seafile" + ";" + "busybox mkdir -m 777 " + SEAFILE_CONFIG_PATH
                 + ";" + SEAFILE_COMMAND_BASE + "init -d " + config.getAbsolutePath()});
     }
 
     public static void start() {
-        exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE + "start"});
+        Utils.exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE + "start"});
     }
 
     public static void stop() {
-        exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE + "stop"});
-        mUserId = "";
-        mUserPassword = "";
-    }
-
-    public static void download(String libraryid, String filePath) {
-        filePath = filePath.replace(" ", "\\ ");
-        Process pro;
-        BufferedReader in = null;
-        try {
-            File f = new File(filePath);
-            if (!f.exists()) {
-                f.mkdirs();
-            }
-            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE
-                    + "download -l " + libraryid + " -d "
-                    + filePath + " " + " -s " + mOpenthosUrl + getUserAccount()});
-            in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
-            String line;
-            while ((line = in.readLine()) != null) {
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+        Utils.exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE + "stop"});
     }
 
     public static String create(String fileName) {
@@ -140,8 +81,9 @@ public class SeafileUtils {
         BufferedReader in = null;
         String id = "";
         try {
-            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE
-                    + "create -n " + fileName +  " -s " + mOpenthosUrl + getUserAccount()});
+            pro = Runtime.getRuntime().exec(new String[]{"su", "-c",
+                    SEAFILE_COMMAND_BASE + "create -n " + fileName +  " -s " +
+                    SeafileService.mAccount.mOpenthosUrl + getUserAccount()});
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
             while ((line = in.readLine()) != null) {
@@ -172,10 +114,10 @@ public class SeafileUtils {
             }
             Log.i("wwww", SEAFILE_COMMAND_BASE
                      + "sync -l " + libraryid + " -d "
-                     + filePath + " -s " + mOpenthosUrl + getUserAccount());
+                     + filePath + " -s " + SeafileService.mAccount.mOpenthosUrl + getUserAccount());
             pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE
                     + "sync -l " + libraryid + " -d "
-                    + filePath + " -s " + mOpenthosUrl + getUserAccount()});
+                    + filePath + " -s " + SeafileService.mAccount.mOpenthosUrl + getUserAccount()});
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
             while ((line = in.readLine()) != null) {
@@ -299,26 +241,10 @@ public class SeafileUtils {
         }
     }
 
-    public static boolean isNetworkOn(Context context) {
-        ConnectivityManager connMgr =
-                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo wifi = connMgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-        if(wifi != null && wifi.isAvailable()
-                && wifi.getDetailedState() == NetworkInfo.DetailedState.CONNECTED) {
-            return true;
-        }
-        NetworkInfo mobile = connMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
-        if(mobile != null && mobile.isAvailable()
-                && mobile.getDetailedState() == NetworkInfo.DetailedState.CONNECTED) {
-            return true;
-        }
-        return false;
-    }
-
     public static String getResult(String token)
             throws UnsupportedEncodingException, HttpRequest.HttpRequestException {
         HttpRequest ret = null;
-        ret = HttpRequest.get(mOpenthosUrl + "api2/repos/", null, false);
+        ret = HttpRequest.get(SeafileService.mAccount.mOpenthosUrl + "api2/repos/", null, false);
         ret.readTimeout(15000).connectTimeout(15000).followRedirects(false)
                 .header("Authorization", "Token " + token);
         if (ret.ok()) {
@@ -332,10 +258,10 @@ public class SeafileUtils {
             throws UnsupportedEncodingException, JSONException,
             HttpRequest.HttpRequestException, PackageManager.NameNotFoundException {
         HttpRequest rep = null;
-        rep = HttpRequest.post(mOpenthosUrl + "api2/auth-token/", null, false)
-                .followRedirects(true).connectTimeout(15000);
-        rep.form("username", mUserId);
-        rep.form("password", mUserPassword);
+        rep = HttpRequest.post(SeafileService.mAccount.mOpenthosUrl + "api2/auth-token/",
+                null, false).followRedirects(true).connectTimeout(15000);
+        rep.form("username", SeafileService.mAccount.mUserName);
+        rep.form("password", SeafileService.mAccount.mUserPassword);
         PackageInfo packageInfo = null;
         packageInfo = context.getPackageManager().
                 getPackageInfo(context.getPackageName(), 0);
@@ -353,364 +279,5 @@ public class SeafileUtils {
         } else {
             throw new UnsupportedEncodingException();
         }
-    }
-
-    public static void exec(String[] commands) {
-        Process pro = null;
-        BufferedReader in = null;
-        try {
-            pro = Runtime.getRuntime().exec(commands);
-            in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
-            String line;
-            while ((line = in.readLine()) != null) {
-                if (line.contains("Started: seafile daemon")) {
-                    break;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (pro != null) {
-                processDestroy(pro);
-                pro = null;
-            }
-        }
-    }
-
-
-    public static void exec(String cmd) {
-        if (TextUtils.isEmpty(cmd)) {
-            return;
-        }
-        Process pro = null;
-        DataOutputStream dos = null;
-        try {
-            Runtime rt = Runtime.getRuntime();
-            pro = rt.exec("su");
-            dos = new DataOutputStream(pro.getOutputStream());
-            dos.writeBytes(cmd + "\n");
-            dos.flush();
-            dos.writeBytes("exit\n");
-            dos.flush();
-            pro.waitFor();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (dos != null) {
-                try {
-                    dos.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (pro != null) {
-                processDestroy(pro);
-                pro = null;
-            }
-        }
-    }
-
-    /*
-     * eg:
-     *     from : /data/temp
-     *     to   : /dev/tmp/temp.tar.gz
-     */
-    public static void tarFile(String from, String to) {
-        if (TextUtils.isEmpty(from) || TextUtils.isEmpty(to)) {
-            return;
-        }
-        Process pro = null;
-        DataOutputStream dos = null;
-        try {
-            File f = new File(to);
-            Runtime rt = Runtime.getRuntime();
-            pro = rt.exec("su");//Root
-            dos = new DataOutputStream(pro.getOutputStream());
-            dos.writeBytes("mkdirs -p " + f.getParent().replace(" ", "\\ ") + "\n");
-            dos.writeBytes("tar -czpf " + to.replace(" ", "\\ ") + " "
-                    + from.replace(" ", "\\ ") + "\n");
-            Log.i("wwww", "tar -czpf " + to.replace(" ", "\\ ") + " " + from.replace(" ", "\\ ") + "\n");
-            dos.flush();
-            dos.writeBytes("exit\n");
-            dos.flush();
-            pro.waitFor();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (dos != null) {
-                try {
-                    dos.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (pro != null) {
-                processDestroy(pro);
-                pro = null;
-            }
-        }
-    }
-
-    /*
-     * eg:
-     *     from : /dev/tmp/temp.tar.gz
-     */
-    public static void untarFile(String from) {
-        if (TextUtils.isEmpty(from)) {
-            return;
-        }
-        Process pro = null;
-        DataOutputStream dos = null;
-        try {
-            Runtime rt = Runtime.getRuntime();
-            pro= rt.exec("su");//Root
-            dos = new DataOutputStream(pro.getOutputStream());
-            dos.writeBytes("tar -xzpf " + from.replace(" ", "\\ ") + "\n");
-            dos.flush();
-            dos.writeBytes("exit\n");
-            dos.flush();
-            pro.waitFor();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (dos != null) {
-                try {
-                    dos.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    public static boolean checkFile(String path) {
-        if (TextUtils.isEmpty(path)) {
-            return false;
-        }
-        Process pro = null;
-        BufferedReader in = null;
-        try {
-            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", "ls "
-                    + path.replace(" ", "\\ ")});
-            in = new BufferedReader(new InputStreamReader(pro.getErrorStream()));
-            String line;
-            while ((line = in.readLine()) != null) {
-                return false;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-
-                }
-            }
-            if (pro != null) {
-                processDestroy(pro);
-                pro = null;
-            }
-        }
-        return true;
-    }
-
-    public static ArrayList<String> execCommand(String command) {
-        Process pro = null;
-        BufferedReader in = null;
-        ArrayList<String> result = new ArrayList();
-        try {
-            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", command});
-            in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
-            String line;
-            while ((line = in.readLine()) != null) {
-                result.add(line);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (pro != null) {
-                processDestroy(pro);
-                pro = null;
-            }
-        }
-        return result;
-    }
-
-    public static HashMap<String, String> execCommands(String command) {
-        Process pro = null;
-        BufferedReader in = null;
-        HashMap<String, String> result = new HashMap();
-        try {
-            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", command});
-            in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
-            String line;
-            while ((line = in.readLine()) != null) {
-                String[] lines = line.split("\\s+");
-                if (lines.length > 2) {
-                    result.put(lines[lines.length - 1], lines[1]);
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (pro != null) {
-                processDestroy(pro);
-                pro = null;
-            }
-        }
-        return result;
-    }
-
-    public static void chownFile(String path, String uid) {
-        if (TextUtils.isEmpty(path)) {
-            return;
-        }
-        Process pro = null;
-        DataOutputStream dos = null;
-        try {
-            Runtime rt = Runtime.getRuntime();
-            pro = rt.exec("su");
-            dos = new DataOutputStream(pro.getOutputStream());
-            dos.writeBytes("chown -R " + uid + ":" + uid + " " + path + "\n");
-            dos.flush();
-            dos.writeBytes("exit\n");
-            dos.flush();
-            pro.waitFor();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (dos != null) {
-                try {
-                    dos.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (pro != null) {
-                processDestroy(pro);
-                pro = null;
-            }
-        }
-    }
-
-    private static void processDestroy(Process process) {
-        if (process != null) {
-            try {
-                if (process.exitValue() != 0) {
-                    killProcess(process);
-                }
-            } catch (IllegalThreadStateException e) {
-                killProcess(process);
-            }
-        }
-    }
-
-    private static void killProcess(Process process) {
-        int pid = getProcessId(process);
-        if (pid != 0) {
-            try {
-                //android kill process
-                android.os.Process.killProcess(pid);
-            } catch (Exception e) {
-                try {
-                    process.destroy();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-        }
-    }
-
-    private static int getProcessId(Process process) {
-        String str = process.toString();
-        try {
-            int i = str.indexOf("=") + 1;
-            int j = str.indexOf("]");
-            str = str.substring(i, j);
-            return Integer.parseInt(str);
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-
-    public static boolean writeAccount(Context context,
-            String id, String password, FileOutputStream output) {
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output));
-        try {
-            writer.write(mOpenthosUrl + System.getProperty("line.separator") +
-                    id + System.getProperty("line.separator") + password);
-            writer.flush();
-        } catch (IOException e) {
-            Toast.makeText(context, context.getString(R.string.write_error), 0).show();
-            return false;
-        } finally {
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return true;
-    }
-
-    public static String[] readAccount(Context context, FileInputStream input) {
-        String[] account = new String[3];
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader(new InputStreamReader(input));
-            account[0] = reader.readLine(); //url
-            account[1] = reader.readLine(); //username
-            account[2] = reader.readLine(); //password
-        } catch (IOException e) {
-            Toast.makeText(context, context.getString(R.string.read_error), 0).show();
-            return null;
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        if (TextUtils.isEmpty(account[0])) {
-            return null;
-        }
-        return account;
     }
 }

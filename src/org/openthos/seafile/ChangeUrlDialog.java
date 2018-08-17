@@ -15,7 +15,7 @@ import org.openthos.seafile.R;
 
 public class ChangeUrlDialog extends Dialog {
     private Context mContext;
-    private String mUrl = SeafileUtils.mOpenthosUrl;
+    private String mUrl = SeafileService.mAccount.mOpenthosUrl;
     private ButtonClickListener mClickListener;
     private Handler mHandler;
 
@@ -41,11 +41,11 @@ public class ChangeUrlDialog extends Dialog {
         RadioButton devs = (RadioButton) findViewById(R.id.url_devs);
         TextView confirm = (TextView) findViewById(R.id.confirm);
         TextView cancel = (TextView) findViewById(R.id.cancel);
-        if (SeafileUtils.mOpenthosUrl.equals(dev.getText().toString())) {
+        if (SeafileService.mAccount.mOpenthosUrl.equals(dev.getText().toString())) {
             dev.setChecked(true);
-        } else if (SeafileUtils.mOpenthosUrl.equals(lab.getText().toString())) {
+        } else if (SeafileService.mAccount.mOpenthosUrl.equals(lab.getText().toString())) {
             lab.setChecked(true);
-        } else if (SeafileUtils.mOpenthosUrl.equals(devs.getText().toString())) {
+        } else if (SeafileService.mAccount.mOpenthosUrl.equals(devs.getText().toString())) {
             devs.setChecked(true);
         }
         dev.setOnClickListener(mClickListener);
@@ -61,8 +61,8 @@ public class ChangeUrlDialog extends Dialog {
         public void onClick(View v) {
             switch (v.getId()) {
                 case R.id.confirm:
-                    if (!SeafileUtils.mOpenthosUrl.equals(mUrl)) {
-                        SeafileUtils.mOpenthosUrl = mUrl;
+                    if (!SeafileService.mAccount.mOpenthosUrl.equals(mUrl)) {
+                        SeafileService.mAccount.mOpenthosUrl = mUrl;
                         mHandler.sendEmptyMessage(OpenthosIDActivity.MSG_CHANGE_URL);
                     }
                     dismiss();

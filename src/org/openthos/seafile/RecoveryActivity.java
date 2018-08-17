@@ -289,9 +289,9 @@ public class RecoveryActivity extends Activity {
             switch (view.getId()) {
                 case R.id.cloud_import:
                     if ((mSwitchBrowser.isChecked()
-                            && mTag == SeafileUtils.TAG_BROWSER_EXPORT)
+                            && mTag == Utils.TAG_BROWSER_EXPORT)
                         || (mSwitchAppdata.isChecked()
-                            && mTag == SeafileUtils.TAG_APPDATA_EXPORT)) {
+                            && mTag == Utils.TAG_APPDATA_EXPORT)) {
                         Toast.makeText(RecoveryActivity.this,
                                 getString(R.string.warning_browser_export), Toast.LENGTH_LONG).show();
                         return;
@@ -300,9 +300,9 @@ public class RecoveryActivity extends Activity {
                     break;
                 case R.id.cloud_export:
                     if ((mSwitchBrowser.isChecked()
-                            && mTag == SeafileUtils.TAG_BROWSER_IMPORT)
+                            && mTag == Utils.TAG_BROWSER_IMPORT)
                         || (mSwitchAppdata.isChecked()
-                            && mTag == SeafileUtils.TAG_APPDATA_IMPORT)) {
+                            && mTag == Utils.TAG_APPDATA_IMPORT)) {
                         Toast.makeText(RecoveryActivity.this,
                                 getString(R.string.warning_browser_import), Toast.LENGTH_LONG).show();
                         return;
@@ -310,22 +310,22 @@ public class RecoveryActivity extends Activity {
                     showExportConfirmDialog();
                     break;
                 case R.id.tv_browser_import:
-                    operateClick(mImportBrowsers, SeafileUtils.TAG_BROWSER_IMPORT,
+                    operateClick(mImportBrowsers, Utils.TAG_BROWSER_IMPORT,
                                 mBrowsersAdapter, mSyncBrowsers, mListViewBrowser,
                                 mBrowserImport, mBrowserExport);
                     break;
                 case R.id.tv_browser_export:
-                    operateClick(mExportBrowsers, SeafileUtils.TAG_BROWSER_EXPORT,
+                    operateClick(mExportBrowsers, Utils.TAG_BROWSER_EXPORT,
                                 mBrowsersAdapter, mSyncBrowsers, mListViewBrowser,
                                 mBrowserExport, mBrowserImport);
                     break;
                 case R.id.tv_appdata_import:
-                    operateClick(mImportAppdata, SeafileUtils.TAG_APPDATA_IMPORT,
+                    operateClick(mImportAppdata, Utils.TAG_APPDATA_IMPORT,
                                 mAppdataAdapter, mSyncAppdata, mListViewAppdata,
                                 mAppdataImport, mAppdataExport);
                     break;
                 case R.id.tv_appdata_export:
-                    operateClick(mExportAppdata, SeafileUtils.TAG_APPDATA_EXPORT,
+                    operateClick(mExportAppdata, Utils.TAG_APPDATA_EXPORT,
                                 mAppdataAdapter, mSyncAppdata, mListViewAppdata,
                                 mAppdataExport, mAppdataImport);
                     break;

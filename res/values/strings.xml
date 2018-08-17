@@ -67,6 +67,7 @@
     <string name="toast_relogin">Please re-login</string>
     <string name="read_error">Read account infomation failure.</string>
     <string name="write_error">Save account infomation failure.</string>
+    <string name="sync_complete">Synchronized\n</string>
 
     <item type="id" name="tag_list"></item>
     <item type="id" name="tag_package"></item>

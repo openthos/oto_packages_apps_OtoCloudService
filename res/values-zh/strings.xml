@@ -62,4 +62,5 @@
     <string name="toast_relogin">请重新登录</string>
     <string name="read_error">获取账号信息失败</string>
     <string name="write_error">保存账号信息失败</string>
+    <string name="sync_complete">同步完成\n</string>
 </resources>

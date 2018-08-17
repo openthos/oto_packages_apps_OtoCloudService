@@ -63,7 +63,7 @@ public class RecoveryService extends Service {
     private Timer mTimer;
     private AutoBackupTask mAutoTask;
     private boolean mIsTimer;
-    public SharedPreferences mSp;
+    private SharedPreferences mSp;
     public static String mConfigPath;
 
     @Override
@@ -126,13 +126,13 @@ public class RecoveryService extends Service {
         mAllAppdataList.removeAll(mAllBrowserList);
         mImportList.clear();
         switch (tag) {
-            case SeafileUtils.TAG_APPDATA_EXPORT:
+            case Utils.TAG_APPDATA_EXPORT:
                 mAllAppdataList.removeAll(mAllBrowserList);
                 return mAllAppdataList;
-            case  SeafileUtils.TAG_APPDATA_IMPORT:
+            case Utils.TAG_APPDATA_IMPORT:
                 String appName = null;
-                for (String name : SeafileUtils.execCommand("ls " +
-                        mConfigPath + SEAFILE_PATH_APPDATA)) {
+                for (String name : Utils.exec(new String[]{"su", "-c",
+                        "ls " + mConfigPath + SEAFILE_PATH_APPDATA})) {
                     appName = name.replace(".tar.gz", "");
                     for (ResolveInfo info : mAllAppdataList) {
                         if (appName.equals(info.activityInfo.packageName)) {
@@ -142,12 +142,12 @@ public class RecoveryService extends Service {
                     }
                 }
                 return mImportList;
-            case  SeafileUtils.TAG_BROWSER_EXPORT:
+            case Utils.TAG_BROWSER_EXPORT:
                 return mAllBrowserList;
-            case  SeafileUtils.TAG_BROWSER_IMPORT:
+            case Utils.TAG_BROWSER_IMPORT:
                 String browserName = null;
-                for (String name : SeafileUtils.execCommand("ls " +
-                        mConfigPath + SEAFILE_PATH_BROWSER)) {
+                for (String name : Utils.exec(new String[]{"su", "-c",
+                        "ls " + mConfigPath + SEAFILE_PATH_BROWSER})) {
                     browserName = name.replace(".tar.gz", "");
                     for (ResolveInfo info : mAllBrowserList) {
                         if (browserName.equals(info.activityInfo.packageName)) {
@@ -190,7 +190,7 @@ public class RecoveryService extends Service {
             BufferedReader appReader = null;
             try {
                 String path = mConfigPath + SEAFILE_PATH_APPSTORE;
-                SeafileUtils.exec("busybox chmod 777 " + path);
+                Utils.exec("busybox chmod 777 " + path);
                 appReader = new BufferedReader(new FileReader(path));
                 String line = null;
                 while ((line = appReader.readLine()) != null) {
@@ -263,8 +263,8 @@ public class RecoveryService extends Service {
             }
             if (appstore) {
                 String path = mConfigPath + SEAFILE_PATH_APPSTORE;
-                if (SeafileUtils.checkFile(path)) {
-                    SeafileUtils.exec("rm " + path);
+                if (Utils.checkFile(path)) {
+                    Utils.exec("rm " + path);
                 }
                 exportAppstoreFiles();
             }
@@ -278,18 +278,18 @@ public class RecoveryService extends Service {
 
     private void exportWallpaperFiles() {
         String path =  mConfigPath + SEAFILE_PATH_WALLPAPER;
-        if (SeafileUtils.checkFile(SYSTEM_PATH_WALLPAPER)) {
-            SeafileUtils.exec("cp -f " + SYSTEM_PATH_WALLPAPER + " "
+        if (Utils.checkFile(SYSTEM_PATH_WALLPAPER)) {
+            Utils.exec("cp -f " + SYSTEM_PATH_WALLPAPER + " "
                     + mConfigPath + SEAFILE_PATH_WALLPAPER);
         } else {
-            SeafileUtils.exec("rm -r " + mConfigPath + SEAFILE_PATH_WALLPAPER);
+            Utils.exec("rm -r " + mConfigPath + SEAFILE_PATH_WALLPAPER);
         }
     }
 
     private void importWallpaperFiles() {
         String path =  mConfigPath  + SEAFILE_PATH_WALLPAPER;
-        if (SeafileUtils.checkFile(path)) {
-            SeafileUtils.exec("busybox chmod 777 " + path);
+        if (Utils.checkFile(path)) {
+            Utils.exec("busybox chmod 777 " + path);
             try {
                 WallpaperManager.getInstance(this).setStream(new FileInputStream(path));
             } catch (IOException exception) {
@@ -300,7 +300,7 @@ public class RecoveryService extends Service {
 
     private void importWifiFiles() {
         String path = mConfigPath + SEAFILE_PATH_WIFI;
-        if (SeafileUtils.checkFile(path)) {
+        if (Utils.checkFile(path)) {
             WifiManager wifiManager = (WifiManager) (getSystemService(Context.WIFI_SERVICE));
             if (wifiManager.isWifiEnabled()) {
                 wifiManager.setWifiEnabled(false);
@@ -310,7 +310,7 @@ public class RecoveryService extends Service {
                     e.printStackTrace();
                 }
             }
-            SeafileUtils.untarFile(path);
+            Utils.untarFile(path);
             if (!wifiManager.isWifiEnabled()) {
                 wifiManager.setWifiEnabled(true);
                 try {
@@ -323,7 +323,7 @@ public class RecoveryService extends Service {
     }
 
     private void exportWifiFiles() {
-        SeafileUtils.tarFile(SYSTEM_PATH_WIFI_INFO,
+        Utils.tarFile(SYSTEM_PATH_WIFI_INFO,
                 mConfigPath + SEAFILE_PATH_WIFI);
     }
 
@@ -339,7 +339,7 @@ public class RecoveryService extends Service {
         try {
             String path = mConfigPath + SEAFILE_PATH_APPSTORE;
             if (packageInfos.size() > 0) {
-                SeafileUtils.exec("echo > " + path + ";busybox chmod 777 " + path);
+                Utils.exec("echo > " + path + ";busybox chmod 777 " + path);
                 appWriter = new BufferedWriter(new FileWriter(path));
                 for (PackageInfo f :packageInfos){
                     appWriter.write(f.packageName);
@@ -364,13 +364,13 @@ public class RecoveryService extends Service {
     }
 
     private void importFiles(List<String> packages, String configPath) {
-        HashMap<String, String> map = SeafileUtils.execCommands("ls -l /data/data");
+        HashMap<String, String> map = Utils.getFiles("/data/data");
         for (int i = 0; i < packages.size(); i++) {
             String uid = map.get(packages.get(i));
             if (!TextUtils.isEmpty(uid)) {
-                SeafileUtils.untarFile(mConfigPath +
+                Utils.untarFile(mConfigPath +
                         configPath + packages.get(i) + ".tar.gz");
-                SeafileUtils.chownFile(SYSTEM_PATH_DATA + packages.get(i), uid);
+                Utils.chownFile(SYSTEM_PATH_DATA + packages.get(i), uid);
             }
         }
     }
@@ -381,7 +381,7 @@ public class RecoveryService extends Service {
             if (!configFile.exists()) {
                 configFile.mkdirs();
             }
-            SeafileUtils.tarFile(SYSTEM_PATH_DATA + packages.get(i),
+            Utils.tarFile(SYSTEM_PATH_DATA + packages.get(i),
                     configFile.getAbsolutePath() + "/" + packages.get(i) + ".tar.gz");
         }
     }
@@ -422,7 +422,7 @@ public class RecoveryService extends Service {
                     for (String str : temp) {
                         sb.append("netcfg ").append(str).append(" down;");
                     }
-                    SeafileUtils.exec(new String[]{"su", "-c",
+                    Utils.exec(new String[]{"su", "-c",
                             sb.toString() + "kill " + Jni.nativeKillPid()});
                 }
             });

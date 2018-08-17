@@ -27,6 +27,7 @@ import java.util.List;
 
 import org.openthos.seafile.R;
 import org.openthos.seafile.SeafileUtils;
+import org.openthos.seafile.SeafileAccount;
 import org.openthos.seafile.seaapp.transfer.DownloadTaskManager;
 
 public class SeafileActivity extends FragmentActivity {
@@ -113,17 +114,12 @@ public class SeafileActivity extends FragmentActivity {
         mListView.setAdapter(mAdapter);
         mGridView.setOnTouchListener(mGenericListener);
         mGridView.setAdapter(mAdapter);
-        try {
-            String[] account = SeafileUtils.readAccount(this,
-                    openFileInput(SeafileUtils.ACCOUNT_INFO_FILE));
-            if (account != null) {
-                mServerURL = account[0];
-                mUserId = account[1];
-                mPassword = account[2];
-                getAccountAndLogin();
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+        SeafileAccount account = org.openthos.seafile.Utils.readAccount(this);
+        if (account.isExistsAccount()) {
+            mServerURL = account.mOpenthosUrl;
+            mUserId = account.mUserName;
+            mPassword = account.mUserPassword;
+            getAccountAndLogin();
         }
         findViewById(R.id.back).setOnClickListener(new View.OnClickListener() {
             @Override

@@ -36,11 +36,11 @@ public class LibraryRequestThread extends Thread {
     public static final int MSG_REGIST_SEAFILE_FAILED = 0x1002;
     public static final int MSG_LOGIN_SEAFILE_OK = 0x1003;
     public static final int MSG_LOGIN_SEAFILE_FAILED = 0x1004;
-    private String registeUri = SeafileUtils.mOpenthosUrl + "id/u/register";
-    private String loginGetUri = SeafileUtils.mOpenthosUrl + "oauth/login/";
+    private String registeUri = SeafileService.mAccount.mOpenthosUrl + "id/u/register";
+    private String loginGetUri = SeafileService.mAccount.mOpenthosUrl + "oauth/login/";
     private String loginPostUri =
-            SeafileUtils.mOpenthosUrl + "id/user/login?destination=oauth2/authorize";
-    private String referer = SeafileUtils.mOpenthosUrl + "accounts/login/?next=/";
+            SeafileService.mAccount.mOpenthosUrl + "id/user/login?destination=oauth2/authorize";
+    private String referer = SeafileService.mAccount.mOpenthosUrl + "accounts/login/?next=/";
     private String redirect = "http.protocol.handle-redirects";
     private String location, csrftoken, sessionid, sess, form_build_id;
     private String name , pass, id, email, passwd;
@@ -155,7 +155,7 @@ public class LibraryRequestThread extends Thread {
     }
 
     private boolean loginStep1Get() throws Exception{
-        URI uri = new URI(SeafileUtils.mOpenthosUrl);
+        URI uri = new URI(SeafileService.mAccount.mOpenthosUrl);
         HttpParams httpParams = new BasicHttpParams();
         httpParams.setParameter(redirect, true);
         HttpClient httpClient = new DefaultHttpClient(httpParams);
@@ -388,7 +388,7 @@ public class LibraryRequestThread extends Thread {
         HttpClient httpClient = new DefaultHttpClient(httpParams);
         HttpUriRequest get = new HttpGet(uri);
         get.setHeader("Referer",
-                SeafileUtils.mOpenthosUrl + "id/user/login?destination=oauth2/authorize");
+                SeafileService.mAccount.mOpenthosUrl + "id/user/login?destination=oauth2/authorize");
         get.setHeader("Cookie","csrftoken=" + csrftoken + ";" +
                 " django_language=zh-cn; has_js=1; sessionid=" +  sessionid + "; " + sess);
 
@@ -422,7 +422,7 @@ public class LibraryRequestThread extends Thread {
         HttpClient httpClient = new DefaultHttpClient(httpParams);
         HttpUriRequest get = new HttpGet(uri);
         get.setHeader("Referer",
-                SeafileUtils.mOpenthosUrl + "id/user/login?destination=oauth2/authorize");
+                SeafileService.mAccount.mOpenthosUrl + "id/user/login?destination=oauth2/authorize");
         get.setHeader("Cookie","csrftoken=" + csrftoken + ";" +
                 " django_language=zh-cn; has_js=1; sessionid=" +  sessionid + "; " + sess);
 

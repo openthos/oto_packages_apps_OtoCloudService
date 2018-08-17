@@ -141,10 +141,10 @@ public class OpenthosIDActivity extends Activity {
             mUnbundPref.setOnPreferenceClickListener(this);
             mUrlPref = findPreference(KEY_URL);
             mUrlPref.setOnPreferenceClickListener(this);
-            mUrlPref.setSummary(SeafileUtils.mOpenthosUrl);
+            mUrlPref.setSummary(SeafileService.mAccount.mOpenthosUrl);
 
-            if (SeafileUtils.isExistsAccount()) {
-                updateID(SeafileUtils.mUserId);
+            if (SeafileService.mAccount.isExistsAccount()) {
+                updateID(SeafileService.mAccount.mUserName);
                 mBindPref.setEnabled(false);
                 mUnbundPref.setEnabled(true);
             } else {
@@ -160,7 +160,6 @@ public class OpenthosIDActivity extends Activity {
                     switch (msg.what) {
                         case MSG_REGIST_SEAFILE:
                              try {
-                                 mISeafileService.setBinder(mSeafileBinder);
                                  mISeafileService.registeAccount(
                                          mRegisterID, mRegisterEmail, mRegisterPass);
                              } catch (RemoteException e) {
@@ -175,24 +174,12 @@ public class OpenthosIDActivity extends Activity {
                                 e.printStackTrace();
                             }
                             break;
-                        case MSG_REGIST_SEAFILE_OK:
-                            Toast.makeText(getActivity(), msg.obj.toString(),
-                                    Toast.LENGTH_SHORT).show();
-                            break;
-                        case MSG_REGIST_SEAFILE_FAILED:
-                            Toast.makeText(getActivity(), msg.obj.toString(),
-                                    Toast.LENGTH_SHORT).show();
-                            break;
                         case MSG_LOGIN_SEAFILE_OK:
                             Toast.makeText(getActivity(), msg.obj.toString(),
                                     Toast.LENGTH_SHORT).show();
-                            updateID(SeafileUtils.mUserId);
+                            updateID(SeafileService.mAccount.mUserName);
                             mBindPref.setEnabled(false);
                             mUnbundPref.setEnabled(true);
-                            break;
-                        case MSG_LOGIN_SEAFILE_FAILED:
-                            Toast.makeText(getActivity(), msg.obj.toString(),
-                                    Toast.LENGTH_SHORT).show();
                             break;
                         case MSG_CHANGE_URL:
                             updateOpenthosUrl(msg.obj.toString());
@@ -338,7 +325,7 @@ public class OpenthosIDActivity extends Activity {
             mUnbundPref.setEnabled(false);
             updateID(null);
             try {
-                if (!TextUtils.isEmpty(SeafileUtils.mUserId)) {
+                if (!TextUtils.isEmpty(SeafileService.mAccount.mUserName)) {
                     mISeafileService.stopAccount();
                 }
                 Toast.makeText(OpenthosIDActivity.this, mToastRelogin, Toast.LENGTH_SHORT).show();
@@ -361,33 +348,11 @@ public class OpenthosIDActivity extends Activity {
         @Override
         protected boolean onTransact(
                 int code, Parcel data, Parcel reply, int flags) throws RemoteException {
-            if (code == mISeafileService.getCodeRegiestSuccess()) {
-                Message msg = new Message();
-                msg.obj = data.readString();
-                msg.what = MSG_REGIST_SEAFILE_OK;
-                mHandler.sendMessage(msg);
-                reply.writeNoException();
-                return true;
-            } else if (code == mISeafileService.getCodeRegiestFailed()) {
-                Message msg = new Message();
-                msg.obj = data.readString();
-                msg.what = MSG_REGIST_SEAFILE_FAILED;
-                mHandler.sendMessage(msg);
-                reply.writeNoException();
-                return true;
-            }
             if (code == mISeafileService.getCodeLoginSuccess()) {
                 Message msg = new Message();
                 msg.obj = data.readString();
                 msg.what = MSG_LOGIN_SEAFILE_OK;
                 mHandler.sendMessage(msg);
-                return true;
-            } else if (code == mISeafileService.getCodeLoginFailed()) {
-                Message msg = new Message();
-                msg.obj = data.readString();
-                msg.what = MSG_LOGIN_SEAFILE_FAILED;
-                mHandler.sendMessage(msg);
-                reply.writeNoException();
                 return true;
             } else if (code == mISeafileService.getCodeChangeUrl()) {
                 Message msg = new Message();
