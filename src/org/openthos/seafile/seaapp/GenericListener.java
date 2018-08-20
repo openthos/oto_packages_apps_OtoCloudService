@@ -8,11 +8,11 @@ import java.io.File;
 import org.openthos.seafile.R;
 
 public class GenericListener implements View.OnTouchListener{
-    private Object mPreSeaf;
     public Object mCurParent;
     private Long mLastClickTime;
     private long DOUBLE_CLICK_INTERVAL_TIME = 1000; // 1.0 second
     private SeafileActivity mActivity;
+    private View mTempView;
 
     public GenericListener(SeafileActivity activity) {
         mActivity = activity;
@@ -25,17 +25,28 @@ public class GenericListener implements View.OnTouchListener{
                 if (event.getButtonState() == MotionEvent.BUTTON_PRIMARY) {
                     switch (view.getId()) {
                         case R.id.list_item_container:
-                            if (mPreSeaf ==  view.getTag() && (Math.abs(System.currentTimeMillis())
+                            if (mTempView == view && (Math.abs(System.currentTimeMillis())
                                     - mLastClickTime <= DOUBLE_CLICK_INTERVAL_TIME)) {
+                                if (mTempView != null) {
+                                    mTempView.setSelected(false);
+                                    mTempView = null;
+                                }
                                 open(view.getTag());
                                 break;
                             }
-                            mPreSeaf = view.getTag();
+                            if (mTempView != null) {
+                                mTempView.setSelected(false);
+                            }
+                            mTempView = view;
+                            mTempView.setSelected(true);
                             mLastClickTime = System.currentTimeMillis();
                             break;
                         case R.id.lv:
                         case R.id.gv:
-                            mPreSeaf = null;
+                            if (mTempView != null) {
+                                mTempView.setSelected(false);
+                                mTempView = null;
+                            }
                             mLastClickTime = null;
                             break;
                     }
@@ -43,12 +54,16 @@ public class GenericListener implements View.OnTouchListener{
                     // app getX, getY, openthos getRawX, getRawY
                     int x = 0;
                     int y = 0;
-                    mPreSeaf = null;
                     mLastClickTime = null;
                     switch (view.getId()) {
                         case R.id.list_item_container:
                             x = (int) event.getRawX();
                             y = (int) event.getRawY();
+                            if (mTempView != null) {
+                                mTempView.setSelected(false);
+                            }
+                            mTempView = view;
+                            mTempView.setSelected(true);
                             if (mActivity.mStoredViews.size() > 1) {
                                 SeafDirent dirent = (SeafDirent) view.getTag();
                                 show("repo", x , y, dirent);
@@ -61,6 +76,10 @@ public class GenericListener implements View.OnTouchListener{
                         case R.id.gv:
                             x = (int) event.getRawX();
                             y = (int) event.getRawY();
+                            if (mTempView != null) {
+                                mTempView.setSelected(false);
+                                mTempView = null;
+                            }
                             if (mActivity.mStoredViews.size() > 1) {
                                 show("repo_blank", x, y, null);
                             } else {

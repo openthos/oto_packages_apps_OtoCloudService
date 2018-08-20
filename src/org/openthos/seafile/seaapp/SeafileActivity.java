@@ -37,7 +37,7 @@ public class SeafileActivity extends FragmentActivity {
     private SeafItemAdapter mAdapter;
     private Account mAccount;
     private DataManager mDataManager;
-    private GenericListener mGenericListener;
+    public GenericListener mGenericListener;
     private NavContext mNavContext;
     public List<Object> mStoredViews;
     public FileDialog mFileDialog;

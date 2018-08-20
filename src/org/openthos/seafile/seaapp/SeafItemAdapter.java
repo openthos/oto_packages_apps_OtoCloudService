@@ -93,7 +93,7 @@ public class SeafItemAdapter extends BaseAdapter {
         if (convertView == null) {
             view = LayoutInflater.from(mActivity).inflate(R.layout.list_item, null);
             RelativeLayout container = (RelativeLayout) view.findViewById(R.id.list_item_container);
-            container.setOnTouchListener(new GenericListener(mActivity));
+            container.setOnTouchListener(mActivity.mGenericListener);
 //            view = LayoutInflater.from(mainActivity).inflate(R.layout.list_item_entry, null);
             TextView title = (TextView) view.findViewById(R.id.list_item_title);
             TextView subtitle = (TextView) view.findViewById(R.id.list_item_subtitle);
@@ -151,7 +151,7 @@ public class SeafItemAdapter extends BaseAdapter {
             view = LayoutInflater.from(mActivity).inflate(R.layout.list_item, null);
 //            view = LayoutInflater.from(mainActivity).inflate(R.layout.list_item_entry, null);
             RelativeLayout container = (RelativeLayout) view.findViewById(R.id.list_item_container);
-            container.setOnTouchListener(new GenericListener(mActivity));
+            container.setOnTouchListener(mActivity.mGenericListener);
             TextView title = (TextView) view.findViewById(R.id.list_item_title);
             TextView subtitle = (TextView) view.findViewById(R.id.list_item_subtitle);
             ImageView icon = (ImageView) view.findViewById(R.id.list_item_icon);
