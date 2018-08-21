@@ -4,7 +4,7 @@ include $(CLEAR_VARS)
 LOCAL_STATIC_JAVA_LIBRARIES := android-support-v4
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-v7-appcompat
 LOCAL_STATIC_JAVA_LIBRARIES += jsoup
-LOCAL_STATIC_JAVA_LIBRARIES += imageloader1.9.5
+LOCAL_STATIC_JAVA_LIBRARIES += imageloader
 
 LOCAL_SRC_FILES := $(call all-java-files-under, src) \
                    src/org/openthos/seafile/ISeafileService.aidl
@@ -26,7 +26,6 @@ LOCAL_CERTIFICATE := platform
 include $(BUILD_PACKAGE)
 include $(CLEAR_VARS)
 LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES  := jsoup:libs/jsoup-1.8.1.jar
-LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES  += imageloader1.9.5:libs/universal-image-loader-1.9.5.jar
 include $(BUILD_MULTI_PREBUILT)
 include $(CLEAR_VARS)
 
