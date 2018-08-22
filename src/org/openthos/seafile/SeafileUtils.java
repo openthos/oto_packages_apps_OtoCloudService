@@ -35,12 +35,7 @@ public class SeafileUtils {
 
     public static final String SETTING_SEAFILE_NAME = "UserConfig";
     public static final String DATA_SEAFILE_NAME = "DATA";
-
     public static final String SEAFILE_URL_LIBRARY = "http://dev.openthos.org/";
-    public static String getUserAccount() {
-        return " -u " + SeafileService.mAccount.mUserName +
-                " -p " + SeafileService.mAccount.mUserPassword;
-    }
 
     public static final int UNSYNC = 0;
     public static final int SYNC = 1;
@@ -60,7 +55,6 @@ public class SeafileUtils {
                     + ";" + "chmod -R 777 /data/sea"
                     + ";" + "busybox mkdir -m 777 -p /data/sea/sdcard/seafile"});
         }
-        Log.i("wwww", i+"");
         Utils.exec(new String[]{"su",
                 "-c", "busybox mount --bind " + seafileAtDisk.getAbsolutePath()
                 + " /data/sea/sdcard/seafile" + ";" + "busybox mkdir -m 777 " + SEAFILE_CONFIG_PATH
@@ -75,7 +69,7 @@ public class SeafileUtils {
         Utils.exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE + "stop"});
     }
 
-    public static String create(String fileName) {
+    public static String create(String fileName, String url, String name, String password) {
         fileName = fileName.replace(" ", "\\ ");
         Process pro;
         BufferedReader in = null;
@@ -83,7 +77,7 @@ public class SeafileUtils {
         try {
             pro = Runtime.getRuntime().exec(new String[]{"su", "-c",
                     SEAFILE_COMMAND_BASE + "create -n " + fileName +  " -s " +
-                    SeafileService.mAccount.mOpenthosUrl + getUserAccount()});
+                    url + " -u " + name + " -p " + password});
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
             while ((line = in.readLine()) != null) {
@@ -103,7 +97,8 @@ public class SeafileUtils {
         return id;
     }
 
-    public static void sync(String libraryid, String filePath) {
+    public static void sync(String libraryid, String filePath,
+            String url, String name, String password) {
         filePath = filePath.replace(" ", "\\ ");
         Process pro;
         BufferedReader in = null;
@@ -112,12 +107,9 @@ public class SeafileUtils {
             if (!f.exists()) {
                 f.mkdirs();
             }
-            Log.i("wwww", SEAFILE_COMMAND_BASE
-                     + "sync -l " + libraryid + " -d "
-                     + filePath + " -s " + SeafileService.mAccount.mOpenthosUrl + getUserAccount());
             pro = Runtime.getRuntime().exec(new String[]{"su", "-c", SEAFILE_COMMAND_BASE
                     + "sync -l " + libraryid + " -d "
-                    + filePath + " -s " + SeafileService.mAccount.mOpenthosUrl + getUserAccount()});
+                    + filePath + " -s " + url + " -u " + name + " -p " + password});
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
             while ((line = in.readLine()) != null) {
@@ -241,10 +233,10 @@ public class SeafileUtils {
         }
     }
 
-    public static String getResult(String token)
+    public static String getResult(String token, String url)
             throws UnsupportedEncodingException, HttpRequest.HttpRequestException {
         HttpRequest ret = null;
-        ret = HttpRequest.get(SeafileService.mAccount.mOpenthosUrl + "api2/repos/", null, false);
+        ret = HttpRequest.get(url + "api2/repos/", null, false);
         ret.readTimeout(15000).connectTimeout(15000).followRedirects(false)
                 .header("Authorization", "Token " + token);
         if (ret.ok()) {
@@ -254,14 +246,14 @@ public class SeafileUtils {
         }
     }
 
-    public static String getToken(Context context)
+    public static String getToken(Context context, String url, String name, String password)
             throws UnsupportedEncodingException, JSONException,
             HttpRequest.HttpRequestException, PackageManager.NameNotFoundException {
         HttpRequest rep = null;
-        rep = HttpRequest.post(SeafileService.mAccount.mOpenthosUrl + "api2/auth-token/",
+        rep = HttpRequest.post(url + "api2/auth-token/",
                 null, false).followRedirects(true).connectTimeout(15000);
-        rep.form("username", SeafileService.mAccount.mUserName);
-        rep.form("password", SeafileService.mAccount.mUserPassword);
+        rep.form("username", name);
+        rep.form("password", password);
         PackageInfo packageInfo = null;
         packageInfo = context.getPackageManager().
                 getPackageInfo(context.getPackageName(), 0);

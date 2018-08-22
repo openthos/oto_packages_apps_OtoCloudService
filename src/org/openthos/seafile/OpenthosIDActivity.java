@@ -51,6 +51,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -100,13 +102,12 @@ public class OpenthosIDActivity extends Activity {
         private Preference mUnbundPref;
         private Preference mUrlPref;
         private PreferenceScreen mScreenPref;
-        private AlertDialog mDialog = null;
         private TextServicesManager mTsm;
-        private String mToastRelogin;
 
         private String mOpenthosID;
         private String mPassword;
         private Handler mHandler;
+        private SeafileAccount mAccount;
 
         private String mRegisterID, mRegisterEmail, mRegisterPass, mRegisterPassConfirm;
         private ISeafileService mISeafileService;
@@ -117,6 +118,8 @@ public class OpenthosIDActivity extends Activity {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
+
+            mAccount = new SeafileAccount(OpenthosIDActivity.this);
             mSeafileServiceConnection = new SeafileServiceConnection();
             Intent intent = new Intent();
             intent.setComponent(new ComponentName("org.openthos.seafile",
@@ -141,10 +144,10 @@ public class OpenthosIDActivity extends Activity {
             mUnbundPref.setOnPreferenceClickListener(this);
             mUrlPref = findPreference(KEY_URL);
             mUrlPref.setOnPreferenceClickListener(this);
-            mUrlPref.setSummary(SeafileService.mAccount.mOpenthosUrl);
+            mUrlPref.setSummary(mAccount.mOpenthosUrl);
 
-            if (SeafileService.mAccount.isExistsAccount()) {
-                updateID(SeafileService.mAccount.mUserName);
+            if (mAccount.isExistsAccount()) {
+                updateID(mAccount.mUserName);
                 mBindPref.setEnabled(false);
                 mUnbundPref.setEnabled(true);
             } else {
@@ -152,7 +155,6 @@ public class OpenthosIDActivity extends Activity {
                 mBindPref.setEnabled(true);
                 mUnbundPref.setEnabled(false);
             }
-            mToastRelogin = getText(R.string.toast_relogin).toString();
             mHandler = new Handler() {
 
                 @Override
@@ -175,9 +177,11 @@ public class OpenthosIDActivity extends Activity {
                             }
                             break;
                         case MSG_LOGIN_SEAFILE_OK:
+                            mAccount = null;
+                            mAccount = new SeafileAccount(OpenthosIDActivity.this);
                             Toast.makeText(getActivity(), msg.obj.toString(),
                                     Toast.LENGTH_SHORT).show();
-                            updateID(SeafileService.mAccount.mUserName);
+                            updateID(mAccount.mUserName);
                             mBindPref.setEnabled(false);
                             mUnbundPref.setEnabled(true);
                             break;
@@ -210,6 +214,7 @@ public class OpenthosIDActivity extends Activity {
 
         @Override
         public boolean onPreferenceClick(final Preference pref) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
             if (pref == mRegisterPref) {
                 View viewRegister = LayoutInflater.from(getActivity())
                                                         .inflate(R.layout.dialog_register, null);
@@ -221,10 +226,9 @@ public class OpenthosIDActivity extends Activity {
                                                       .findViewById(R.id.dialog_openthos_pass);
                 final EditText openthosPassConfirm = (EditText) viewRegister
                                                       .findViewById(R.id.dialog_openthos_pass_confirm);
-                AlertDialog.Builder builder_register = new AlertDialog.Builder(getActivity());
-                builder_register.setTitle(R.string.account_register);
-                builder_register.setView(viewRegister);
-                builder_register.setPositiveButton(R.string.account_user_register,
+                builder.setTitle(R.string.account_register);
+                builder.setView(viewRegister);
+                builder.setPositiveButton(R.string.account_user_register,
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -246,17 +250,14 @@ public class OpenthosIDActivity extends Activity {
                             dialog.dismiss();
                         }
                     });
-                builder_register.setNegativeButton(R.string.cancel, null);
-                builder_register.show();
             } else if (pref == mBindPref) {
                 View viewBind = LayoutInflater.from(getActivity()).inflate(R.layout.dialog_bind, null);
                 final EditText userID_bind = (EditText) viewBind.findViewById(R.id.dialog_name);
                 final EditText userPassword_bind = (EditText) viewBind.
                                                    findViewById(R.id.dialog_name_bind);
-                AlertDialog.Builder builder_bind = new AlertDialog.Builder(getActivity());
-                builder_bind.setTitle(R.string.account_bind);
-                builder_bind.setView(viewBind);
-                builder_bind.setPositiveButton(R.string.confirm,
+                builder.setTitle(R.string.account_bind);
+                builder.setView(viewBind);
+                builder.setPositiveButton(R.string.confirm,
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -268,12 +269,9 @@ public class OpenthosIDActivity extends Activity {
                             dialog.dismiss();
                         }
                     });
-                builder_bind.setNegativeButton(R.string.cancel, null);
-                builder_bind.show();
             } else if (pref == mUnbundPref) {
-                AlertDialog.Builder builder_unbund = new AlertDialog.Builder(getActivity());
-                builder_unbund.setMessage(R.string.account_judge);
-                builder_unbund.setPositiveButton(R.string.account_yes,
+                builder.setMessage(R.string.account_judge);
+                builder.setPositiveButton(R.string.account_yes,
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -291,22 +289,62 @@ public class OpenthosIDActivity extends Activity {
                             }
                         }
                     });
-                builder_unbund.setNegativeButton(R.string.account_no,
-                    new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                             dialog.dismiss();
-                        }
-                    });
-                builder_unbund.create().show();
             } else if (pref == mUrlPref) {
-                try {
-                    mISeafileService.setBinder(mSeafileBinder);
-                    mISeafileService.setOpenthosUrl("");
-                } catch (RemoteException e) {
-                    e.printStackTrace();
+                LayoutInflater layoutInflater = getActivity().getLayoutInflater();
+                View changeUrlDialog = layoutInflater
+                        .inflate(R.layout.dialog_change_url, null);
+                builder.setTitle(R.string.title_change_url);
+                builder.setView(changeUrlDialog);
+                builder.setCancelable(true);
+
+                RadioGroup group = (RadioGroup) changeUrlDialog.findViewById(R.id.url_group);
+                final RadioButton rbDev = (RadioButton) changeUrlDialog.findViewById(R.id.url_dev);
+                final RadioButton rbLab = (RadioButton) changeUrlDialog.findViewById(R.id.url_lab);
+                final RadioButton rbDevs = (RadioButton) changeUrlDialog.findViewById(R.id.url_devs);
+
+                if (mAccount.mOpenthosUrl.equals(rbDev.getText().toString())) {
+                    rbDev.setChecked(true);
+                } else if (mAccount.mOpenthosUrl.equals(rbLab.getText().toString())) {
+                    rbLab.setChecked(true);
+                } else if (mAccount.mOpenthosUrl.equals(rbDevs.getText().toString())) {
+                    rbDevs.setChecked(true);
                 }
+                group.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(RadioGroup group, int checkedId) {
+                        if (checkedId == rbDev.getId()) {
+                            rbDev.setChecked(true);
+                        } else if (checkedId == rbLab.getId()) {
+                            rbLab.setChecked(true);
+                        } else if (checkedId == rbDevs.getId()) {
+                            rbDevs.setChecked(true);
+                        }
+                    }
+                });
+                builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(final DialogInterface dialog, final int which) {
+                        String tempUrl = "";
+                        if (rbDev.isChecked()) {
+                            tempUrl = rbDev.getText().toString();
+                        } else if (rbLab.isChecked()) {
+                            tempUrl = rbLab.getText().toString();
+                        } else if (rbDevs.isChecked()) {
+                            tempUrl = rbDevs.getText().toString();
+                        }
+                        if (!tempUrl.equals(mAccount.mOpenthosUrl)) {
+                            updateOpenthosUrl(tempUrl);
+                        }
+                    }
+                });
+                builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(final DialogInterface dialog, final int which) {
+                    }
+                });
             }
+            builder.setNegativeButton(android.R.string.cancel, null);
+            builder.create().show();
             return false;
         }
 
@@ -320,17 +358,19 @@ public class OpenthosIDActivity extends Activity {
         }
 
         private void updateOpenthosUrl(String url) {
-            mUrlPref.setSummary(url);
-            mBindPref.setEnabled(true);
-            mUnbundPref.setEnabled(false);
-            updateID(null);
+            boolean success = false;
             try {
-                if (!TextUtils.isEmpty(SeafileService.mAccount.mUserName)) {
-                    mISeafileService.stopAccount();
-                }
-                Toast.makeText(OpenthosIDActivity.this, mToastRelogin, Toast.LENGTH_SHORT).show();
+                success = mISeafileService.setOpenthosUrl(url);
             } catch (RemoteException e) {
                 e.printStackTrace();
+            }
+            if (success) {
+                mUrlPref.setSummary(url);
+                mBindPref.setEnabled(true);
+                mUnbundPref.setEnabled(false);
+                updateID(null);
+                mAccount = null;
+                mAccount = new SeafileAccount(OpenthosIDActivity.this);
             }
         }
 
@@ -353,13 +393,6 @@ public class OpenthosIDActivity extends Activity {
                 msg.obj = data.readString();
                 msg.what = MSG_LOGIN_SEAFILE_OK;
                 mHandler.sendMessage(msg);
-                return true;
-            } else if (code == mISeafileService.getCodeChangeUrl()) {
-                Message msg = new Message();
-                msg.obj = data.readString();
-                msg.what = MSG_CHANGE_URL;
-                mHandler.sendMessage(msg);
-                reply.writeNoException();
                 return true;
             }
             return super.onTransact(code, data, reply, flags);

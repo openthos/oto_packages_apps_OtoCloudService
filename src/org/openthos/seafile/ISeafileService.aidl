@@ -17,13 +17,12 @@ interface ISeafileService {
 
     int getCodeSendInto();
     int getCodeSendOut();
-    int getCodeDownloadFinish();
     int getCodeRegiestSuccess();
     int getCodeRegiestFailed();
     int getCodeLoginSuccess();
     int getCodeLoginFailed();
     int getCodeChangeUrl();
 
-    void setOpenthosUrl(String url);
+    boolean setOpenthosUrl(String url);
     String getOpenthosUrl();
 }

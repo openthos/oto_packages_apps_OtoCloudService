@@ -72,8 +72,9 @@
             </intent-filter>
         </activity>
 
-        <service android:name="org.openthos.seafile.RecoveryService" > </service>
-
+        <service android:name="org.openthos.seafile.RecoveryService"
+            android:exported="true">
+        </service>
     </application>
 
 </manifest>

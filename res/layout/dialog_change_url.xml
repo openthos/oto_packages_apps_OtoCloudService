@@ -5,24 +5,8 @@
     android:orientation="vertical"
     android:background="@color/white">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="@dimen/dialog_property_padding3x">
-
-        <TextView
-            android:id="@+id/title_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:text="@string/title_change_url"
-            android:textColor="@color/black"
-            android:textSize="@dimen/dialog_property_padding3x" />
-
-    </LinearLayout>
-
     <RadioGroup
+        android:id="@+id/url_group"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -37,7 +21,6 @@
             android:gravity="center_vertical"
             android:textSize="14sp"
             android:text="@string/url_dev"
-            android:checked="true"
             android:textColor="@color/black" />
 
 
@@ -64,32 +47,4 @@
             android:textColor="@color/black" />
 
     </RadioGroup>
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="@dimen/dialog_property_padding1x"
-        android:layout_marginTop="@dimen/dialog_property_padding1x">
-
-        <TextView
-            android:id="@+id/cancel"
-            android:layout_width="@dimen/dialog_property_button_width"
-            android:layout_height="@dimen/dialog_property_button_height"
-            android:layout_alignParentRight="true"
-            android:gravity="center"
-            android:text="@string/cancel"
-            android:textColor="@color/black"
-            android:textSize="@dimen/dialog_property_font_size" />
-
-        <TextView
-            android:id="@+id/confirm"
-            android:layout_width="@dimen/dialog_property_button_width"
-            android:layout_height="@dimen/dialog_property_button_height"
-            android:layout_marginRight="@dimen/dialog_property_padding1x"
-            android:layout_toLeftOf="@id/cancel"
-            android:gravity="center"
-            android:text="@string/confirm"
-            android:textColor="@color/black"
-            android:textSize="@dimen/dialog_property_font_size" />
-    </RelativeLayout>
 </LinearLayout>

@@ -1,12 +1,6 @@
 package org.openthos.seafile;
 
 import android.content.Context;
-import android.content.res.AssetManager;
-import android.content.res.Resources;
-import android.content.pm.PackageManager;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageParser;
-import android.content.pm.PackageUserState;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.text.TextUtils;
@@ -242,11 +236,11 @@ public class Utils {
         }
     }
 
-    public static boolean writeAccount(Context context, String name, String password) {
+    public static boolean writeAccount(Context context, String url, String name, String password) {
         BufferedWriter writer = null;
         try {
             JSONObject obj = new JSONObject();
-            obj.put("url", SeafileService.mAccount.mOpenthosUrl);
+            obj.put("url", url);
             obj.put("name", name);
             obj.put("pass", password);
             writer = new BufferedWriter(new OutputStreamWriter(
@@ -296,34 +290,6 @@ public class Utils {
             }
         }
         return account;
-    }
-
-    public static String getAppName(Context context, File sourceFile) {
-        try {
-            PackageParser parser = new PackageParser();
-            PackageParser.Package pkg = parser.parseMonolithicPackage(sourceFile, 0);
-            //parser.collectManifestDigest(pkg);
-            PackageInfo info = PackageParser.generatePackageInfo(pkg, null,
-                     PackageManager.GET_PERMISSIONS, 0, 0, null,
-                     new PackageUserState());
-            Resources pRes = context.getResources();
-            AssetManager assmgr = new AssetManager();
-            assmgr.addAssetPath(sourceFile.getAbsolutePath());
-            Resources res = new Resources(assmgr,
-                                 pRes.getDisplayMetrics(), pRes.getConfiguration());
-            CharSequence label = null;
-            if (info.applicationInfo.labelRes != 0) {
-                label = res.getText(info.applicationInfo.labelRes);
-            }
-            if (label == null) {
-                label = (info.applicationInfo.nonLocalizedLabel != null) ?
-                      info.applicationInfo.nonLocalizedLabel : info.applicationInfo.packageName;
-            }
-            return label.toString();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "";
     }
 
     public static boolean isNetworkOn(Context context) {

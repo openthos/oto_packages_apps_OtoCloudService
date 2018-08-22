@@ -36,38 +36,43 @@ public class LibraryRequestThread extends Thread {
     public static final int MSG_REGIST_SEAFILE_FAILED = 0x1002;
     public static final int MSG_LOGIN_SEAFILE_OK = 0x1003;
     public static final int MSG_LOGIN_SEAFILE_FAILED = 0x1004;
-    private String registeUri = SeafileService.mAccount.mOpenthosUrl + "id/u/register";
-    private String loginGetUri = SeafileService.mAccount.mOpenthosUrl + "oauth/login/";
-    private String loginPostUri =
-            SeafileService.mAccount.mOpenthosUrl + "id/user/login?destination=oauth2/authorize";
-    private String referer = SeafileService.mAccount.mOpenthosUrl + "accounts/login/?next=/";
+    private String registeUri;
+    private String loginGetUri;
+    private String loginPostUri;
+    private String referer;
     private String redirect = "http.protocol.handle-redirects";
     private String location, csrftoken, sessionid, sess, form_build_id;
-    private String name , pass, id, email, passwd;
+    private String url, name, pass, id, email, passwd;
     private Mark mark;
     private Context context;
     private Handler handler;
     private Message message;
 
     public LibraryRequestThread(Handler handler, Context context,
-            String name, String pass, Mark mark) {
+            String url, String name, String pass, Mark mark) {
         super();
         this.handler = handler;
         this.context = context;
+        this.url = url;
         this.name = name;
         this.pass = pass;
         this.mark = mark;
+        loginGetUri = url + "oauth/login/";
+        loginPostUri = url + "id/user/login?destination=oauth2/authorize";
+        referer = url + "accounts/login/?next=/";
     }
 
     public LibraryRequestThread(Handler handler, Context context,
-            String id, String email, String passwd, Mark mark) {
+            String url, String id, String email, String passwd, Mark mark) {
         super();
         this.handler = handler;
         this.context = context;
+        this.url = url;
         this.id = id;
         this.email = email;
         this.passwd = passwd;
         this.mark = mark;
+        registeUri = url + "id/u/register";
     }
 
     @Override
@@ -155,7 +160,7 @@ public class LibraryRequestThread extends Thread {
     }
 
     private boolean loginStep1Get() throws Exception{
-        URI uri = new URI(SeafileService.mAccount.mOpenthosUrl);
+        URI uri = new URI(url);
         HttpParams httpParams = new BasicHttpParams();
         httpParams.setParameter(redirect, true);
         HttpClient httpClient = new DefaultHttpClient(httpParams);
@@ -387,8 +392,7 @@ public class LibraryRequestThread extends Thread {
         httpParams.setParameter(redirect, false);
         HttpClient httpClient = new DefaultHttpClient(httpParams);
         HttpUriRequest get = new HttpGet(uri);
-        get.setHeader("Referer",
-                SeafileService.mAccount.mOpenthosUrl + "id/user/login?destination=oauth2/authorize");
+        get.setHeader("Referer", url + "id/user/login?destination=oauth2/authorize");
         get.setHeader("Cookie","csrftoken=" + csrftoken + ";" +
                 " django_language=zh-cn; has_js=1; sessionid=" +  sessionid + "; " + sess);
 
@@ -421,8 +425,7 @@ public class LibraryRequestThread extends Thread {
         httpParams.setParameter(redirect, false);
         HttpClient httpClient = new DefaultHttpClient(httpParams);
         HttpUriRequest get = new HttpGet(uri);
-        get.setHeader("Referer",
-                SeafileService.mAccount.mOpenthosUrl + "id/user/login?destination=oauth2/authorize");
+        get.setHeader("Referer", url + "id/user/login?destination=oauth2/authorize");
         get.setHeader("Cookie","csrftoken=" + csrftoken + ";" +
                 " django_language=zh-cn; has_js=1; sessionid=" +  sessionid + "; " + sess);
 

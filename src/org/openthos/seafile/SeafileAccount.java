@@ -47,7 +47,7 @@ public class SeafileAccount {
     }
 
     public boolean isExistsAccount() {
-        return !TextUtils.isEmpty(mUserName) && !TextUtils.isEmpty(mUserPassword);
+        return !(TextUtils.isEmpty(mUserName) || TextUtils.isEmpty(mUserPassword));
     }
 
     public void clear() {

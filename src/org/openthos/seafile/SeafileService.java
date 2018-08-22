@@ -10,7 +10,6 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.FileObserver;
@@ -28,7 +27,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -41,9 +39,6 @@ import java.util.concurrent.TimeUnit;
 public class SeafileService extends Service {
 
     private static final String DESCRIPTOR = "org.openthos.seafile.ISeafileService";
-    private static final String APPSTORE_DOWNLOAD_PATH
-            = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            .getAbsolutePath() + "/app";
 
     private static final int START_STATE_MONITOR = 40000001;
     private static final int ADD_BINDER = 40000002;
@@ -70,9 +65,6 @@ public class SeafileService extends Service {
     private InitLibrarysThread mInitLibrarysThread;
     private String mUserPath;
     private ArrayList<IBinder> mIBinders = new ArrayList();
-    private ArrayList<String> mAppNames = new ArrayList();
-    private ArrayList<String> mApkPaths = new ArrayList();
-    private int mTotalApks, mDownloadApks, mTotal;
     private SeafileBinder mBinder = new SeafileBinder();
     private boolean DEBUG = false;
     private Handler mHandler;
@@ -157,8 +149,8 @@ public class SeafileService extends Service {
             if (mAccount.mSettingLibrary == null) {
                 SeafileLibrary seafileLibrary = new SeafileLibrary();
                 seafileLibrary.libraryName = SeafileUtils.SETTING_SEAFILE_NAME;
-                seafileLibrary.libraryId
-                        = SeafileUtils.create(SeafileUtils.SETTING_SEAFILE_NAME);
+                seafileLibrary.libraryId = SeafileUtils.create(SeafileUtils.SETTING_SEAFILE_NAME,
+                        mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mUserPassword);
                 mAccount.mSettingLibrary = seafileLibrary;
             }
             if (!TextUtils.isEmpty(mAccount.mSettingLibrary.libraryId)) {
@@ -168,8 +160,9 @@ public class SeafileService extends Service {
                 }
                 mAccount.mSettingLibrary.filePath
                         = "/" + mAccount.mUserName + "/" + SeafileUtils.SETTING_SEAFILE_NAME;
-                SeafileUtils.sync(mAccount.mSettingLibrary.libraryId,
-                        mAccount.mSettingLibrary.filePath);
+                SeafileUtils.sync(
+                        mAccount.mSettingLibrary.libraryId, mAccount.mSettingLibrary.filePath,
+                        mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mUserPassword);
             } else {
                 mAccount.mSettingLibrary = null;
             }
@@ -177,8 +170,8 @@ public class SeafileService extends Service {
             if (mAccount.mDataLibrary == null) {
                 SeafileLibrary seafileLibrary = new SeafileLibrary();
                 seafileLibrary.libraryName = SeafileUtils.DATA_SEAFILE_NAME;
-                seafileLibrary.libraryId
-                        = SeafileUtils.create(SeafileUtils.DATA_SEAFILE_NAME);
+                seafileLibrary.libraryId = SeafileUtils.create(SeafileUtils.DATA_SEAFILE_NAME,
+                        mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mUserPassword);
                 mAccount.mDataLibrary = seafileLibrary;
             }
             if (!TextUtils.isEmpty(mAccount.mDataLibrary.libraryId)) {
@@ -189,8 +182,9 @@ public class SeafileService extends Service {
                 mAccount.mDataLibrary.filePath = SeafileUtils.SEAFILE_DATA_ROOT_PATH
                         + "/" + mAccount.mUserName + "/" + mAccount.mDataLibrary.libraryName;
                 if (isSync == SeafileUtils.SYNC) {
-                    SeafileUtils.sync(mAccount.mDataLibrary.libraryId,
-                            mAccount.mDataLibrary.filePath);
+                    SeafileUtils.sync(
+                            mAccount.mDataLibrary.libraryId, mAccount.mDataLibrary.filePath,
+                            mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mUserPassword);
                 }
             } else {
                 mAccount.mDataLibrary = null;
@@ -244,7 +238,16 @@ public class SeafileService extends Service {
                     notice += s + "\n";
                 }
             }
-            if (notice.contains(SEAFILE_STATUS_UPLOADING)
+            if (TextUtils.isEmpty(notice)
+                    || !notice.contains(SeafileUtils.DATA_SEAFILE_NAME)
+                    || !notice.contains(SeafileUtils.SETTING_SEAFILE_NAME)) {
+                reSync();
+                if (mIsNotificationShown) {
+                    mIsNotificationShown = false;
+                    mNotificationManager.cancel(0);
+                    restartMonitor(TIMER_MEDIUM);
+                }
+            } else if (notice.contains(SEAFILE_STATUS_UPLOADING)
                     || notice.contains(SEAFILE_STATUS_DOWNLOADING)) {
                 notice = notice.replace(SEAFILE_STATUS_UPLOADING,
                        getString(R.string.seafile_uploading));
@@ -262,20 +265,11 @@ public class SeafileService extends Service {
                 showNotification(notice);
             } else {
                 if (mIsNotificationShown) {
-                    if (TextUtils.isEmpty(notice)
-                            || !notice.contains(SeafileUtils.DATA_SEAFILE_NAME)
-                            || !notice.contains(SeafileUtils.SETTING_SEAFILE_NAME)) {
-                        reSync();
-                        mIsNotificationShown = false;
-                        mNotificationManager.cancel(0);
-                        restartMonitor(TIMER_MEDIUM);
-                    } else {
-                        mIsNotificationShown = false;
-                        mNotificationManager.cancel(0);
-                        restartMonitor(TIMER_LONG);
-                        mBuilder.setWhen(System.currentTimeMillis());
-                        showNotification(getString(R.string.sync_complete));
-                    }
+                    mIsNotificationShown = false;
+                    mNotificationManager.cancel(0);
+                    restartMonitor(TIMER_LONG);
+                    mBuilder.setWhen(System.currentTimeMillis());
+                    showNotification(getString(R.string.sync_complete));
                 }
             }
         }
@@ -323,14 +317,16 @@ public class SeafileService extends Service {
             if (mAccount.mDataLibrary != null) {
                 SeafileUtils.desync(mAccount.mDataLibrary.filePath);
                 if (mAccount.mDataLibrary.isSync == SeafileUtils.SYNC) {
-                    SeafileUtils.sync(mAccount.mDataLibrary.libraryId,
-                            mAccount.mDataLibrary.filePath);
+                    SeafileUtils.sync(
+                            mAccount.mDataLibrary.libraryId, mAccount.mDataLibrary.filePath,
+                            mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mUserPassword);
                 }
             }
             if (mAccount.mSettingLibrary != null) {
                 SeafileUtils.desync(mAccount.mSettingLibrary.filePath);
-                SeafileUtils.sync(mAccount.mSettingLibrary.libraryId,
-                        mAccount.mSettingLibrary.filePath);
+                SeafileUtils.sync(
+                        mAccount.mSettingLibrary.libraryId, mAccount.mSettingLibrary.filePath,
+                        mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mUserPassword);
             }
         } else {
             if (mAccount.isExistsAccount()) {
@@ -347,8 +343,9 @@ public class SeafileService extends Service {
 
     private String getLibrarysSuccess() {
         try {
-            String token = SeafileUtils.getToken(SeafileService.this);
-            return SeafileUtils.getResult(token);
+            String token = SeafileUtils.getToken(SeafileService.this,
+                    mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mUserPassword);
+            return SeafileUtils.getResult(token, mAccount.mOpenthosUrl);
         } catch (UnsupportedEncodingException | HttpRequest.HttpRequestException
                 | PackageManager.NameNotFoundException | JSONException e) {
             e.printStackTrace();
@@ -387,88 +384,11 @@ public class SeafileService extends Service {
         }
     }
 
-    public class InstallAsyncTask extends AsyncTask<Void, Object, Void> {
-        private static final int CURRENT_INDEX = 0;
-        private static final int APPNAME = 1;
-
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            initializeApp();
-            for (int i = 0; i < mTotalApks; i++) {
-                Object[] result = new Object[2];
-                result[CURRENT_INDEX] = i + 1;
-                result[APPNAME] = mAppNames.get(i);
-                publishProgress(result);
-                installSlient(mApkPaths.get(i));
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void avoid) {
-            Intent intent = new Intent(SeafileService.this, RecoveryService.class);
-            intent.putExtra("restore", true);
-            startService(intent);
-        }
-    }
-
-    private void initializeApp() {
-        mAppNames.clear();
-        mApkPaths.clear();
-        File file = new File(APPSTORE_DOWNLOAD_PATH);
-        File[] files = file.listFiles();
-        try {
-            for (File apk: files) {
-                String name = Utils.getAppName(this, apk);
-                if (TextUtils.isEmpty(name)) {
-                    continue;
-                }
-                mAppNames.add(name);
-                mApkPaths.add(apk.getAbsolutePath());
-            }
-        } catch (Exception e) {
-        }
-        mTotalApks = mAppNames.size();
-    }
-
-    private void installSlient(String apkPath) {
-        apkPath = apkPath.replace(Environment.getExternalStorageDirectory().getAbsolutePath(),
-                "/storage/emulated/legacy");
-        String cmd = "pm install " + apkPath;
-        DataOutputStream os = null;
-        try {
-            Process process = Runtime.getRuntime().exec("su");
-            os = new DataOutputStream(process.getOutputStream());
-            os.write(cmd.getBytes());
-            os.writeBytes("\n");
-            os.writeBytes("exit\n");
-            os.flush();
-            process.waitFor();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
     private class SeafileBinder extends ISeafileService.Stub {
 
         @Override
         public boolean onTransact(int code, Parcel data, Parcel reply, int flags)
                 throws RemoteException {
-            switch (code) {
-               case CODE_DOWNLOAD_FINISH:
-                    new InstallAsyncTask().execute();
-                    reply.writeNoException();
-                    return true;
-            }
             return super.onTransact(code, data, reply, flags);
         }
 
@@ -485,7 +405,8 @@ public class SeafileService extends Service {
                 mAccount.mDataLibrary.isSync =
                         mConsole.updateSync(mAccount.mUserId, mAccount.mDataLibrary.libraryId,
                         mAccount.mDataLibrary.libraryName, SeafileUtils.SYNC);
-                SeafileUtils.sync(mAccount.mDataLibrary.libraryId, mAccount.mDataLibrary.filePath);
+                SeafileUtils.sync(mAccount.mDataLibrary.libraryId, mAccount.mDataLibrary.filePath,
+                        mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mUserPassword);
             }
         }
 
@@ -530,11 +451,16 @@ public class SeafileService extends Service {
                 SeafileUtils.desync(mAccount.mDataLibrary.filePath);
                 SeafileUtils.desync(mAccount.mSettingLibrary.filePath);
             }
-            if (!Utils.writeAccount(SeafileService.this, "", "")) {
+            if (!Utils.writeAccount(SeafileService.this, mAccount.mOpenthosUrl, "", "")) {
                 deleteFile(Utils.ACCOUNT_INFO_FILE);
             }
             mAccount.clear();
             SeafileUtils.stop();
+            if (mIsNotificationShown) {
+                mIsNotificationShown = false;
+                mNotificationManager.cancel(0);
+                restartMonitor(TIMER_LONG);
+            }
             if (mStatusTask != null) {
                 mStatusTask.cancel();
             }
@@ -561,15 +487,16 @@ public class SeafileService extends Service {
 
         @Override
         public void registeAccount(String userName, String email, String password) {
-            LibraryRequestThread libraryThread = new LibraryRequestThread(
-                    mHandler, SeafileService.this, userName, email, password, Mark.REGISTE);
+            LibraryRequestThread libraryThread =
+                    new LibraryRequestThread(mHandler, SeafileService.this,
+                    mAccount.mOpenthosUrl, userName, email, password, Mark.REGISTE);
             libraryThread.start();
         }
 
         @Override
         public void loginAccount(String userName, String password) {
-            LibraryRequestThread libraryThread = new LibraryRequestThread(
-                    mHandler, SeafileService.this, userName, password, Mark.LOGIN);
+            LibraryRequestThread libraryThread = new LibraryRequestThread(mHandler,
+                    SeafileService.this, mAccount.mOpenthosUrl, userName, password, Mark.LOGIN);
             libraryThread.start();
         }
 
@@ -600,11 +527,6 @@ public class SeafileService extends Service {
         }
 
         @Override
-        public int getCodeDownloadFinish() {
-            return CODE_DOWNLOAD_FINISH;
-        }
-
-        @Override
         public int getCodeRegiestSuccess() {
             return CODE_REGIEST_SUCCESS;
         }
@@ -629,15 +551,24 @@ public class SeafileService extends Service {
             return CODE_CHANGE_URL;
         }
 
-        public void setOpenthosUrl(String url) {
+        public boolean setOpenthosUrl(String url) {
             mTmpOpenthosUrl = mAccount.mOpenthosUrl;
+            if (!Utils.writeAccount(SeafileService.this, url, "", "")) {
+                mAccount.mOpenthosUrl = mTmpOpenthosUrl;
+                return false;
+            }
+            if (mAccount.isExistsAccount()) {
+                stopAccount();
+            }
+            mAccount.mOpenthosUrl = url;
             mHandler.post(new Runnable() {
                 @Override
                 public void run () {
-                    ChangeUrlDialog dialog = new ChangeUrlDialog(SeafileService.this, mHandler);
-                    dialog.showDialog();
+                    Toast.makeText(SeafileService.this,
+                            getString(R.string.toast_relogin), Toast.LENGTH_SHORT).show();
                 }
             });
+            return true;
         }
 
         public String getOpenthosUrl() {
@@ -673,7 +604,7 @@ public class SeafileService extends Service {
                     break;
                 case LibraryRequestThread.MSG_LOGIN_SEAFILE_OK:
                     Bundle bundle = msg.getData();
-                    if (!Utils.writeAccount(SeafileService.this,
+                    if (!Utils.writeAccount(SeafileService.this, mAccount.mOpenthosUrl,
                             bundle.getString("user"), bundle.getString("password"))) {
                         break;
                     }
@@ -700,26 +631,6 @@ public class SeafileService extends Service {
                 case LibraryRequestThread.MSG_LOGIN_SEAFILE_FAILED:
                     Toast.makeText(SeafileService.this, msg.obj.toString(),
                             Toast.LENGTH_SHORT).show();
-                    break;
-                case OpenthosIDActivity.MSG_CHANGE_URL:
-                    if (!Utils.writeAccount(SeafileService.this,
-                            mAccount.mUserName, mAccount.mUserPassword)) {
-                        mAccount.mOpenthosUrl = mTmpOpenthosUrl;
-                        break;
-                    }
-                    for (IBinder iBinder : mIBinders) {
-                        Parcel _data = Parcel.obtain();
-                        Parcel _reply = Parcel.obtain();
-                        _data.writeString(mAccount.mOpenthosUrl);
-                        try {
-                            iBinder.transact(CODE_CHANGE_URL, _data, _reply, 0);
-                        } catch (RemoteException e) {
-                            e.printStackTrace();
-                        } finally {
-                            _data.recycle();
-                            _reply.recycle();
-                        }
-                    }
                     break;
             }
         }
