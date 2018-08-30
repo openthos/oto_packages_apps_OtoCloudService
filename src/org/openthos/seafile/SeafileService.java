@@ -52,6 +52,7 @@ public class SeafileService extends Service {
     private static final int CODE_LOGIN_SUCCESS = 80000007;
     private static final int CODE_LOGIN_FAILED = 80000008;
     private static final int CODE_CHANGE_URL = 80000009;
+    private static final int CODE_UNBIND_ACCOUNT = 80000010;
 
     private static final long TIMER_SHORT = 1000;
     private static final long TIMER_MEDIUM = TIMER_SHORT * 10;
@@ -482,6 +483,19 @@ public class SeafileService extends Service {
                     .putBoolean("startupmenu", false)
                     .putBoolean("browser", false)
                     .putBoolean("appstore", false).commit();
+
+            for (IBinder iBinder : mIBinders) {
+                Parcel _data = Parcel.obtain();
+                Parcel _reply = Parcel.obtain();
+                try {
+                    iBinder.transact(CODE_UNBIND_ACCOUNT, _data, _reply, 0);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                } finally {
+                    _data.recycle();
+                    _reply.recycle();
+                }
+            }
         }
 
 
@@ -549,6 +563,11 @@ public class SeafileService extends Service {
         @Override
         public int getCodeChangeUrl() {
             return CODE_CHANGE_URL;
+        }
+
+        @Override
+        public int getCodeUnbindAccount() {
+            return CODE_UNBIND_ACCOUNT;
         }
 
         public boolean setOpenthosUrl(String url) {

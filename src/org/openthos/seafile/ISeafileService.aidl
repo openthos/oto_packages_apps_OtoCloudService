@@ -22,6 +22,7 @@ interface ISeafileService {
     int getCodeLoginSuccess();
     int getCodeLoginFailed();
     int getCodeChangeUrl();
+    int getCodeUnbindAccount();
 
     boolean setOpenthosUrl(String url);
     String getOpenthosUrl();
