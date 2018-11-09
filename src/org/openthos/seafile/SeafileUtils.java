@@ -5,12 +5,16 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.provider.Settings;
+import android.util.Log;
+import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
@@ -20,7 +24,8 @@ import java.io.UnsupportedEncodingException;
  */
 
 public class SeafileUtils {
-    public static final String SEAFILE_STATE_PATH = "/data/sea/tmp/state";
+    public static final String SEAFILE_STATE_PATH = "/system/linux/sea/tmp/state/";
+    public static final String SEAFILE_STATE_FILE = "tmp.state";
     public static final String SEAFILE_DATA_ROOT_PATH = "/sdcard/seafile";
 
     public static final String SEAFILE_BASE_COMMAND
@@ -202,5 +207,31 @@ public class SeafileUtils {
         } else {
             throw new UnsupportedEncodingException();
         }
+    }
+
+    public static String readLog(Context context) {
+        StringBuffer buffer = new StringBuffer();
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new FileReader(
+                    new File(SEAFILE_STATE_PATH + SEAFILE_STATE_FILE)));
+            String s = null;
+            while((s = reader.readLine()) != null) {
+                buffer.append(s + "\n");
+            }
+        } catch (IOException e) {
+            if (!(e instanceof FileNotFoundException) && context != null) {
+                Toast.makeText(context, context.getString(R.string.read_error), 0).show();
+            }
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return buffer.toString();
     }
 }
