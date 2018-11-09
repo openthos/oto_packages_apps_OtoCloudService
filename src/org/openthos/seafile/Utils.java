@@ -4,8 +4,10 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.text.TextUtils;
-import android.util.Log;
 import android.widget.Toast;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -17,9 +19,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class Utils {
 
@@ -38,6 +37,7 @@ public class Utils {
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
             while ((line = in.readLine()) != null) {
+                android.util.Log.i("wwww", line);
                 result.add(line);
                 if (line.contains("Started: seafile daemon")) {
                     break;
@@ -236,20 +236,28 @@ public class Utils {
         }
     }
 
-    public static boolean writeAccount(Context context, String url, String name, String password) {
+    public static boolean writeAccount(Context context, String url, String username,
+                                       String token) {
+        SeafileAccount account = new SeafileAccount(url);
+        account.mUserName = username;
+        account.mToken = token;
+        return writeAccount(context, account);
+    }
+
+    public static boolean writeAccount(Context context, SeafileAccount account) {
         BufferedWriter writer = null;
         try {
             JSONObject obj = new JSONObject();
-            obj.put("url", url);
-            obj.put("name", name);
-            obj.put("pass", password);
+            obj.put("url", account.mOpenthosUrl);
+            obj.put("name", account.mUserName);
+            obj.put("token", account.mToken);
             writer = new BufferedWriter(new OutputStreamWriter(
                     context.openFileOutput(ACCOUNT_INFO_FILE, Context.MODE_PRIVATE)));
             writer.write(obj.toString());
             writer.flush();
         } catch (JSONException | IOException e) {
             if (!(e instanceof FileNotFoundException)) {
-                Toast.makeText(context, context.getString(R.string.write_error), 0).show();
+                Toast.makeText(context, context.getString(R.string.write_error), Toast.LENGTH_SHORT).show();
             }
             return false;
         } finally {
@@ -274,11 +282,11 @@ public class Utils {
             if (!TextUtils.isEmpty(obj.getString("url"))) {
                 account.mOpenthosUrl = obj.getString("url");
                 account.mUserName = obj.getString("name");
-                account.mUserPassword = obj.getString("pass");
+                account.mToken = obj.getString("token");
             }
         } catch (JSONException | IOException e) {
             if (!(e instanceof FileNotFoundException) && context != null) {
-                Toast.makeText(context, context.getString(R.string.read_error), 0).show();
+                Toast.makeText(context, context.getString(R.string.read_error), Toast.LENGTH_SHORT).show();
             }
         } finally {
             if (reader != null) {
@@ -296,12 +304,12 @@ public class Utils {
         ConnectivityManager connMgr =
                 (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo wifi = connMgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-        if(wifi != null && wifi.isAvailable()
+        if (wifi != null && wifi.isAvailable()
                 && wifi.getDetailedState() == NetworkInfo.DetailedState.CONNECTED) {
             return true;
         }
         NetworkInfo mobile = connMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
-        if(mobile != null && mobile.isAvailable()
+        if (mobile != null && mobile.isAvailable()
                 && mobile.getDetailedState() == NetworkInfo.DetailedState.CONNECTED) {
             return true;
         }

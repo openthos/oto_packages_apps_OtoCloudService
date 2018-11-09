@@ -16,48 +16,37 @@
 
 package org.openthos.seafile;
 
+import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.os.Bundle;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Parcel;
 import android.os.RemoteException;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.net.Uri;
 import android.preference.Preference;
-import android.preference.PreferenceActivity;
-import android.preference.PreferenceFragment;
 import android.preference.Preference.OnPreferenceClickListener;
+import android.preference.PreferenceFragment;
 import android.preference.PreferenceScreen;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
-import android.view.textservice.SpellCheckerInfo;
-import android.view.textservice.SpellCheckerSubtype;
-import android.view.textservice.TextServicesManager;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.View.OnClickListener;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.Switch;
-import android.widget.TextView;
 import android.widget.Toast;
-
-import org.openthos.seafile.ISeafileService;
 
 public class OpenthosIDActivity extends Activity {
     public static final int MSG_REGIST_SEAFILE_OK = 0x1004;
@@ -86,6 +75,7 @@ public class OpenthosIDActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+    @SuppressLint("ValidFragment")
     private class OpenthosIDFragment extends PreferenceFragment
         implements  OnPreferenceClickListener {
         private static final String TAG = "OpenthosIDActivity";
@@ -102,7 +92,6 @@ public class OpenthosIDActivity extends Activity {
         private Preference mUnbundPref;
         private Preference mUrlPref;
         private PreferenceScreen mScreenPref;
-        private TextServicesManager mTsm;
 
         private String mOpenthosID;
         private String mPassword;
@@ -133,8 +122,6 @@ public class OpenthosIDActivity extends Activity {
             }
 
             mScreenPref = getPreferenceScreen();
-            Preference screen = findPreference(KEY_OPENTHOS_SCREEN);
-            screen.setLayoutResource(R.layout.activity_main);
             mOpenthosIDPref = findPreference(KEY_OPENTHOS_ID);
             mRegisterPref = findPreference(KEY_REGISTER);
             mRegisterPref.setOnPreferenceClickListener(this);
@@ -196,7 +183,6 @@ public class OpenthosIDActivity extends Activity {
                     }
                 }
             };
-
         }
 
         @Override

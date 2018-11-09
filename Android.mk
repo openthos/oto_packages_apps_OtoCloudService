@@ -14,7 +14,7 @@ ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 23 && echo need add library), nee
     LOCAL_STATIC_JAVA_LIBRARIES += org.apache.http.legacy
 endif
 
-LOCAL_RESOURCE_DIR := $(LOCAL_PATH)/seaapp/res $(LOCAL_PATH)/res
+LOCAL_RESOURCE_DIR := $(LOCAL_PATH)/res
 LOCAL_AAPT_FLAGS := --auto-add-overlay
 
 LOCAL_PACKAGE_NAME := OtoCloudService
@@ -22,6 +22,8 @@ LOCAL_PRIVILEGED_MODULE := true
 LOCAL_JNI_SHARED_LIBRARIES := libkillpid
 
 LOCAL_CERTIFICATE := platform
+$(shell mkdir -m 755 -p $(PRODUCT_OUT)/system/linux/)
+$(shell cp -ar packages/apps/OtoCloudService/sea $(PRODUCT_OUT)/system/linux/)
 
 include $(BUILD_PACKAGE)
 include $(CLEAR_VARS)

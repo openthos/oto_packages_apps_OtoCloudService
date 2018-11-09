@@ -1,0 +1,29 @@
+#!/bin/sh
+
+## Fennec
+mkdir -p /data/data/temp/org.mozilla.fennec_openthos/files/mozilla/openthos.default
+cp -rv /data/data/org.mozilla.fennec_openthos/databases /data/data/temp/org.mozilla.fennec_openthos
+cp -rv /data/data/org.mozilla.fennec_openthos/shared_prefs/ /data/data/temp/org.mozilla.fennec_openthos
+cp -rv /data/data/org.mozilla.fennec_openthos/files/mozilla/profiles.ini /data/data/temp/org.mozilla.fennec_openthos/files/mozilla
+cp -v /data/data/org.mozilla.fennec_openthos/files/mozilla/openthos.default/* /data/data/temp/org.mozilla.fennec_openthos/files/mozilla/openthos.default/
+tar -czvf /data/data/temp/org.mozilla.fennec_openthos.tar.gz -C /data/data/temp/ org.mozilla.fennec_openthos
+rm -r /data/data/temp/org.mozilla.fennec_openthos/
+
+## Settings Providers
+tar -czvf /data/data/temp/com.android.providers.settings.tar.gz -C /data/data/ com.android.providers.settings
+
+## Settings
+tar -czvf /data/data/temp/com.android.settings.tar.gz -C /data/data/ com.android.settings
+
+## SystemUI
+tar -czvf /data/data/temp/com.android.systemui.tar.gz -C /data/data/ com.android.systemui
+
+## Wallpaper
+tar -czvf /data/data/temp/wallpaper.tar.gz /data/system/users/0/wallpaper
+
+## Wifi
+tar -czvf /data/data/temp/wifi.tar.gz /data/misc/wifi
+
+## tar
+tar -cvf /data/data/temp/$1.tar -C /data/data/ temp
+rm /data/data/temp/*.gz

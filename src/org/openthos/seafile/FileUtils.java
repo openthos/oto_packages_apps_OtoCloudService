@@ -1,16 +1,9 @@
 package org.openthos.seafile;
 
-import android.util.Log;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 
 /**
  * Created by libing on 2017/02/20.
@@ -90,7 +83,7 @@ public class FileUtils {
      *  copy  directory
      * @param srcPath
      *
-     * @param destPath
+     * @param destDir
      *
      * @return
      */

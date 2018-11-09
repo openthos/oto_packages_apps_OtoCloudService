@@ -7,36 +7,13 @@
     </style>
 
     <style name="Theme.Settings" parent="@android:style/Theme.Material.Settings">
-        <item name="@*android:preferenceListStyle">@style/PreferenceHeaderListSinglePane</item>
-        <item name="@*android:preferenceFragmentListStyle">@style/PreferenceFragmentListSinglePane</item>
         <!-- Redefine the ActionBar style for contentInsetStart -->
         <item name="side_margin">@dimen/settings_side_margin</item>
         <item name="android:actionBarStyle">@style/Theme.ActionBar.SubSettings</item>
-        <item name="@*android:actionBarSize">@dimen/actionbar_size</item>
-
     </style>
 
     <style name="Theme.ActionBar.SubSettings" parent="@android:style/Widget.Material.Light.ActionBar.Solid">
         <item name="android:contentInsetStart">@dimen/actionbar_subsettings_contentInsetStart</item>
     </style>
 
-    <style name="PreferenceHeaderListSinglePane" parent="@*android:style/PreferenceHeaderList">
-        <item name="android:paddingStart">@dimen/settings_side_margin</item>
-        <item name="android:paddingEnd">@dimen/settings_side_margin</item>
-        <item name="android:paddingTop">0dp</item>
-        <item name="android:paddingBottom">0dp</item>
-        <item name="android:layout_marginStart">0dp</item>
-        <item name="android:layout_marginEnd">0dp</item>
-        <item name="android:layout_marginTop">0dp</item>
-        <item name="android:layout_marginBottom">0dp</item>
-        <item name="android:scrollbarStyle">outsideOverlay</item>
-    </style>
-
-    <style name="PreferenceFragmentListSinglePane" parent="@*android:style/PreferenceFragmentList">
-        <item name="android:paddingStart">@dimen/settings_side_margin</item>
-        <item name="android:paddingEnd">@dimen/settings_side_margin</item>
-        <item name="android:layout_marginStart">0dp</item>
-        <item name="android:layout_marginEnd">0dp</item>
-        <item name="android:scrollbarStyle">outsideOverlay</item>
-    </style>
 </resources>

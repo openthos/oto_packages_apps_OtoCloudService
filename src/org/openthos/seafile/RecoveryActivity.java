@@ -2,96 +2,66 @@ package org.openthos.seafile;
 
 import android.app.ActionBar;
 import android.app.Activity;
-import android.app.Fragment;
-import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
-import android.content.Context;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
-import android.content.ServiceConnection;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
+import android.content.ServiceConnection;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.RemoteException;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.Switch;
-import android.widget.Toast;
 import android.widget.BaseAdapter;
-import android.widget.CheckBox;
+import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.ListView;
+import android.widget.LinearLayout;
+import android.widget.RadioGroup;
+import android.widget.Switch;
 import android.widget.TextView;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.FileOutputStream;
-import java.io.FileInputStream;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.text.TextUtils;
-import android.net.Uri;
-import android.database.Cursor;
-import android.app.WallpaperManager;
-import android.util.Log;
-import android.database.sqlite.SQLiteDatabase;
-import android.content.pm.PackageInfo;
-import android.content.Intent;
-import java.util.List;
+import org.json.JSONException;
+
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import org.openthos.seafile.ISeafileService;
-import org.openthos.seafile.R;
+import java.util.List;
 
 public class RecoveryActivity extends Activity {
+    private RadioGroup mRadioGroup;
     private Switch mSwitchWallpaper;
     private Switch mSwitchWifi;
     private Switch mSwitchAppdata;
     private Switch mSwitchAppstore;
-    private Switch mSwitchBrowser;
     private Switch mSwitchStartupmenu;
 
-    private Button mButtonImport;
-    private Button mButtonExport;
+    private Button mButtonConfirm;
+    private TextView mChooseAppdata;
 
-    private TextView mBrowserImport;
-    private TextView mBrowserExport;
-    private TextView mAppdataImport;
-    private TextView mAppdataExport;
-    private ListView mListViewBrowser;
-    private ListView mListViewAppdata;
-
-    private List<ResolveInfo> mExportBrowsers = new ArrayList();
-    private List<ResolveInfo> mImportBrowsers = new ArrayList();
     private List<ResolveInfo> mExportAppdata = new ArrayList();
     private List<ResolveInfo> mImportAppdata = new ArrayList();
-    private List<String> mSyncBrowsers = new ArrayList();
-    private List<String> mSyncAppdata = new ArrayList();
-    private ResolveAdapter mBrowsersAdapter;
-    private ResolveAdapter mAppdataAdapter;
+    private List<ResolveInfo> mSyncAppdata = new ArrayList();
+    private ResolveAdapter mAppdataAdapter = new ResolveAdapter();
     private PackageManager mPackageManager;
-    private File mCloudFolder;
-    private int mTag = -1;
+    private int mTag = 0;
 
+
+    private RadioCheckedChangeListener mRadioCheckedChangeListener;
     private ClickListener mClickListener;
     private CheckedChangeListener mCheckedChangeListener;
 
     private RecoveryService mRecoveryService;
 
-    private static final String TAG = "RecoveryActivity";
-    private static final String ROOT_COMMOND = "chmod -R 777 ";
-    private static final int BUF_SIZE = 1024;
-    private boolean DEBUG = false;
+    private static final int IMPORT_TAG = 0;
+    private static final int EXPORT_TAG = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -103,127 +73,83 @@ public class RecoveryActivity extends Activity {
         }
         Intent intent = new Intent(RecoveryActivity.this, RecoveryService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        mPackageManager = getPackageManager();
         initView();
-        initData();
-
-        mCloudFolder = new File(getString(R.string.cloudfolder_path));
     }
 
     private void initView() {
+        mRadioGroup = (RadioGroup) findViewById(R.id.radio_group);
         mSwitchWallpaper = (Switch) findViewById(R.id.switch_wallpaper);
         mSwitchWifi = (Switch) findViewById(R.id.switch_wifi);
         mSwitchAppdata = (Switch) findViewById(R.id.switch_appdata);
         mSwitchAppstore = (Switch) findViewById(R.id.switch_appstore);
-        mSwitchBrowser = (Switch) findViewById(R.id.switch_browser);
         mSwitchStartupmenu = (Switch) findViewById(R.id.switch_startmenu);
-        mBrowserImport = (TextView) findViewById(R.id.tv_browser_import);
-        mBrowserExport = (TextView) findViewById(R.id.tv_browser_export);
-        mListViewBrowser = (ListView) findViewById(R.id.lv_browser);
-        mAppdataImport = (TextView) findViewById(R.id.tv_appdata_import);
-        mAppdataExport = (TextView) findViewById(R.id.tv_appdata_export);
-        mListViewAppdata = (ListView) findViewById(R.id.lv_appdata);
-        mButtonImport = (Button) findViewById(R.id.cloud_import);
-        mButtonExport = (Button) findViewById(R.id.cloud_export);
+        mChooseAppdata = (TextView) findViewById(R.id.tv_appdata_import);
+        mButtonConfirm = (Button) findViewById(R.id.cloud_import);
 
-        if (mSwitchBrowser.isChecked()) {
-            mBrowserImport.setEnabled(true);
-            mBrowserExport.setEnabled(true);
-        } else {
-            mBrowserImport.setEnabled(false);
-            mBrowserExport.setEnabled(false);
-        }
+        // switch status
+        restoreSwitchStatus();
 
-        if (mSwitchAppdata.isChecked()) {
-            mAppdataImport.setEnabled(true);
-            mAppdataExport.setEnabled(true);
-        } else {
-            mAppdataImport.setEnabled(false);
-            mAppdataExport.setEnabled(false);
-        }
-
+        mRadioCheckedChangeListener = new RadioCheckedChangeListener();
         mClickListener = new ClickListener();
         mCheckedChangeListener = new CheckedChangeListener();
-        mButtonImport.setOnClickListener(mClickListener);
-        mButtonExport.setOnClickListener(mClickListener);
-        mBrowserImport.setOnClickListener(mClickListener);
-        mBrowserExport.setOnClickListener(mClickListener);
-        mSwitchBrowser.setOnCheckedChangeListener(mCheckedChangeListener);
-        mAppdataImport.setOnClickListener(mClickListener);
-        mAppdataExport.setOnClickListener(mClickListener);
+
+        mRadioGroup.setOnCheckedChangeListener(mRadioCheckedChangeListener);
+        mChooseAppdata.setOnClickListener(mClickListener);
+        mButtonConfirm.setOnClickListener(mClickListener);
         mSwitchAppdata.setOnCheckedChangeListener(mCheckedChangeListener);
         mSwitchStartupmenu.setOnCheckedChangeListener(mCheckedChangeListener);
     }
 
-    private void initData() {
-        mPackageManager = getPackageManager();
-        mBrowsersAdapter = new ResolveAdapter();
-        mListViewBrowser.setAdapter(mBrowsersAdapter);
-        mAppdataAdapter = new ResolveAdapter();
-        mListViewAppdata.setAdapter(mAppdataAdapter);
+    private void restoreSwitchStatus() {
     }
 
-    private void setListViewHeight(ListView listView, ResolveAdapter adapter) {
-        ViewGroup.LayoutParams params = listView.getLayoutParams();
-        if (adapter.getCount() > 0) {
-            View item = adapter.getView(0, null, listView);
-            item.measure(0, 0);
-            params.height = item.getMeasuredHeight() * adapter.getCount() +
-                    listView.getDividerHeight() * (adapter.getCount() - 1);
-            listView.setLayoutParams(params);
-        } else {
-            params.height = 0;
-            listView.setLayoutParams(params);
-        }
+    private void saveSwitchStatus() {
     }
 
     private void showExportConfirmDialog() {
-        AlertDialog.Builder builder=new Builder(this);
-        builder.setMessage(getString(R.string.export_confirm_dialog_info));
-        builder.setPositiveButton(getString(R.string.cloud_service_dialog_confirm),
-                new android.content.DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        exportAllFiles();
-                        dialog.dismiss();
-                    }
-                });
-        builder.setNegativeButton(getString(R.string.cloud_service_dialog_cancel),
-                new android.content.DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                });
-        builder.create().show();
+        new Builder(this)
+                .setMessage(getString(R.string.export_confirm_dialog_info))
+                .setPositiveButton(getString(R.string.cloud_service_dialog_confirm),
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                exportAllFiles();
+                                dialog.dismiss();
+                            }
+                        })
+                .setNegativeButton(android.R.string.cancel, null)
+                .create().show();
     }
 
     private void importAllFiles() {
-        mRecoveryService.restoreSettings(mSwitchWallpaper.isChecked(),
-                mSwitchWifi.isChecked(),
-                mSwitchAppdata.isChecked(),
-                mSyncAppdata,
-                mSwitchStartupmenu.isChecked(),
-                mSwitchBrowser.isChecked(),
-                mSyncBrowsers,
+        mRecoveryService.restoreSettings(mSwitchWallpaper.isChecked(), mSwitchWifi.isChecked(),
+                mSwitchAppdata.isChecked(), getPackages(), mSwitchStartupmenu.isChecked(),
                 mSwitchAppstore.isChecked());
     }
 
+    private List<String> getPackages() {
+        ArrayList<String> list = new ArrayList<>();
+        for (ResolveInfo resolveInfo : mSyncAppdata) {
+            list.add(resolveInfo.activityInfo.packageName);
+        }
+        return list;
+    }
+
     private void exportAllFiles() {
-        mRecoveryService.saveSettings(mSwitchWallpaper.isChecked(),
-                mSwitchWifi.isChecked(),
-                mSwitchAppdata.isChecked(),
-                mSyncAppdata,
-                mSwitchStartupmenu.isChecked(),
-                mSwitchBrowser.isChecked(),
-                mSyncBrowsers,
-                mSwitchAppstore.isChecked());
+        mRecoveryService.saveSettings(true, mSwitchWallpaper.isChecked(),
+                mSwitchWifi.isChecked(), mSwitchAppdata.isChecked(), getPackages(),
+                mSwitchStartupmenu.isChecked(), mSwitchAppstore.isChecked());
     }
 
     private class ResolveAdapter extends BaseAdapter {
         private List<ResolveInfo> allList = new ArrayList();
         private List<String> syncList = new ArrayList();
 
-        private void setList(List<ResolveInfo> allList, List<String> syncList) {
+        private ResolveAdapter() {
+        }
+
+        private void setList(List<ResolveInfo> allList) {
             this.allList = allList;
-            this.syncList = syncList;
         }
 
         @Override
@@ -254,96 +180,126 @@ public class RecoveryActivity extends Activity {
             holder = (ViewHolder) convertView.getTag();
             holder.text.setText(allList.get(i).loadLabel(mPackageManager));
             holder.image.setImageDrawable(allList.get(i).loadIcon(mPackageManager));
-            holder.check.setTag(R.id.tag_list, syncList);
-            holder.check.setTag(R.id.tag_package, allList.get(i).activityInfo.packageName);
-            holder.check.setOnCheckedChangeListener(mCheckedChangeListener);
-            holder.check.setChecked(false);
-            try {
-                if ((mPackageManager.getPackageInfo(allList.get(i).activityInfo.packageName, 0).
-                        applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) > 0) {
-                    holder.check.setChecked(true);
-                }
-            } catch (PackageManager.NameNotFoundException e) {
-                e.printStackTrace();
+            if (mSyncAppdata.contains(allList.get(i))) {
+                holder.background.setSelected(true);
+            } else {
+                holder.background.setSelected(false);
             }
+            holder.background.setTag(allList.get(i));
+            holder.background.setOnClickListener(mClickListener);
             return convertView;
         }
     }
 
     private class ViewHolder {
+        public LinearLayout background;
         public TextView text;
         public ImageView image;
-        public CheckBox check;
 
         public ViewHolder(View view) {
+            background = (LinearLayout) view.findViewById(R.id.background);
             text = (TextView) view.findViewById(R.id.tv_item);
             image = (ImageView) view.findViewById(R.id.iv_item);
-            check = (CheckBox) view.findViewById(R.id.cb_item);
         }
     }
 
-    private class ClickListener implements View.OnClickListener {
+    private class ClickListener implements OnClickListener {
 
         @Override
         public void onClick(View view) {
             switch (view.getId()) {
                 case R.id.cloud_import:
-                    if ((mSwitchBrowser.isChecked()
-                            && mTag == Utils.TAG_BROWSER_EXPORT)
-                        || (mSwitchAppdata.isChecked()
-                            && mTag == Utils.TAG_APPDATA_EXPORT)) {
-                        Toast.makeText(RecoveryActivity.this,
-                                getString(R.string.warning_browser_export), Toast.LENGTH_LONG).show();
-                        return;
+                    if (mTag == IMPORT_TAG) {
+                        // import
+                        importAllFiles();
+                    } else if (mTag == EXPORT_TAG) {
+                        // export
+                        showExportConfirmDialog();
                     }
-                    importAllFiles();
-                    break;
-                case R.id.cloud_export:
-                    if ((mSwitchBrowser.isChecked()
-                            && mTag == Utils.TAG_BROWSER_IMPORT)
-                        || (mSwitchAppdata.isChecked()
-                            && mTag == Utils.TAG_APPDATA_IMPORT)) {
-                        Toast.makeText(RecoveryActivity.this,
-                                getString(R.string.warning_browser_import), Toast.LENGTH_LONG).show();
-                        return;
-                    }
-                    showExportConfirmDialog();
-                    break;
-                case R.id.tv_browser_import:
-                    operateClick(mImportBrowsers, Utils.TAG_BROWSER_IMPORT,
-                                mBrowsersAdapter, mSyncBrowsers, mListViewBrowser,
-                                mBrowserImport, mBrowserExport);
-                    break;
-                case R.id.tv_browser_export:
-                    operateClick(mExportBrowsers, Utils.TAG_BROWSER_EXPORT,
-                                mBrowsersAdapter, mSyncBrowsers, mListViewBrowser,
-                                mBrowserExport, mBrowserImport);
                     break;
                 case R.id.tv_appdata_import:
-                    operateClick(mImportAppdata, Utils.TAG_APPDATA_IMPORT,
-                                mAppdataAdapter, mSyncAppdata, mListViewAppdata,
-                                mAppdataImport, mAppdataExport);
+                    showAppdataList();
                     break;
-                case R.id.tv_appdata_export:
-                    operateClick(mExportAppdata, Utils.TAG_APPDATA_EXPORT,
-                                mAppdataAdapter, mSyncAppdata, mListViewAppdata,
-                                mAppdataExport, mAppdataImport);
+                case R.id.background:
+                    if (view.isSelected()) {
+                        Log.d("wwww", "-------------click background-true-");
+                        view.setSelected(false);
+                        mSyncAppdata.remove(view.getTag());
+                    } else {
+                        Log.d("wwww", "-------------click background-false-");
+                        view.setSelected(true);
+                        mSyncAppdata.add((ResolveInfo) view.getTag());
+                    }
                     break;
             }
         }
     }
 
-    private void operateClick(List<ResolveInfo> appList, int tag, ResolveAdapter adapter,
-            List<String> syncList, ListView listView, TextView light, TextView dark) {
-        appList = mRecoveryService.getAppsInfo(tag);
-        syncList.clear();
-        adapter.setList(appList, syncList);
-        adapter.notifyDataSetChanged();
-        setListViewHeight(listView, adapter);
-        listView.setVisibility(View.VISIBLE);
-        mTag = tag;
-        light.setBackgroundResource(R.color.text_bg_color);
-        dark.setBackgroundResource(R.color.white);
+    private void showAppdataList() {
+        Builder builder = new Builder(this);
+        View view = LayoutInflater.from(this).inflate(R.layout.appdata_list, null);
+        GridView gridView = (GridView) view.findViewById(R.id.lv_appdata);
+        if (mTag == IMPORT_TAG) {
+            mAppdataAdapter.setList(mImportAppdata);
+            builder.setTitle(getText(R.string.cloud_appdata_import));
+        } else {
+            mAppdataAdapter.setList(mExportAppdata);
+            builder.setTitle(getText(R.string.cloud_appdata_export));
+        }
+        gridView.setAdapter(mAppdataAdapter);
+        builder.setView(view);
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                Log.d("nnnnnn", "-------------------dialog-ok-" + mSyncAppdata.size());
+            }
+        });
+        builder.create().show();
+    }
+
+    private void initList() {
+        mImportAppdata = mRecoveryService.getAppsInfo(Utils.TAG_APPDATA_IMPORT);
+        mExportAppdata = mRecoveryService.getAppsInfo(Utils.TAG_APPDATA_EXPORT);
+        for (int i = 0; i < mImportAppdata.size(); i++) {
+            try {
+                if ((mPackageManager.getPackageInfo(mImportAppdata.get(i).activityInfo.packageName, 0).
+                        applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) > 0) {
+                    mSyncAppdata.add(mImportAppdata.get(i));
+                }
+            } catch (PackageManager.NameNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    private void refreshView() {
+        Log.d("nnnnnn", "---------------------------refresh-");
+        if (mTag == IMPORT_TAG) {
+            mButtonConfirm.setText(R.string.cloud_import);
+            mChooseAppdata.setText(R.string.cloud_appdata_import);
+        } else if (mTag == EXPORT_TAG) {
+            mButtonConfirm.setText(R.string.cloud_export);
+            mChooseAppdata.setText(R.string.cloud_appdata_export);
+
+        }
+    }
+
+    private class RadioCheckedChangeListener implements RadioGroup.OnCheckedChangeListener {
+
+        @Override
+        public void onCheckedChanged(RadioGroup group, int checkedId) {
+            switch (checkedId) {
+                case R.id.rb_import:
+                    mTag = IMPORT_TAG;
+                    refreshView();
+                    break;
+                case R.id.rb_export:
+                    mTag = EXPORT_TAG;
+                    refreshView();
+                    break;
+            }
+        }
     }
 
     private class CheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
@@ -353,42 +309,13 @@ public class RecoveryActivity extends Activity {
             switch (buttonView.getId()) {
                 case R.id.switch_startmenu:
                     if (isChecked) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(RecoveryActivity.this);
+                        Builder builder = new Builder(RecoveryActivity.this);
                         builder.setMessage(getString(R.string.warn_restore_startupmenu));
                         builder.setPositiveButton(R.string.okay, null);
                         builder.create().show();
                     }
                     break;
                 case R.id.switch_appdata:
-                    if (isChecked) {
-                        mAppdataExport.performClick();
-                        mAppdataImport.setEnabled(true);
-                        mAppdataExport.setEnabled(true);
-                    } else {
-                        mAppdataImport.setEnabled(false);
-                        mAppdataExport.setEnabled(false);
-                        mListViewAppdata.setVisibility(View.GONE);
-                    }
-                    break;
-                case R.id.switch_browser:
-                    if (isChecked) {
-                        mBrowserExport.performClick();
-                        mBrowserImport.setEnabled(true);
-                        mBrowserExport.setEnabled(true);
-                    } else {
-                        mBrowserImport.setEnabled(false);
-                        mBrowserExport.setEnabled(false);
-                        mListViewBrowser.setVisibility(View.GONE);
-                    }
-                    break;
-                case R.id.cb_item:
-                    if (isChecked) {
-                        ((List<String>) buttonView.getTag(R.id.tag_list)).
-                                add((String) buttonView.getTag(R.id.tag_package));
-                    } else {
-                        ((List<String>) buttonView.getTag(R.id.tag_list)).
-                                remove((String) buttonView.getTag(R.id.tag_package));
-                    }
                     break;
             }
         }
@@ -407,6 +334,8 @@ public class RecoveryActivity extends Activity {
     private ServiceConnection mConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName name, IBinder service) {
             mRecoveryService = ((RecoveryService.ServiceBinder) service).getService();
+            //if (TextUtils.isEmpty(mRecoveryService.getUserName())) {
+            //}
         }
 
         public void onServiceDisconnected(ComponentName name) {

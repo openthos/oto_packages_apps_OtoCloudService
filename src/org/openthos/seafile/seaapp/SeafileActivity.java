@@ -1,11 +1,7 @@
 package org.openthos.seafile.seaapp;
 
-import android.content.Context;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.pm.ResolveInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,18 +13,15 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import org.json.JSONException;
+import org.openthos.seafile.R;
+import org.openthos.seafile.SeafileAccount;
+import org.openthos.seafile.SeafileUtils;
+import org.openthos.seafile.seaapp.transfer.DownloadTaskManager;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.File;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.openthos.seafile.R;
-import org.openthos.seafile.SeafileUtils;
-import org.openthos.seafile.SeafileAccount;
-import org.openthos.seafile.seaapp.transfer.DownloadTaskManager;
 
 public class SeafileActivity extends FragmentActivity {
     private ListView mListView;
@@ -118,7 +111,8 @@ public class SeafileActivity extends FragmentActivity {
         if (account.isExistsAccount()) {
             mServerURL = account.mOpenthosUrl;
             mUserId = account.mUserName;
-            mPassword = account.mUserPassword;
+            // TODO ???
+//            mPassword = account.mUserPassword;
             getAccountAndLogin();
         }
         findViewById(R.id.back).setOnClickListener(new View.OnClickListener() {

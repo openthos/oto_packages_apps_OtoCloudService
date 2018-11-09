@@ -1,0 +1,36 @@
+#!/bin/sh
+
+## untar 
+tar -xvf /data/data/temp/$1.tar -C /data/data
+
+## Fennec
+tar -xvf /data/data/temp/org.mozilla.fennec_openthos.tar.gz  -C /data/data/
+chmod -R 777 /data/data/org.mozilla.fennec_openthos
+
+## Settings Providers
+tar -xvf /data/data/temp/com.android.providers.settings.tar.gz  -C /data/data/
+chmod -R 777 /data/data/com.android.providers.settings
+
+## Settings
+tar -xvf /data/data/temp/com.android.settings.tar.gz -C /data/data/
+chmod -R 777 /data/data/com.android.settings
+
+## SystemUI
+tar -xvf /data/data/temp/com.android.systemui.tar.gz -C /data/data/
+chmod -R 777 /data/data/com.android.systemui
+
+## Wallpaper
+tar -xvf /data/data/temp/wallpaper.tar.gz /data/system/users/0/wallpaper
+chmod -R 777 /data/system/users/0/wallpaper
+
+## Wifi
+tar -xvf /data/data/temp/wifi.tar.gz /data/misc/wifi
+chmod -R 777 /data/misc/wifi 
+
+## clean
+rm /data/data/temp/*.tar
+rm /data/data/temp/*.gz
+
+## reboot
+
+

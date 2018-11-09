@@ -1,31 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <ImageView
-        android:id="@+id/iv_item"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_margin="12dp"
-        android:scaleType="fitCenter"
-        android:layout_centerVertical="true"
-        android:layout_alignParentLeft="true"/>
+    <LinearLayout
+        android:id="@+id/background"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center"
+        android:background="@drawable/item_bg_selector"
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/tv_item"
-        android:layout_width="wrap_content"
-        android:layout_height="24dp"
-        android:ellipsize="marquee"
-        android:singleLine="true"
-        android:layout_centerVertical="true"
-        android:layout_toRightOf="@id/iv_item"/>
+        <ImageView
+            android:id="@+id/iv_item"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="12dp"
+            android:scaleType="fitCenter" />
 
-    <CheckBox
-        android:id="@+id/cb_item"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_margin="12dp"
-        android:layout_centerVertical="true"
-        android:layout_alignParentRight="true"/>
-</RelativeLayout>
+        <TextView
+            android:id="@+id/tv_item"
+            android:layout_width="wrap_content"
+            android:layout_height="24dp"
+            android:layout_gravity="center_horizontal"
+            android:ellipsize="marquee"
+            android:singleLine="true" />
+
+        <CheckBox
+            android:id="@+id/cb_item"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>

@@ -48,11 +48,12 @@
             android:exported="true">
         </service>
 
-        <receiver android:name=".BootBroadcastReceiver">
+        <receiver android:name=".BootCompleteReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+
         <activity android:name=".seaapp.SeafileActivity">
         </activity>
 
