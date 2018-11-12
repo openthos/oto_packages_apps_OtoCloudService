@@ -4,6 +4,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.widget.Toast;
 
 import org.json.JSONException;
@@ -17,7 +18,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 
 public class Utils {
@@ -248,16 +254,19 @@ public class Utils {
         BufferedWriter writer = null;
         try {
             JSONObject obj = new JSONObject();
+            String token = Config.FLAG_PROGUARD ?
+                    encodeToken(account.mToken + account.mUserName) : account.mToken;
             obj.put("url", account.mOpenthosUrl);
             obj.put("name", account.mUserName);
-            obj.put("token", account.mToken);
+            obj.put("token", token);
             writer = new BufferedWriter(new OutputStreamWriter(
                     context.openFileOutput(ACCOUNT_INFO_FILE, Context.MODE_PRIVATE)));
             writer.write(obj.toString());
             writer.flush();
         } catch (JSONException | IOException e) {
             if (!(e instanceof FileNotFoundException)) {
-                Toast.makeText(context, context.getString(R.string.write_error), Toast.LENGTH_SHORT).show();
+                Toast.makeText(context,
+                        context.getString(R.string.write_error), Toast.LENGTH_SHORT).show();
             }
             return false;
         } finally {
@@ -280,13 +289,20 @@ public class Utils {
                     context.openFileInput(ACCOUNT_INFO_FILE)));
             JSONObject obj = new JSONObject(reader.readLine());
             if (!TextUtils.isEmpty(obj.getString("url"))) {
+                String token = Config.FLAG_PROGUARD ?
+                        decodeToken(obj.getString("name"), obj.getString("token"))
+                        : obj.getString("token");
+                if (TextUtils.isEmpty(token)) {
+                    return account;
+                }
                 account.mOpenthosUrl = obj.getString("url");
                 account.mUserName = obj.getString("name");
-                account.mToken = obj.getString("token");
+                account.mToken = token;
             }
         } catch (JSONException | IOException e) {
             if (!(e instanceof FileNotFoundException) && context != null) {
-                Toast.makeText(context, context.getString(R.string.read_error), Toast.LENGTH_SHORT).show();
+                Toast.makeText(context,
+                        context.getString(R.string.read_error), Toast.LENGTH_SHORT).show();
             }
         } finally {
             if (reader != null) {
@@ -314,5 +330,75 @@ public class Utils {
             return true;
         }
         return false;
+    }
+
+    private static String encodeToken(String token) {
+        byte[] bytes = token.getBytes();
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = (byte) ~bytes[i];
+        }
+        byte[] key = getKey();
+        byte[] result = xor(bytes, key);
+        return new String(Base64.encode(result, Base64.DEFAULT));
+    }
+
+    private static String decodeToken(String name, String result) {
+        byte[] key = getKey();
+        byte[] bytes = xor(Base64.decode(result, Base64.DEFAULT), key);
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = (byte) ~bytes[i];
+        }
+        result = new String(bytes);
+        if (result.endsWith(name)) {
+            return result.replace(name, "");
+        } else {
+            return null;
+        }
+    }
+
+    private static byte[] xor(byte[] arg0, byte[] arg1) {
+        int len = arg1.length;
+        byte[] result = new byte[arg0.length];
+        for (int i = 0; i < arg0.length; i++) {
+            result[i] = (byte) (arg0[i] ^ arg1[i % len]);
+        }
+        return result;
+    }
+
+    private static byte[] getKey() {
+        String localKey = ACCOUNT_INFO_FILE;
+        try {
+            Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
+            while (en.hasMoreElements()) {
+                NetworkInterface networks = en.nextElement();
+                Enumeration<InetAddress> address = networks.getInetAddresses();
+                while (address.hasMoreElements()) {
+                    InetAddress ip = address.nextElement();
+                    String ipaddress = ip.getHostAddress();
+                    byte[] key = networks.getHardwareAddress();
+                    if (key != null && key.length >0) {
+                        StringBuffer stringBuffer = new StringBuffer("");
+                        for (int i = 0; i < key.length; i++) {
+                            int temp = key[i] & 0xff;
+                            String str = Integer.toHexString(temp);
+                            if (str.length() == 1) {
+                                stringBuffer.append("0" + str);
+                            } else {
+                                stringBuffer.append(str);
+                            }
+                        }
+                        localKey = stringBuffer.toString();
+                        break;
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        return localKey.getBytes();
+    }
+
+    public class Config {
+        private static final boolean FLAG_PROGUARD = true;
     }
 }

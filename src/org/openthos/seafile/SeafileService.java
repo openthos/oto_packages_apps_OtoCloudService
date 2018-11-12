@@ -81,6 +81,8 @@ public class SeafileService extends Service {
         mAccount = new SeafileAccount(this);
         if (mAccount.isExistsAccount()) {
             startAccount();
+        } else if (!Utils.isNetworkOn(this)) {
+            regiestNetworkReceiver();
         }
     }
 
@@ -358,9 +360,16 @@ public class SeafileService extends Service {
                             .getSystemService(Context.CONNECTIVITY_SERVICE);
                     NetworkInfo activeNetwork = manager.getActiveNetworkInfo();
                     if (activeNetwork != null && activeNetwork.isConnected()) {
-                        mInitLibrarysThread = new InitLibrarysThread();
-                        mInitLibrarysThread.start();
-                        unregiestNetworkReceiver();
+                        if (!mAccount.isExistsAccount()) {
+                            mAccount = new SeafileAccount(SeafileService.this);
+                            if (mAccount.isExistsAccount()) {
+                                startAccount();
+                            }
+                        } else {
+                            mInitLibrarysThread = new InitLibrarysThread();
+                            mInitLibrarysThread.start();
+                            unregiestNetworkReceiver();
+                        }
                     }
                     break;
             }
