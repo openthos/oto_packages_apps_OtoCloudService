@@ -1,9 +1,13 @@
 package org.openthos.seafile;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.Settings;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -19,11 +23,17 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HTTP;
+import org.json.JSONObject;
+import org.json.JSONException;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +48,7 @@ public class AccountLogin extends Thread {
     private String loginPostUri;
     private String referer;
     private String redirect = "http.protocol.handle-redirects";
+    private String tokenPath = "/system/linux/sea/tmp/account";
     private String location, csrftoken, sessionid, sess, form_build_id;
     private String url, name, pass, id, email, passwd, token;
     private Mark mark;
@@ -429,23 +440,63 @@ public class AccountLogin extends Thread {
         int statusCode = httpResponse.getStatusLine().getStatusCode();
 
         if (statusCode == 200) {
-            return getToken();
+            return writeToken(location);
         }
         return false;
     }
 
-    private boolean getToken() {
-        SeafileUtils.start();
-
-        String result = SeafileUtils.getToken(url, name + "@openthos.org", pass);
-        android.util.Log.i("wwww", url);
-        android.util.Log.i("wwww", name + "@openthos.org");
-        android.util.Log.i("wwww", pass);
-        android.util.Log.i("wwww", result);
-        if (result != null){
+    private boolean writeToken(String location) throws Exception {
+        String accout = name + "@openthos.org";
+        String result = getToken(context, location, accout, pass);
+        android.util.Log.i("lxx", url);
+        android.util.Log.i("lxx", accout);
+        android.util.Log.i("lxx", pass);
+        android.util.Log.i("lxx", result);
+        if (result != null) {
             token = result;
-            return true;
+            notifySeafileKeeper(accout, token);
         }
-        return false;
+        return result != null;
+    }
+
+    private void notifySeafileKeeper(String accout, String token) {
+        try {
+            FileWriter writer = new FileWriter(new File(tokenPath));
+            BufferedWriter bufferedWriter = new BufferedWriter(writer);
+            bufferedWriter.write(accout + "\n" + token);
+            bufferedWriter.flush();
+            writer.close();
+            bufferedWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private String getToken(Context context, String url, String name, String password)
+            throws UnsupportedEncodingException, JSONException,
+            HttpRequest.HttpRequestException, PackageManager.NameNotFoundException {
+        HttpRequest rep = null;
+        rep = HttpRequest.post(url + "api2/auth-token/",
+                null, false).followRedirects(true).connectTimeout(15000);
+        rep.form("username", name);
+        rep.form("password", password);
+        PackageInfo packageInfo = null;
+        packageInfo = context.getPackageManager().
+                getPackageInfo(context.getPackageName(), 0);
+        String deviceId = Settings.Secure.getString(context.getContentResolver(),
+                Settings.Secure.ANDROID_ID);
+        rep.form("platform", "android");
+        rep.form("device_id", deviceId);
+        rep.form("device_name", Build.MODEL);
+        rep.form("client_version", packageInfo.versionName);
+        rep.form("platform_version", Build.VERSION.RELEASE);
+        String contentAsString = null;
+        if (rep.ok()){
+            contentAsString = new String(rep.bytes(), "UTF-8");
+            return new JSONObject(contentAsString).getString("token");
+        } else {
+            throw new UnsupportedEncodingException();
+        }
     }
 }
