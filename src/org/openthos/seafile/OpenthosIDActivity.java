@@ -48,6 +48,11 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
 public class OpenthosIDActivity extends Activity {
     public static final int MSG_REGIST_SEAFILE_OK = 0x1004;
     public static final int MSG_REGIST_SEAFILE_FAILED = 0x1005;
@@ -85,6 +90,7 @@ public class OpenthosIDActivity extends Activity {
         private static final String KEY_BIND = "openthos_bind";
         private static final String KEY_UNBUND = "openthos_unbund";
         private static final String KEY_URL = "openthos_url";
+        private static final String mPath = "/system/linux/sea/tmp/logout";
 
         private Preference mOpenthosIDPref;
         private Preference mRegisterPref;
@@ -270,6 +276,7 @@ public class OpenthosIDActivity extends Activity {
                                 mISeafileService.stopAccount();
                                 mBindPref.setEnabled(true);
                                 mUnbundPref.setEnabled(false);
+                                notifySeafileKeeper();
                             } catch (RemoteException e) {
                                 e.printStackTrace();
                             }
@@ -360,29 +367,45 @@ public class OpenthosIDActivity extends Activity {
             }
         }
 
-    private class SeafileServiceConnection implements ServiceConnection {
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            mISeafileService = ISeafileService.Stub.asInterface(service);
-        }
-
-        public void onServiceDisconnected(ComponentName name) {
-        }
-    }
-
-    private class SeafileBinder extends Binder {
-
-        @Override
-        protected boolean onTransact(
-                int code, Parcel data, Parcel reply, int flags) throws RemoteException {
-            if (code == mISeafileService.getCodeLoginSuccess()) {
-                Message msg = new Message();
-                msg.obj = data.readString();
-                msg.what = MSG_LOGIN_SEAFILE_OK;
-                mHandler.sendMessage(msg);
-                return true;
+        private void notifySeafileKeeper() {
+            try {
+                String serverUrl = "server_url=" + mAccount.mOpenthosUrl;
+                String user = "user=" + mAccount.mUserName;
+                String action = "action=logout";
+                FileWriter writer = new FileWriter(new File(mPath));
+                BufferedWriter bufferedWriter = new BufferedWriter(writer);
+                bufferedWriter.write(serverUrl + "\n" + user + "\n" + action);
+                bufferedWriter.flush();
+                writer.close();
+                bufferedWriter.close();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            return super.onTransact(code, data, reply, flags);
         }
-    }
+
+        private class SeafileServiceConnection implements ServiceConnection {
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                mISeafileService = ISeafileService.Stub.asInterface(service);
+            }
+
+            public void onServiceDisconnected(ComponentName name) {
+            }
+        }
+
+        private class SeafileBinder extends Binder {
+
+            @Override
+            protected boolean onTransact(
+                    int code, Parcel data, Parcel reply, int flags) throws RemoteException {
+                if (code == mISeafileService.getCodeLoginSuccess()) {
+                    Message msg = new Message();
+                    msg.obj = data.readString();
+                    msg.what = MSG_LOGIN_SEAFILE_OK;
+                    mHandler.sendMessage(msg);
+                    return true;
+                }
+                return super.onTransact(code, data, reply, flags);
+            }
+        }
     }
 }

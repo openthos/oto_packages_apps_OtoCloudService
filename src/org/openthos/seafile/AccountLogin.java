@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AccountLogin extends Thread {
+    public static final String TAG = "AccountLogin";
     public static final int MSG_REGIST_SEAFILE_OK = 0x1001;
     public static final int MSG_REGIST_SEAFILE_FAILED = 0x1002;
     public static final int MSG_LOGIN_SEAFILE_OK = 0x1003;
@@ -48,7 +49,7 @@ public class AccountLogin extends Thread {
     private String loginPostUri;
     private String referer;
     private String redirect = "http.protocol.handle-redirects";
-    private String tokenPath = "/system/linux/sea/tmp/account";
+    private String tokenPath = "/system/linux/sea/tmp/account.conf";
     private String location, csrftoken, sessionid, sess, form_build_id;
     private String url, name, pass, id, email, passwd, token;
     private Mark mark;
@@ -448,10 +449,10 @@ public class AccountLogin extends Thread {
     private boolean writeToken(String location) throws Exception {
         String accout = name + "@openthos.org";
         String result = getToken(context, location, accout, pass);
-        android.util.Log.i("lxx", url);
-        android.util.Log.i("lxx", accout);
-        android.util.Log.i("lxx", pass);
-        android.util.Log.i("lxx", result);
+        android.util.Log.i(TAG, url);
+        android.util.Log.i(TAG, accout);
+        android.util.Log.i(TAG, pass);
+        android.util.Log.i(TAG, result);
         if (result != null) {
             token = result;
             notifySeafileKeeper(accout, token);
@@ -461,16 +462,21 @@ public class AccountLogin extends Thread {
 
     private void notifySeafileKeeper(String accout, String token) {
         try {
+            String serverUrl = "server_url=" + url;
+            String user = "user=" + accout;
+            String password = "password=" + pass;
+            String seafToken = "token=" + token;
+            String action = "action=login";
             FileWriter writer = new FileWriter(new File(tokenPath));
             BufferedWriter bufferedWriter = new BufferedWriter(writer);
-            bufferedWriter.write(accout + "\n" + token);
+            bufferedWriter.write(serverUrl + "\n" + user +
+                        "\n" + password + "\n" + seafToken + "\n" + action);
             bufferedWriter.flush();
             writer.close();
             bufferedWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
     private String getToken(Context context, String url, String name, String password)
