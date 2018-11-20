@@ -45,18 +45,13 @@ public class SeafileService extends Service {
     private static final int CODE_LOGIN_FAILED = 80000008;
     private static final int CODE_CHANGE_URL = 80000009;
     private static final int CODE_UNBIND_ACCOUNT = 80000010;
-    private static final long TIMER_SHORT = 1000;
-    private static final long TIMER_MEDIUM = TIMER_SHORT * 10;
-    private static final long TIMER_LONG = TIMER_MEDIUM * 10;
     private static final String SEAFILE_STATUS_DOWNLOADING = "downloading";
     private static final String SEAFILE_STATUS_UPLOADING = "uploading";
     public static SeafileAccount mAccount;
-    private InitLibrarysThread mInitLibrarysThread;
     private String mUserPath;
     private ArrayList<IBinder> mIBinders = new ArrayList();
     private SeafileBinder mBinder = new SeafileBinder();
     private Handler mHandler;
-    private ScheduledExecutorService mScheduledService;
     private String mTmpOpenthosUrl = SeafileUtils.SEAFILE_URL_LIBRARY;
 
     private StateObserver mLogObserver;
@@ -65,19 +60,14 @@ public class SeafileService extends Service {
     private Notification.Builder mBuilder;
     private Notification.BigTextStyle mStyle;
     private boolean mIsNotificationShown = false;
-    private NetworkReceiver mNetworkReceiver;
 
     @Override
     public void onCreate() {
         super.onCreate();
         mHandler = new SeafileHandler(Looper.getMainLooper());
-        SeafileUtils.init();
-        SeafileUtils.start();
         mAccount = new SeafileAccount(this);
         if (mAccount.isExistsAccount()) {
             startAccount();
-        } else if (!Utils.isNetworkOn(this)) {
-            regiestNetworkReceiver();
         }
     }
 
@@ -85,96 +75,6 @@ public class SeafileService extends Service {
     private void startAccount() {
 	android.util.Log.i("wwww", "startaccount");
         mUserPath = SeafileUtils.SEAFILE_DATA_ROOT_PATH + "/" + mAccount.mUserName;
-        if (mInitLibrarysThread != null) {
-            mInitLibrarysThread = null;
-        }
-        mScheduledService = Executors.newScheduledThreadPool(1);
-        mInitLibrarysThread = new InitLibrarysThread();
-        mInitLibrarysThread.start();
-    }
-
-    private class InitLibrarysThread extends Thread {
-        @Override
-        public void run() {
-            super.run();
-            if (!Utils.isNetworkOn(SeafileService.this)) {
-                regiestNetworkReceiver();
-                mInitLibrarysThread = null;
-                return;
-            }
-            String library;
-            if ((library = getLibrarysSuccess()) == null) {
-                postDelayedThread();
-                return;
-            }
-            try {
-                JSONArray jsonArray = new JSONArray(library);
-                JSONObject jsonObject = null;
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    SeafileLibrary seafileLibrary = new SeafileLibrary();
-                    jsonObject = jsonArray.getJSONObject(i);
-                    seafileLibrary.libraryName = jsonObject.getString("name");
-                    seafileLibrary.libraryId = jsonObject.getString("id");
-                    if (seafileLibrary.libraryName.equals(SeafileUtils.SETTING_SEAFILE_NAME)) {
-                        mAccount.mConfigLibrary = seafileLibrary;
-                        continue;
-                    }
-                    if (seafileLibrary.libraryName.equals(SeafileUtils.DATA_SEAFILE_NAME)) {
-                        mAccount.mDataLibrary = seafileLibrary;
-                        continue;
-                    }
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            if (mAccount.mConfigLibrary == null) {
-                SeafileLibrary seafileLibrary = new SeafileLibrary();
-                seafileLibrary.libraryName = SeafileUtils.SETTING_SEAFILE_NAME;
-                seafileLibrary.libraryId = SeafileUtils.create(SeafileUtils.SETTING_SEAFILE_NAME,
-                        mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mToken);
-                mAccount.mConfigLibrary = seafileLibrary;
-            }
-            if (!TextUtils.isEmpty(mAccount.mConfigLibrary.libraryId)) {
-                File configFile = new File("/system/linux/sea/" + mAccount.mUserName + "/" + SeafileUtils.SETTING_SEAFILE_NAME);
-                if (!configFile.exists()) {
-                    configFile.mkdirs();
-                }
-                mAccount.mConfigLibrary.filePath
-                        = "/" + mAccount.mUserName + "/" + SeafileUtils.SETTING_SEAFILE_NAME;
-                SeafileUtils.sync(
-                        mAccount.mConfigLibrary.libraryId, mAccount.mConfigLibrary.filePath,
-                        mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mToken);
-            } else {
-                mAccount.mConfigLibrary = null;
-            }
-            if (mAccount.mDataLibrary == null) {
-                SeafileLibrary seafileLibrary = new SeafileLibrary();
-                seafileLibrary.libraryName = SeafileUtils.DATA_SEAFILE_NAME;
-                seafileLibrary.libraryId = SeafileUtils.create(SeafileUtils.DATA_SEAFILE_NAME,
-                        mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mToken);
-                mAccount.mDataLibrary = seafileLibrary;
-            }
-            if (!TextUtils.isEmpty(mAccount.mDataLibrary.libraryId)) {
-                mAccount.mDataLibrary.isSync = SeafileUtils.SYNC;
-                mAccount.mDataLibrary.filePath = SeafileUtils.SEAFILE_DATA_ROOT_PATH
-                        + "/" + mAccount.mUserName + "/" + mAccount.mDataLibrary.libraryName;
-                SeafileUtils.sync(
-                        mAccount.mDataLibrary.libraryId, mAccount.mDataLibrary.filePath,
-                        mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mToken);
-            } else {
-                mAccount.mDataLibrary = null;
-            }
-            Intent intent = new Intent(SeafileService.this, RecoveryService.class);
-            intent.putExtra("backup", true);
-            startService(intent);
-            mHandler.sendEmptyMessage(START_STATE_MONITOR);
-        }
-    }
-
-    private void postDelayedThread() {
-        mInitLibrarysThread = null;
-        mInitLibrarysThread = new InitLibrarysThread();
-        mScheduledService.schedule(mInitLibrarysThread, 60, TimeUnit.SECONDS);
     }
 
     // monitor librarys status
@@ -232,53 +132,6 @@ public class SeafileService extends Service {
         mNotificationManager.notify(0, mBuilder.getNotification());
     }
 
-    private String getLibrarysSuccess() {
-        try {
-            return SeafileUtils.getResult(mAccount.mToken, mAccount.mOpenthosUrl);
-        } catch (UnsupportedEncodingException | HttpRequest.HttpRequestException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private void regiestNetworkReceiver() {
-        mNetworkReceiver = new NetworkReceiver();
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-        registerReceiver(mNetworkReceiver, intentFilter);
-    }
-
-    private void unregiestNetworkReceiver() {
-        unregisterReceiver(mNetworkReceiver);
-        mNetworkReceiver = null;
-    }
-
-    private class NetworkReceiver extends BroadcastReceiver {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            switch (intent.getAction()) {
-                case ConnectivityManager.CONNECTIVITY_ACTION:
-                    ConnectivityManager manager = (ConnectivityManager) context
-                            .getSystemService(Context.CONNECTIVITY_SERVICE);
-                    NetworkInfo activeNetwork = manager.getActiveNetworkInfo();
-                    if (activeNetwork != null && activeNetwork.isConnected()) {
-                        if (!mAccount.isExistsAccount()) {
-                            mAccount = new SeafileAccount(SeafileService.this);
-                            if (mAccount.isExistsAccount()) {
-                                startAccount();
-                            }
-                        } else {
-                            mInitLibrarysThread = new InitLibrarysThread();
-                            mInitLibrarysThread.start();
-                            unregiestNetworkReceiver();
-                        }
-                    }
-                    break;
-            }
-        }
-    }
-
     private class SeafileBinder extends ISeafileService.Stub {
 
         @Override
@@ -289,33 +142,10 @@ public class SeafileService extends Service {
 
         @Override
         public void syncData() {
-            if (mAccount == null || mAccount.mDataLibrary == null) {
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(SeafileService.this, getString(R.string.toast_data_init), Toast.LENGTH_SHORT).show();
-                    }
-                });
-            } else {
-                mAccount.mDataLibrary.isSync = SeafileUtils.SYNC;
-                SeafileUtils.sync(mAccount.mDataLibrary.libraryId, mAccount.mDataLibrary.filePath,
-                        mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mToken);
-            }
         }
 
         @Override
         public void desyncData() {
-            if (mAccount == null || mAccount.mDataLibrary == null) {
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(SeafileService.this, getString(R.string.toast_data_init), Toast.LENGTH_SHORT).show();
-                    }
-                });
-            } else {
-                mAccount.mDataLibrary.isSync = SeafileUtils.UNSYNC;
-                SeafileUtils.desync(mAccount.mDataLibrary.filePath);
-            }
         }
 
         @Override
@@ -325,9 +155,7 @@ public class SeafileService extends Service {
 
         @Override
         public boolean isSync() {
-            return mAccount != null
-                    && mAccount.mDataLibrary != null
-                    && mAccount.mDataLibrary.isSync == SeafileUtils.SYNC;
+            return true;
         }
 
         @Override
@@ -342,20 +170,11 @@ public class SeafileService extends Service {
                 mIsNotificationShown = false;
                 mNotificationManager.cancel(0);
             }
-
-            if (mAccount != null) {
-                SeafileUtils.desync(mAccount.mDataLibrary.filePath);
-            }
             mAccount.clear();
             Utils.writeAccount(SeafileService.this, mAccount.mOpenthosUrl, "", "");
             Intent intent = new Intent(SeafileService.this, RecoveryService.class);
             intent.putExtra("timer", true);
             startService(intent);
-            if (mInitLibrarysThread != null) {
-                mInitLibrarysThread = null;
-            }
-            mScheduledService.shutdown();
-            mScheduledService = null;
             for (IBinder iBinder : mIBinders) {
                 Parcel _data = Parcel.obtain();
                 Parcel _reply = Parcel.obtain();
@@ -496,7 +315,6 @@ public class SeafileService extends Service {
                     Bundle bundle = msg.getData();
                     Utils.writeAccount(SeafileService.this, mAccount.mOpenthosUrl,
                             bundle.getString("user"), bundle.getString("token"));
-                    android.util.Log.i("wwww", bundle.getString("token"));
                     if (!TextUtils.isEmpty(bundle.getString("user"))
                             && !TextUtils.isEmpty(bundle.getString("token"))) {
                         mAccount.mUserName = bundle.getString("user");

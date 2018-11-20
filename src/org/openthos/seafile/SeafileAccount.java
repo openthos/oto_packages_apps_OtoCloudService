@@ -13,8 +13,6 @@ public class SeafileAccount {
     public String mOpenthosUrl;
     public String mUserName;
     public int mUserId;
-    public SeafileLibrary mDataLibrary;
-    public SeafileLibrary mConfigLibrary;
     public File mFile;
     public String mToken = "";
 
@@ -35,16 +33,6 @@ public class SeafileAccount {
         return new SeafileAccount(url);
     }
 
-    @Override
-    public String toString() {
-        StringBuffer sb = new StringBuffer();
-        sb.append("[");
-        sb.append("{\"id\":\"" + mDataLibrary.libraryId);
-        sb.append("\",\"name\":\"" + mDataLibrary.libraryName + "\"}");
-        sb.append("]");
-        return sb.toString();
-    }
-
     public boolean isExistsAccount() {
         return !(TextUtils.isEmpty(mUserName) || TextUtils.isEmpty(mToken));
     }
@@ -52,7 +40,6 @@ public class SeafileAccount {
     public void clear() {
         mUserName = "";
         mUserId = -1;
-        mDataLibrary = null;
         mFile = null;
         mToken = "";
     }
