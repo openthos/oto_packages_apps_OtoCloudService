@@ -25,7 +25,9 @@ import java.io.UnsupportedEncodingException;
 
 public class SeafileUtils {
     public static final String SEAFILE_STATE_PATH = "/system/linux/sea/tmp/state/";
-    public static final String SEAFILE_STATE_FILE = "tmp.state";
+    public static final String SEAFILE_STATE_FILE = "DATA.state";
+    public static final String SEAFILE_KEEPER_STATE_PATH = "/system/linux/sea/tmp/logs/";
+    public static final String SEAFILE_KEEPER_STATE_FILE = "Keeper.state";
     public static final String SEAFILE_DATA_ROOT_PATH = "/sdcard/seafile";
 
     public static final String SEAFILE_BASE_COMMAND
@@ -214,7 +216,8 @@ public class SeafileUtils {
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new FileReader(
-                    new File(SEAFILE_STATE_PATH + SEAFILE_STATE_FILE)));
+                    new File(SEAFILE_KEEPER_STATE_PATH, SEAFILE_KEEPER_STATE_FILE)));
+
             String s = null;
             while((s = reader.readLine()) != null) {
                 buffer.append(s + "\n");

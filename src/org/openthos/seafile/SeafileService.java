@@ -59,18 +59,13 @@ public class SeafileService extends Service {
     private ScheduledExecutorService mScheduledService;
     private String mTmpOpenthosUrl = SeafileUtils.SEAFILE_URL_LIBRARY;
 
-    private Timer mStatusTimer;
-    private StatusTask mStatusTask;
-    private StatusObserver mDataObserver;
-    private LogObserver mLogObserver;
+    private StateObserver mLogObserver;
+    private StateObserver mStateObserver;
     private NotificationManager mNotificationManager;
     private Notification.Builder mBuilder;
     private Notification.BigTextStyle mStyle;
     private boolean mIsNotificationShown = false;
     private NetworkReceiver mNetworkReceiver;
-
-    private File mStateFile = new File(
-            SeafileUtils.SEAFILE_STATE_PATH + SeafileUtils.SEAFILE_STATE_FILE);
 
     @Override
     public void onCreate() {
@@ -184,9 +179,6 @@ public class SeafileService extends Service {
 
     // monitor librarys status
     private void startStatusMonitor() {
-        mStatusTimer = new Timer();
-        mStatusTask = new StatusTask();
-
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         mBuilder = new Notification.Builder(this);
         mBuilder.setContentTitle(getString(R.string.seafile_status_title));
@@ -194,61 +186,15 @@ public class SeafileService extends Service {
         mBuilder.setAutoCancel(false);
         mBuilder.setOngoing(true);
         mStyle = new Notification.BigTextStyle();
-        mStatusTimer.schedule(mStatusTask, 3000, TIMER_LONG);
 
-        mDataObserver = new StatusObserver(mUserPath + "/" + SeafileUtils.DATA_SEAFILE_NAME);
-        //mDataObserver = new StatusObserver(SeafileUtils.SEAFILE_STATE_PATH);
-        mDataObserver.startWatching();
-        mLogObserver = new LogObserver(SeafileUtils.SEAFILE_STATE_PATH);
+        mStateObserver = new StateObserver(SeafileUtils.SEAFILE_KEEPER_STATE_PATH);
+        mLogObserver = new StateObserver(SeafileUtils.SEAFILE_STATE_PATH);
         mLogObserver.startWatching();
     }
 
-    private class StatusTask extends TimerTask {
-        @Override
-        public void run() {
-            String notice = "";
-            ArrayList<String> result = Utils.exec(new String[]{"su", "-c",
-                    SeafileUtils.SEAFILE_BASE_COMMAND + "status"});
-            for (String s : result) {
-                if (s.contains(SEAFILE_STATUS_UPLOADING)
-                        || s.contains(SEAFILE_STATUS_DOWNLOADING)) {
-                    notice += s + "\n";
-                } else if (s.contains("error")
-                        || s.contains("waiting for sync")
-                        || s.contains("Failed to get sync info from server")
-                        || s.contains("You do not have permission to access this library")) {
-                    notice += s + "\n";
-                    break;
-                }
-            }
-            if (!TextUtils.isEmpty(notice)) {
-                notice = notice.replace(SEAFILE_STATUS_UPLOADING,
-                        getString(R.string.seafile_uploading));
-                notice = notice.replace(SEAFILE_STATUS_DOWNLOADING,
-                        getString(R.string.seafile_downloading));
-                notice = notice.replace(SeafileUtils.DATA_SEAFILE_NAME,
-                        getString(R.string.data_seafile_name));
-                notice = notice.replace(SeafileUtils.SETTING_SEAFILE_NAME,
-                        getString(R.string.userconfig_seafile_name));
-                if (!mIsNotificationShown) {
-                    restartMonitor(TIMER_SHORT);
-                    mIsNotificationShown = true;
-                }
-                Utils.exec(new String[]{"su", "-c",
-                        "echo \"" + notice + "\" > " + mStateFile.getAbsolutePath()});
-            } else {
-                mStateFile.delete();
-                if (mIsNotificationShown) {
-                    restartMonitor(TIMER_LONG);
-                    mIsNotificationShown = false;
-                }
-            }
-        }
-    }
+    private class StateObserver extends FileObserver {
 
-    private class StatusObserver extends FileObserver {
-
-        public StatusObserver(String path) {
+        public StateObserver(String path) {
             super(path);
         }
 
@@ -257,67 +203,24 @@ public class SeafileService extends Service {
             int action = event & FileObserver.ALL_EVENTS;
             switch (action) {
                 case FileObserver.CREATE:
-                case FileObserver.MOVED_TO:
-                case FileObserver.MOVED_FROM:
-                case FileObserver.DELETE:
-                    if (!mIsNotificationShown) {
-                        restartMonitor(mStateFile.exists() ? 1 : TIMER_MEDIUM);
+                    if (SeafileUtils.SEAFILE_STATE_FILE.equals(path)) {
+                        mStateObserver.startWatching();
                     }
                     break;
-            }
-        }
-    }
-
-    private class LogObserver extends FileObserver {
-
-        public LogObserver(String path) {
-            super(path);
-        }
-
-        @Override
-        public void onEvent(int event, String path) {
-            if (SeafileUtils.SEAFILE_STATE_FILE.equals(path)) {
-                int action = event & FileObserver.ALL_EVENTS;
-                switch (action) {
-                    case FileObserver.CREATE:
-                        Utils.exec(new String[]{"su", "-c",
-                                "chmod -R 755 " + mStateFile.getAbsolutePath()});
-                    case FileObserver.MODIFY:
-                        showNotification(SeafileUtils.readLog(SeafileService.this));
-                        break;
-                    case FileObserver.DELETE:
+                case FileObserver.DELETE:
+                    if (SeafileUtils.SEAFILE_STATE_FILE.equals(path)) {
+                        mStateObserver.stopWatching();
                         if (mIsNotificationShown) {
                             showNotification(getString(R.string.sync_complete));
-                            restartMonitor(TIMER_LONG);
                         }
-                        break;
-                }
-            }
-        }
-    }
-
-    private void restartMonitor(long period) {
-        if (period == TIMER_LONG) {
-            mDataObserver.startWatching();
-        } else {
-            mDataObserver.stopWatching();
-        }
-        mStatusTask.cancel();
-        mStatusTimer.cancel();
-        mStatusTask = new StatusTask();
-        mStatusTimer = new Timer();
-        mStatusTimer.schedule(mStatusTask, period, period);
-    }
-
-    private void reSync() {
-        if (mAccount != null && mAccount.isExistsAccount()) {
-            if (mAccount.mDataLibrary != null) {
-                SeafileUtils.desync(mAccount.mDataLibrary.filePath);
-                if (mAccount.mDataLibrary.isSync == SeafileUtils.SYNC) {
-                    SeafileUtils.sync(
-                            mAccount.mDataLibrary.libraryId, mAccount.mDataLibrary.filePath,
-                            mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mToken);
-                }
+                    }
+                    break;
+                case FileObserver.MODIFY:
+                    if (SeafileUtils.SEAFILE_KEEPER_STATE_FILE.equals(path)) {
+                        showNotification(SeafileUtils.readLog(SeafileService.this));
+                        mIsNotificationShown = true;
+                    }
+                    break;
             }
         }
     }
@@ -429,28 +332,22 @@ public class SeafileService extends Service {
 
         @Override
         public void stopAccount() {
-            if (mDataObserver != null) {
-                mDataObserver.stopWatching();
-            }
             if (mLogObserver != null) {
                 mLogObserver.stopWatching();
             }
+            if (mStateObserver != null) {
+                mStateObserver.stopWatching();
+            }
+            if (mIsNotificationShown) {
+                mIsNotificationShown = false;
+                mNotificationManager.cancel(0);
+            }
+
             if (mAccount != null) {
                 SeafileUtils.desync(mAccount.mDataLibrary.filePath);
             }
             mAccount.clear();
             Utils.writeAccount(SeafileService.this, mAccount.mOpenthosUrl, "", "");
-            if (mIsNotificationShown) {
-                mIsNotificationShown = false;
-                mNotificationManager.cancel(0);
-                restartMonitor(TIMER_LONG);
-            }
-            if (mStatusTask != null) {
-                mStatusTask.cancel();
-            }
-            if (mStatusTimer != null) {
-                mStatusTimer.cancel();
-            }
             Intent intent = new Intent(SeafileService.this, RecoveryService.class);
             intent.putExtra("timer", true);
             startService(intent);
@@ -635,8 +532,8 @@ public class SeafileService extends Service {
 
     @Override
     public void onDestroy() {
-        if (mDataObserver != null) {
-            mDataObserver.stopWatching();
+        if (mStateObserver != null) {
+            mStateObserver.stopWatching();
         }
         if (mLogObserver != null) {
             mLogObserver.stopWatching();
