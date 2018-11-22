@@ -49,7 +49,6 @@ public class AccountLogin extends Thread {
     private String loginPostUri;
     private String referer;
     private String redirect = "http.protocol.handle-redirects";
-    private String tokenPath = "/system/linux/sea/tmp/account.conf";
     private String location, csrftoken, sessionid, sess, form_build_id;
     private String url, name, pass, id, email, passwd, token;
     private Mark mark;
@@ -467,7 +466,7 @@ public class AccountLogin extends Thread {
             String password = "password=" + pass;
             String seafToken = "token=" + token;
             String action = "action=login";
-            FileWriter writer = new FileWriter(new File(tokenPath));
+            FileWriter writer = new FileWriter(new File(SeafileUtils.SEAFILE_ACCOUNT_CONFIG));
             BufferedWriter bufferedWriter = new BufferedWriter(writer);
             bufferedWriter.write(serverUrl + "\n" + user +
                         "\n" + password + "\n" + seafToken + "\n" + action);

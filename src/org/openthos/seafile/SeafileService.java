@@ -34,7 +34,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class SeafileService extends Service {
-    private static final int START_STATE_MONITOR = 40000001;
     private static final int ADD_BINDER = 40000002;
     private static final int REMOVE_BINDER = 40000003;
     private static final int CODE_SEND_INTO = 80000001;
@@ -64,6 +63,7 @@ public class SeafileService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        initStateMonitor();
         mHandler = new SeafileHandler(Looper.getMainLooper());
         mAccount = new SeafileAccount(this);
         if (mAccount.isExistsAccount()) {
@@ -75,10 +75,11 @@ public class SeafileService extends Service {
     private void startAccount() {
 	android.util.Log.i("wwww", "startaccount");
         mUserPath = SeafileUtils.SEAFILE_DATA_ROOT_PATH + "/" + mAccount.mUserName;
+        mLogObserver.startWatching();
     }
 
-    // monitor librarys status
-    private void startStatusMonitor() {
+    // monitor librarys state
+    private void initStateMonitor() {
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         mBuilder = new Notification.Builder(this);
         mBuilder.setContentTitle(getString(R.string.seafile_status_title));
@@ -89,7 +90,6 @@ public class SeafileService extends Service {
 
         mStateObserver = new StateObserver(SeafileUtils.SEAFILE_KEEPER_STATE_PATH);
         mLogObserver = new StateObserver(SeafileUtils.SEAFILE_STATE_PATH);
-        mLogObserver.startWatching();
     }
 
     private class StateObserver extends FileObserver {
@@ -126,10 +126,20 @@ public class SeafileService extends Service {
     }
 
     private void showNotification(String notice) {
-        mStyle.bigText(notice);
-        mBuilder.setStyle(mStyle);
-        mBuilder.setWhen(System.currentTimeMillis());
-        mNotificationManager.notify(0, mBuilder.getNotification());
+        if (!TextUtils.isEmpty(notice)) {
+            notice = notice.replace(SEAFILE_STATUS_UPLOADING,
+                    getString(R.string.seafile_uploading));
+            notice = notice.replace(SEAFILE_STATUS_DOWNLOADING,
+                    getString(R.string.seafile_downloading));
+            notice = notice.replace(SeafileUtils.DATA_SEAFILE_NAME,
+                    getString(R.string.data_seafile_name));
+            notice = notice.replace(SeafileUtils.SETTING_SEAFILE_NAME,
+                    getString(R.string.userconfig_seafile_name));
+            mStyle.bigText(notice);
+            mBuilder.setStyle(mStyle);
+            mBuilder.setWhen(System.currentTimeMillis());
+            mNotificationManager.notify(0, mBuilder.getNotification());
+        }
     }
 
     private class SeafileBinder extends ISeafileService.Stub {
@@ -294,9 +304,6 @@ public class SeafileService extends Service {
         @Override
         public synchronized void handleMessage(Message msg) {
             switch (msg.what) {
-                case START_STATE_MONITOR:
-                    startStatusMonitor();
-                    break;
                 case ADD_BINDER:
                     mIBinders.add((IBinder) msg.obj);
                     break;

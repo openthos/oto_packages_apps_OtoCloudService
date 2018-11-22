@@ -13,5 +13,5 @@ status_info_output="tmp/logs/Keeper.state"
 nDATA="DATA"
 nUserConfig="UserConfig"
 ucPsw="openthos.org"
-autoMsg="Automatically created by OPENTHOS"
+autoMsg="OPENTHOS"
 

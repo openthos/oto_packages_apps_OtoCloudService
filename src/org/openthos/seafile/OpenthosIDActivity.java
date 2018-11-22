@@ -90,7 +90,6 @@ public class OpenthosIDActivity extends Activity {
         private static final String KEY_BIND = "openthos_bind";
         private static final String KEY_UNBUND = "openthos_unbund";
         private static final String KEY_URL = "openthos_url";
-        private static final String mPath = "/system/linux/sea/tmp/logout";
 
         private Preference mOpenthosIDPref;
         private Preference mRegisterPref;
@@ -372,7 +371,7 @@ public class OpenthosIDActivity extends Activity {
                 String serverUrl = "server_url=" + mAccount.mOpenthosUrl;
                 String user = "user=" + mAccount.mUserName;
                 String action = "action=logout";
-                FileWriter writer = new FileWriter(new File(mPath));
+                FileWriter writer = new FileWriter(new File(SeafileUtils.SEAFILE_ACCOUNT_CONFIG));
                 BufferedWriter bufferedWriter = new BufferedWriter(writer);
                 bufferedWriter.write(serverUrl + "\n" + user + "\n" + action);
                 bufferedWriter.flush();
