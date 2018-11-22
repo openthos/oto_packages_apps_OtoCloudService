@@ -1,0 +1,95 @@
+#!/bin/bash
+
+cd `dirname $0`
+source setenv
+
+account_login_func()
+{
+	server_url=""
+	action=""
+	source $account_conf && rm $account_conf
+	if [ "$action"x = "logout"x ];then
+		echo "account logout"
+		account_desync
+		return
+	fi
+	if [ ! $server_url ];then
+		echo "account login failed"
+		return
+	fi
+
+	mToken=`$proot_cmd seaf-cli get-token -c $conf_dir -s $server_url -u $user -p $password`
+	if [ $? -eq 0 ];then
+		echo "get token successfully"
+		#rm $account_conf
+	else
+		echo "get token failed"
+		return
+	fi
+
+	list_libs=`$proot_cmd seaf-cli list-remote -c $conf_dir -s $server_url -u $user -p $password`
+	if [ $? -ne 0 ];then
+		echo "list remote failed"
+	fi
+
+	unset remote_libraries
+	declare -A remote_libraries
+	mName=""
+	for l in $list_libs
+	do
+		if [ $mName ];then
+			remote_libraries["$l"]="$mName"
+			mName=""
+		else
+			mName="$l"
+		fi
+	done
+	unset remote_libraries["ID"]
+	#echo ${!remote_libraries[@]},${remote_libraries[@]}
+
+	iDATA=""
+	iUserConfig=""
+	for l in ${!remote_libraries[@]}
+	do
+		if [ "${remote_libraries[$l]}"x = "$nDATA"x ];then
+			iDATA=$l
+		elif [ "${remote_libraries[$l]}"x = "$nUserConfig"x ];then
+			iUserConfig=$l
+		fi
+	done
+
+	if [ ! $iDATA ];then
+		iDATA=`$proot_cmd seaf-cli create -n $nDATA -t $autoMsg -c $conf_dir -s $server_url -u $user -p $password`
+		if [ $? -ne 0 ];then
+			echo "DATA create failed"
+		fi
+	fi
+
+	if [ ! $iUserConfig ];then
+		iUserConfig=`$proot_cmd seaf-cli create -n $nUserConfig -t $autoMsg -e $ucPsw -c $conf_dir -s $server_url -u $user -p $password`
+		if [ $? -ne 0 ];then
+			echo "UserConfig create failed"
+		fi
+	fi
+
+	echo DATA:$iDATA, UserConfig:$iUserConfig
+
+echo "
+server_url=$server_url
+user=$user
+token=$mToken
+iDATA=$iDATA
+iUserConfig=$iUserConfig
+" > $conf_dir/account.conf
+
+	### libraries sync
+	account_sync
+
+}
+
+seaDir=/
+proot_cmd=""
+cd $seaDir
+
+account_login_func
+

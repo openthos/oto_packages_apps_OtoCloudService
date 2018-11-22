@@ -1,0 +1,32 @@
+#!/bin/bash
+
+cd `dirname $0`
+source setenv
+
+account_sync_func()
+{
+	token=""
+	source $conf_dir/account.conf
+	if [ ! $token ];then
+		echo "retrieve token failed"
+		return
+	fi
+
+	### do desync
+	account_desync
+
+	### do sync
+	[ -d $seafile_sync/$user/$nDATA ] || mkdir -p $seafile_sync/$user/$nDATA
+	$proot_cmd seaf-cli sync -c $conf_dir -l $iDATA -s $server_url -u $user -tk $token -d $seafile_sync/$user/$nDATA
+
+	[ -d $seafile_sync/$user/.$nUserConfig ] || mkdir -p $seafile_sync/$user/.$nUserConfig
+	$proot_cmd seaf-cli sync -c $conf_dir -l $iUserConfig -e $ucPsw -s $server_url -u $user -tk $token -d $seafile_sync/$user/.$nUserConfig
+
+}
+
+seaDir=/  
+proot_cmd=""
+cd $seaDir                                                                                           
+
+account_sync_func
+

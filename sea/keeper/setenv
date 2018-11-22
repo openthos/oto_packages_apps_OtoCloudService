@@ -1,0 +1,17 @@
+seaDir=/system/linux/sea
+proot_cmd="$seaDir/keeper/proot_cmd"
+
+conf_dir="data/ccnet"
+seafile_data="data/seafile_data"
+seafile_sync="data/seafile"
+
+seafile_ddata="/data/data/seafile"
+seafile_sdcard="/sdcard/seafile"
+
+account_conf="tmp/account.conf"
+status_info_output="tmp/logs/Keeper.state"
+nDATA="DATA"
+nUserConfig="UserConfig"
+ucPsw="openthos.org"
+autoMsg="Automatically created by OPENTHOS"
+

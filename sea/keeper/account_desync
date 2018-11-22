@@ -1,0 +1,40 @@
+#!/bin/bash
+
+cd `dirname $0`
+source setenv
+
+account_desync_func()
+{
+
+	list_libs=(`$proot_cmd seaf-cli list -c $conf_dir`)
+	if [ $? -ne 0 ];then
+		echo "list failed"
+		return
+	fi
+
+	unset local_libraries
+	declare -A local_libraries
+	mCount=4 #Retrieve first ID
+	for i in ${!list_libs[@]}
+	do
+		if [ "$i" -eq "$mCount" ];then
+			mID="${list_libs[i]}"
+			local_libraries["$mID"]="${list_libs[i+1]}"
+			let "mCount+=3"
+		fi
+	done
+	echo desync: ${!local_libraries[@]},${local_libraries[@]}
+
+	for l in ${local_libraries[@]}
+	do
+		$proot_cmd seaf-cli desync -c $conf_dir -d $l
+	done
+
+}
+
+seaDir=/  
+proot_cmd=""
+cd $seaDir                                                                                           
+
+account_desync_func
+

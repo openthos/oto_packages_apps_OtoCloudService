@@ -1,0 +1,15 @@
+#!/system/bin/sh
+
+seaDir=/system/linux/sea
+#seaDir=$(dirname $0)
+
+export HOME=/
+export LD_HWCAP_MASK=0
+export SHELL=/bin/sh
+export PROOT_NO_SECCOMP=1 #kernel4.9 execve() bug
+export PROOT_TMPDIR=$seaDir/tmp
+export PROOT_TMP_DIR=$PROOT_TMPDIR
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/keeper
+
+#$seaDir/proot  -w / -r $seaDir -b /dev -b /sys -b /proc "/bin/bash"
+$seaDir/proot  -w / -r $seaDir -b /dev -b /sys -b /proc "$@"
