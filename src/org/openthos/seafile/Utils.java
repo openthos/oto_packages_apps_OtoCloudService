@@ -43,11 +43,7 @@ public class Utils {
             in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line;
             while ((line = in.readLine()) != null) {
-                android.util.Log.i("wwww", line);
                 result.add(line);
-                if (line.contains("Started: seafile daemon")) {
-                    break;
-                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -243,10 +239,11 @@ public class Utils {
     }
 
     public static boolean writeAccount(Context context, String url, String username,
-                                       String token) {
+            String token, String password) {
         SeafileAccount account = new SeafileAccount(url);
         account.mUserName = username;
         account.mToken = token;
+        account.mPassword = password;
         return writeAccount(context, account);
     }
 
@@ -259,6 +256,7 @@ public class Utils {
             obj.put("url", account.mOpenthosUrl);
             obj.put("name", account.mUserName);
             obj.put("token", token);
+            obj.put("password", account.mPassword);
             writer = new BufferedWriter(new OutputStreamWriter(
                     context.openFileOutput(ACCOUNT_INFO_FILE, Context.MODE_PRIVATE)));
             writer.write(obj.toString());
@@ -298,6 +296,7 @@ public class Utils {
                 account.mOpenthosUrl = obj.getString("url");
                 account.mUserName = obj.getString("name");
                 account.mToken = token;
+                account.mPassword = obj.getString("password");
             }
         } catch (JSONException | IOException e) {
             if (!(e instanceof FileNotFoundException) && context != null) {

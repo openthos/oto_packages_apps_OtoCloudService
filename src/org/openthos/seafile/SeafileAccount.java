@@ -12,14 +12,14 @@ import java.io.File;
 public class SeafileAccount {
     public String mOpenthosUrl;
     public String mUserName;
-    public int mUserId;
-    public File mFile;
+    public String mPassword;
     public String mToken = "";
 
     public SeafileAccount(Context context) {
         SeafileAccount account = Utils.readAccount(context);
         mOpenthosUrl = account.mOpenthosUrl;
         mUserName = account.mUserName;
+        mPassword = account.mPassword;
         mToken = account.mToken;
     }
 
@@ -27,6 +27,7 @@ public class SeafileAccount {
         mOpenthosUrl = url;
         mUserName = "";
         mToken = "";
+        mPassword = "";
     }
 
     public static SeafileAccount getDefaultAccount(String url) {
@@ -39,8 +40,7 @@ public class SeafileAccount {
 
     public void clear() {
         mUserName = "";
-        mUserId = -1;
-        mFile = null;
         mToken = "";
+        mPassword = "";
     }
 }

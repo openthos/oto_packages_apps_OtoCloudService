@@ -24,8 +24,15 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -73,9 +80,18 @@ public class SeafileService extends Service {
 
     // sync bound account
     private void startAccount() {
-	android.util.Log.i("wwww", "startaccount");
         mUserPath = SeafileUtils.SEAFILE_DATA_ROOT_PATH + "/" + mAccount.mUserName;
         mLogObserver.startWatching();
+        //mount
+        //String docPath = "/sdcard/seafile/" + mAccount.mUserName + "/DATA/Documents";
+        //String picPath = "/sdcard/seafile/" + mAccount.mUserName + "/DATA/Pictures";
+        //Utils.exec(new String[]{"mkdir", "-p", docPath});
+        //Utils.exec(new String[]{"mkdir", "-p", picPath});
+        //Utils.exec(new String[]{"su", "-c", "busybox mount --bind /sdcard/Documents " + docPath
+        //        + ";busybox mount --bind /sdcard/Pictures " + picPath
+        //        + ";busybox mount --bind /sdcard/seafile /system/linux/sea/data/seafile"});
+        //notify
+        notifySeafileKeeper(mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mToken, mAccount.mPassword);
     }
 
     // monitor librarys state
@@ -181,7 +197,7 @@ public class SeafileService extends Service {
                 mNotificationManager.cancel(0);
             }
             mAccount.clear();
-            Utils.writeAccount(SeafileService.this, mAccount.mOpenthosUrl, "", "");
+            Utils.writeAccount(SeafileService.this, mAccount.mOpenthosUrl, "", "", "");
             Intent intent = new Intent(SeafileService.this, RecoveryService.class);
             intent.putExtra("timer", true);
             startService(intent);
@@ -272,7 +288,7 @@ public class SeafileService extends Service {
 
         public boolean setOpenthosUrl(String url) {
             mTmpOpenthosUrl = mAccount.mOpenthosUrl;
-            if (!Utils.writeAccount(SeafileService.this, url, "", "")) {
+            if (!Utils.writeAccount(SeafileService.this, url, "", "", "")) {
                 mAccount.mOpenthosUrl = mTmpOpenthosUrl;
                 return false;
             }
@@ -321,11 +337,13 @@ public class SeafileService extends Service {
                 case AccountLogin.MSG_LOGIN_SEAFILE_OK:
                     Bundle bundle = msg.getData();
                     Utils.writeAccount(SeafileService.this, mAccount.mOpenthosUrl,
-                            bundle.getString("user"), bundle.getString("token"));
+                            bundle.getString("user"), bundle.getString("token"),
+                            bundle.getString("password"));
                     if (!TextUtils.isEmpty(bundle.getString("user"))
                             && !TextUtils.isEmpty(bundle.getString("token"))) {
                         mAccount.mUserName = bundle.getString("user");
                         mAccount.mToken = bundle.getString("token");
+                        mAccount.mPassword = bundle.getString("password");
                         startAccount();
                     }
                     for (IBinder iBinder : mIBinders) {
@@ -364,5 +382,24 @@ public class SeafileService extends Service {
             mLogObserver.stopWatching();
         }
         super.onDestroy();
+    }
+
+    private void notifySeafileKeeper(String url, String accout, String token, String pass) {
+        try {
+            String serverUrl = "server_url=" + url;
+            String user = "user=" + accout;
+            String seafToken = "token=" + token;
+            String password = "password=" + pass;
+            String action = "action=login";
+            FileWriter writer = new FileWriter(new File(SeafileUtils.SEAFILE_ACCOUNT_CONFIG));
+            BufferedWriter bufferedWriter = new BufferedWriter(writer);
+            bufferedWriter.write(serverUrl + "\n" + user +
+                        "\n"+ password +"\n" + seafToken + "\n" + action);
+            bufferedWriter.flush();
+            writer.close();
+            bufferedWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

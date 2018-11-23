@@ -96,6 +96,7 @@ public class AccountLogin extends Thread {
                     Bundle bundle = new Bundle();
                     bundle.putString("user", name + "@openthos.org");
                     bundle.putString("token", token);
+                    bundle.putString("password", pass);
                     message.setData(bundle);
                     message.obj = context.getString(R.string.toast_bind_successful);
                     handler.sendMessage(message);
@@ -440,42 +441,19 @@ public class AccountLogin extends Thread {
         int statusCode = httpResponse.getStatusLine().getStatusCode();
 
         if (statusCode == 200) {
-            return writeToken(location);
+            return getToken(location);
         }
         return false;
     }
 
-    private boolean writeToken(String location) throws Exception {
+    private boolean getToken(String location) throws Exception {
         String accout = name + "@openthos.org";
         String result = getToken(context, location, accout, pass);
-        android.util.Log.i(TAG, url);
-        android.util.Log.i(TAG, accout);
-        android.util.Log.i(TAG, pass);
-        android.util.Log.i(TAG, result);
         if (result != null) {
             token = result;
-            notifySeafileKeeper(accout, token);
+            return true;
         }
-        return result != null;
-    }
-
-    private void notifySeafileKeeper(String accout, String token) {
-        try {
-            String serverUrl = "server_url=" + url;
-            String user = "user=" + accout;
-            String password = "password=" + pass;
-            String seafToken = "token=" + token;
-            String action = "action=login";
-            FileWriter writer = new FileWriter(new File(SeafileUtils.SEAFILE_ACCOUNT_CONFIG));
-            BufferedWriter bufferedWriter = new BufferedWriter(writer);
-            bufferedWriter.write(serverUrl + "\n" + user +
-                        "\n" + password + "\n" + seafToken + "\n" + action);
-            bufferedWriter.flush();
-            writer.close();
-            bufferedWriter.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        return false;
     }
 
     private String getToken(Context context, String url, String name, String password)
