@@ -28,6 +28,9 @@ account_desync_func()
 	for l in ${local_libraries[@]}
 	do
 		$proot_cmd seaf-cli desync -c $conf_dir -d $l
+
+		#if [ "${l:0-4}"x = "DATA"x ];then
+		#to umount
 	done
 
 }

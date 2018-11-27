@@ -6,7 +6,7 @@ source setenv
 account_sync_func()
 {
 	token=""
-	source $conf_dir/account.conf
+	[ -f $conf_dir/account.conf ] && source $conf_dir/account.conf
 	if [ ! $token ];then
 		echo "retrieve token failed"
 		return
