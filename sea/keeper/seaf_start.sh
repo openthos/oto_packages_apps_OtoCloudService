@@ -23,14 +23,12 @@ seaf_stop()
 
 set_environment()
 {
-		[ -d tmp ] || mkdir -p tmp
 		mountpoint -q tmp && umount tmp
 		mount -t tmpfs tmpfs tmp
 		mkdir tmp/logs tmp/state
 
 		seafile_uid=`awk '/org.openthos.seafile/{print $2}' /data/system/packages.list`
 		chown -R $seafile_uid:$seafile_uid tmp
-		busybox chmod -R +x .
 
 		#/data/data/seafile
 		[ -d $seafile_ddata ] || mkdir -p $seafile_ddata
@@ -58,13 +56,6 @@ do_exit()
 }
 
 cd $seaDir
-
-if [ -f /cache/keeper.log ];then
-	echo "There's already a seafile keeper running !"
-	date
-	exit
-fi
-
 set_environment
 
 #Catch the exit SIG, "kill PID" instead of "kill -9 PID"
