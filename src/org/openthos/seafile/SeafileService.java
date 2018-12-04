@@ -28,12 +28,19 @@ import java.net.URI;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+
+import java.text.SimpleDateFormat;
+
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executors;
@@ -82,16 +89,50 @@ public class SeafileService extends Service {
     private void startAccount() {
         mUserPath = SeafileUtils.SEAFILE_DATA_ROOT_PATH + "/" + mAccount.mUserName;
         mLogObserver.startWatching();
-        //mount
-        //String docPath = "/sdcard/seafile/" + mAccount.mUserName + "/DATA/Documents";
-        //String picPath = "/sdcard/seafile/" + mAccount.mUserName + "/DATA/Pictures";
-        //Utils.exec(new String[]{"mkdir", "-p", docPath});
-        //Utils.exec(new String[]{"mkdir", "-p", picPath});
-        //Utils.exec(new String[]{"su", "-c", "busybox mount --bind /sdcard/Documents " + docPath
-        //        + ";busybox mount --bind /sdcard/Pictures " + picPath
-        //        + ";busybox mount --bind /sdcard/seafile /system/linux/sea/data/seafile"});
         //notify
-        notifySeafileKeeper(mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mToken, mAccount.mPassword);
+        notifySeafileKeeper(mAccount.mOpenthosUrl,
+                mAccount.mUserName, mAccount.mToken, mAccount.mPassword);
+        //Auto-Backup
+        startAutoBackup();
+    }
+
+    private void startAutoBackup() {
+        TimerTask task = new TimerTask() {
+            public void run() {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+                Date now = new Date();
+                String date = sdf.format(now);
+                if (!new File("/sdcard/seafile/" 
+                        + mAccount.mUserName + "/.UserConfig/" + date + ".tar").exists()) {
+                    initEnvironment();
+                    BufferedReader br = null;
+                    try {
+                        Process pro = Runtime.getRuntime().exec(
+                                new String[]{"su", "-c", "./data/data/org.openthos.seafile/backup " + date
+                                + " /sdcard/seafile/"+ mAccount.mUserName + "/.UserConfig/"});
+                        br = new BufferedReader(new InputStreamReader(pro.getInputStream()));
+                        String line = "";
+                        while ((line = br.readLine()) != null) {
+                        }
+                        br.close();
+                        br = null;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } finally {
+                        if (br != null) {
+                            try {
+                                br.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        Timer timer = new Timer();
+        long time = 1000L * 60L * 60L;
+        timer.schedule(task, 0, time);
     }
 
     // monitor librarys state
@@ -158,7 +199,7 @@ public class SeafileService extends Service {
         }
     }
 
-    private class SeafileBinder extends ISeafileService.Stub {
+    public class SeafileBinder extends ISeafileService.Stub {
 
         @Override
         public boolean onTransact(int code, Parcel data, Parcel reply, int flags)
@@ -198,9 +239,6 @@ public class SeafileService extends Service {
             }
             mAccount.clear();
             Utils.writeAccount(SeafileService.this, mAccount.mOpenthosUrl, "", "", "");
-            Intent intent = new Intent(SeafileService.this, RecoveryService.class);
-            intent.putExtra("timer", true);
-            startService(intent);
             for (IBinder iBinder : mIBinders) {
                 Parcel _data = Parcel.obtain();
                 Parcel _reply = Parcel.obtain();
@@ -400,6 +438,66 @@ public class SeafileService extends Service {
             bufferedWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void initEnvironment() {
+        String mBackupPath = "/data/data/org.openthos.seafile/backup";
+        File f = new File(mBackupPath);
+        if (!f.exists()) {
+            InputStream in = null;
+            OutputStream out = null;
+            try {
+                in = getAssets().open("backup");
+                out = new FileOutputStream(f);
+                int byteconut;
+                byte[] bytes = new byte[1024];
+                while ((byteconut = in.read(bytes)) != -1) {
+                    out.write(bytes, 0, byteconut);
+                }
+                in.close();
+                out.close();
+                in = null;
+                out = null;
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if (in != null) {
+                    try {
+                        in.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (out != null) {
+                    try {
+                        out.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        BufferedReader br = null;
+        try {
+            Process pro = Runtime.getRuntime().exec(
+                    new String[]{"su", "-c", "chmod 755 " + f.getAbsolutePath()});
+            br = new BufferedReader(new InputStreamReader(pro.getInputStream()));
+            String line = "";
+            while ((line = br.readLine()) != null) {
+            }
+            br.close();
+            br = null;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 }

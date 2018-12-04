@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ## untar 
-tar -xvf /data/data/temp/$1.tar -C /data/data
+tar -xvf $1 -C /data/data
 
 ## Fennec
 tar -xvf /data/data/temp/org.mozilla.fennec_openthos.tar.gz  -C /data/data/

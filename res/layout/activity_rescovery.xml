@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginLeft="@dimen/actionbar_subsettings_contentInsetStart"
+    android:layout_marginRight="@dimen/actionbar_subsettings_contentInsetStart"
+    android:orientation="vertical"
+    tools:context=".RecoveryActivity">
+
+    <Switch
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:saveEnabled="true"
+        android:textSize="28dp"
+        android:text="@string/auto_backup" />
+
+    <TextView
+        android:id="@+id/choose_one"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:textSize="28dp"
+        android:text="@string/choose_one_day" />
+
+    <Button
+        android:id="@+id/start_recovery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:visibility="gone"
+        android:textSize="28dp"
+        android:text="@string/start_to_recovery" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="5dp"
+        android:textSize="28dp"
+        android:text="@string/recovery_info" />
+</LinearLayout>

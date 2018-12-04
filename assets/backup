@@ -26,4 +26,7 @@ tar -czvf /data/data/temp/wifi.tar.gz /data/misc/wifi
 
 ## tar
 tar -cvf /data/data/temp/$1.tar -C /data/data/ temp
+chmod 755 /data/data/temp/$1.tar
+cp /data/data/temp/$1.tar $2
 rm /data/data/temp/*.gz
+rm /data/data/temp/$1.tar

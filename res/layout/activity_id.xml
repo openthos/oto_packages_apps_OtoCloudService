@@ -3,5 +3,7 @@
     android:id="@+id/content"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:layout_marginLeft="@dimen/actionbar_subsettings_contentInsetStart"
+    android:layout_marginRight="@dimen/actionbar_subsettings_contentInsetStart"
     android:orientation="vertical" >
 </LinearLayout>
