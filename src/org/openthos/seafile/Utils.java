@@ -6,10 +6,8 @@ import android.net.NetworkInfo;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.widget.Toast;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;

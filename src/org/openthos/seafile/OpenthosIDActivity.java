@@ -125,7 +125,6 @@ public class OpenthosIDActivity extends Activity {
             if (actionBar != null) {
                 actionBar.setDisplayHomeAsUpEnabled(true);
             }
-
             mScreenPref = getPreferenceScreen();
             mOpenthosIDPref = findPreference(KEY_OPENTHOS_ID);
             mRegisterPref = findPreference(KEY_REGISTER);
@@ -137,7 +136,6 @@ public class OpenthosIDActivity extends Activity {
             mUrlPref = findPreference(KEY_URL);
             mUrlPref.setOnPreferenceClickListener(this);
             mUrlPref.setSummary(mAccount.mOpenthosUrl);
-
             if (mAccount.isExistsAccount()) {
                 updateID(mAccount.mUserName);
                 mBindPref.setEnabled(false);
@@ -201,7 +199,6 @@ public class OpenthosIDActivity extends Activity {
             }
             super.onDestroy();
         }
-
 
         @Override
         public boolean onPreferenceClick(final Preference pref) {

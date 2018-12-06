@@ -66,7 +66,6 @@ public class SeafileService extends Service {
     private SeafileBinder mBinder = new SeafileBinder();
     private Handler mHandler;
     private String mTmpOpenthosUrl = SeafileUtils.SEAFILE_URL_LIBRARY;
-
     private StateObserver mLogObserver;
     private StateObserver mStateObserver;
     private NotificationManager mNotificationManager;
@@ -92,7 +91,6 @@ public class SeafileService extends Service {
         //notify
         notifySeafileKeeper(mAccount.mOpenthosUrl,
                 mAccount.mUserName, mAccount.mToken, mAccount.mPassword);
-        //Auto-Backup
         startAutoBackup();
     }
 
