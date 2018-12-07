@@ -36,6 +36,7 @@ set_environment()
 
 		[ -d $seafile_sdcard ] || mkdir -p $seafile_sdcard
 		[ -d $seafile_sync ] || mkdir -p $seafile_sync
+		[ -d /sdcard/Documents ] || mkdir -p /sdcard/Documents
 		#mountpoint -q $seafile_sync || busybox mount --bind $seafile_sdcard $seafile_sync
 }
 
@@ -69,26 +70,22 @@ do
 	#account_sync()
 
 	if [ -f $account_conf ];then
-
 		grep "token=" $account_conf
 		if [ $? -eq 0 ];then
 			previous_user=$user
 			source $account_conf
 			if [ "$user"x != "$previous_user"x ];then
-				umount $seaDir/data/seafile/$previous_user/$nDATA/Documents
-				umount $seaDir/data/seafile/$previous_user/$nDATA/Pictures
+				mountpoint -q $seaDir/data/seafile/$previous_user/$nDATA/Documents && umount $seaDir/data/seafile/$previous_user/$nDATA/Documents
+				mountpoint -q $seaDir/data/seafile/$previous_user/$nDATA/Pictures && umount $seaDir/data/seafile/$previous_user/$nDATA/Pictures
 			fi
-                        [ -d /sdcard/seafile/$user/$nDATA/Documents ] || mkdir -p /sdcard/seafile/$user/$nDATA/Documents
-                        [ -d /sdcard/seafile/$user/$nDATA/Pictures ] || mkdir -p /sdcard/seafile/$user/$nDATA/Pictures
+			[ -d /sdcard/seafile/$user/$nDATA/Documents ] || mkdir -p /sdcard/seafile/$user/$nDATA/Documents
+			[ -d /sdcard/seafile/$user/$nDATA/Pictures ] || mkdir -p /sdcard/seafile/$user/$nDATA/Pictures
 			mountpoint -q $seaDir/data/seafile/$user/$nDATA/Documents || busybox mount --bind /sdcard/Documents /sdcard/seafile/$user/$nDATA/Documents
 			mountpoint -q $seaDir/data/seafile/$user/$nDATA/Pictures || busybox mount --bind /sdcard/Pictures /sdcard/seafile/$user/$nDATA/Pictures
 		fi
-
 		###login check
 		$proot_cmd account_login
-
 	fi
-
 	sleep 2
 done
 
