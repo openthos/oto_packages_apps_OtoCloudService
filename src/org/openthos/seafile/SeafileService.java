@@ -345,6 +345,16 @@ public class SeafileService extends Service {
         public String getOpenthosUrl() {
             return mAccount.mOpenthosUrl;
         }
+
+        public void setFlagAutoRecovery(boolean flag) {
+            getSharedPreferences("flag", Context.MODE_PRIVATE)
+                    .edit().putBoolean("AutoRecovery", flag).commit();
+        }
+
+        public boolean getFlagAutoRecovery() {
+            return getSharedPreferences("flag", Context.MODE_PRIVATE)
+                    .getBoolean("AutoRecovery", false);
+        }
     }
 
     private class SeafileHandler extends Handler {

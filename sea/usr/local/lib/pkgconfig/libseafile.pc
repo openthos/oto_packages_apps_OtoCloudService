@@ -1,0 +1,11 @@
+prefix=/lh/seafile/seafile-src/sea
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libseafile
+Description: Client library for accessing seafile service.
+Version: 6.2.8
+Libs: -L${libdir} -lseafile -L/lh/seafile/seafile-src/sea/lib -lsearpc -lgio-2.0 -lgobject-2.0 -lglib-2.0 -ljansson
+Cflags: -I${includedir} -pthread -I/lh/seafile/seafile-src/sea/include -I/lh/seafile/seafile-src/sea/include/searpc -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
+Requires: gobject-2.0 glib-2.0

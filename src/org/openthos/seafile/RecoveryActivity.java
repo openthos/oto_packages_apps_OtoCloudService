@@ -49,8 +49,9 @@ public class RecoveryActivity extends Activity {
 
     private SeafileBinder mSeafileBinder;
     private AlertDialog mLoadingDailog;
-    private TextView mChooseFile;
-    private Button mStartRecsovery;
+    private TextView mTvChooseFile;
+    private Button mStartRecsovery, mChooseFile;
+    private Switch mSwitchAutoRecovery;
     private OnClickListener mOnClickListener;
 
     @Override
@@ -61,9 +62,9 @@ public class RecoveryActivity extends Activity {
         if (mActionBar != null) {
             mActionBar.setDisplayHomeAsUpEnabled(true);
         }
+        initView();
         Intent intent = new Intent(RecoveryActivity.this, SeafileService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-        initView();
         Builder builder = new Builder(RecoveryActivity.this);
         builder.setMessage(getString(R.string.wait_for_ready));
         builder.setPositiveButton(R.string.exit,
@@ -79,7 +80,10 @@ public class RecoveryActivity extends Activity {
 
     private void initView() {
         mOnClickListener = new ClickListener();
-        mChooseFile = (TextView) findViewById(R.id.choose_one);
+        mSwitchAutoRecovery = (Switch) findViewById(R.id.switch_auto_recovery);
+        mSwitchAutoRecovery.setOnClickListener(mOnClickListener);
+        mTvChooseFile = (TextView) findViewById(R.id.tv_choose_one);
+        mChooseFile = (Button) findViewById(R.id.choose_one);
         mChooseFile.setOnClickListener(mOnClickListener);
         mStartRecsovery = (Button) findViewById(R.id.start_recovery);
         mStartRecsovery.setOnClickListener(mOnClickListener);
@@ -92,6 +96,7 @@ public class RecoveryActivity extends Activity {
                 mLoadingDailog.setMessage(getString(R.string.no_openthos_id));
             } else {
                 mLoadingDailog.dismiss();
+                mSwitchAutoRecovery.setChecked(mSeafileBinder.getFlagAutoRecovery());
             }
         }
 
@@ -122,13 +127,13 @@ public class RecoveryActivity extends Activity {
                         return;
                     }
                     final String[] files = f.list();
-                    mChooseFile.setText(getString(R.string.choose_one_day) + files[0]);
+                    mTvChooseFile.setText(getString(R.string.choose_one_day) + ":" +files[0]);
                     mStartRecsovery.setVisibility(View.VISIBLE);
                     Builder b = new Builder(RecoveryActivity.this);
                     b.setSingleChoiceItems(files, 0, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                           mChooseFile.setText(getString(R.string.choose_one_day) + files[which]);
+                           mTvChooseFile.setText(getString(R.string.choose_one_day) + ":" + files[which]);
                            path = "/sdcard/seafile/" + mSeafileBinder.getUserName() + "/.UserConfig/" + files[which];
                         }
                     });
@@ -146,6 +151,9 @@ public class RecoveryActivity extends Activity {
                     });
                     builder.setNegativeButton(R.string.cancel, null);
                     builder.create().show();
+                    break;
+                case R.id.switch_auto_recovery:
+                    mSeafileBinder.setFlagAutoRecovery(mSwitchAutoRecovery.isChecked());
                     break;
             }
         }
@@ -275,4 +283,9 @@ public class RecoveryActivity extends Activity {
         }
     }
 
+    @Override
+    public void onDestroy() {
+        unbindService(mConnection);
+        super.onDestroy();
+    }
 }
