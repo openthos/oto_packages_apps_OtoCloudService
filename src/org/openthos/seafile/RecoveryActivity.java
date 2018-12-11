@@ -13,6 +13,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.Log;
@@ -40,6 +41,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 
 import org.openthos.seafile.SeafileService.SeafileBinder;
 
@@ -133,31 +135,84 @@ public class RecoveryActivity extends Activity {
                     b.create().show();
                     break;
                 case R.id.start_recovery:
-                    initEnvironment();
-                    BufferedReader br = null;
-                    try {
-                        Process pro = Runtime.getRuntime().exec(
-                                new String[]{"su", "-c", "./data/data/org.openthos.seafile/rescovery " + path});
-                        br = new BufferedReader(new InputStreamReader(pro.getInputStream()));
-                        String line = "";
-                        while ((line = br.readLine()) != null) {
+                    Builder builder = new Builder(RecoveryActivity.this);
+                    builder.setMessage(getString(R.string.warn_restore_startupmenu));
+                    builder.setPositiveButton(R.string.okay, null);
+                    builder.setPositiveButton(R.string.okay, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(final DialogInterface dialog, final int which) {
+                            startRecovery(path);
                         }
-                        br.close();
-                        br = null;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } finally {
-                        if (br != null) {
-                            try {
-                                br.close();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
+                    });
+                    builder.setNegativeButton(R.string.cancel, null);
+                    builder.create().show();
                     break;
             }
         }
+    }
+
+    private void startRecovery(String path) {
+        initEnvironment();
+        BufferedReader br = null;
+        try {
+            Process pro = Runtime.getRuntime().exec(
+                    new String[]{"su", "-c", "./data/data/org.openthos.seafile/rescovery " + path});
+            br = new BufferedReader(new InputStreamReader(pro.getInputStream()));
+            String line = "";
+            while ((line = br.readLine()) != null) {
+            }
+            br.close();
+            br = null;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        softRebootSystem();
+    }
+
+    private void softRebootSystem() {
+        new Handler().post(new Runnable() {
+            public void run() {
+                Process pro = null;
+                BufferedReader in = null;
+                ArrayList<String> temp = new ArrayList();
+                try {
+                    pro = Runtime.getRuntime().exec(new String[]{"su", "-c", "netcfg"});
+                    in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
+                    String line;
+
+                    while ((line = in.readLine()) != null) {
+                        String tempStr = line.split("\\s+")[0];
+                        if (tempStr.startsWith("eth")) {
+                            temp.add(tempStr);
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (in != null) {
+                        try {
+                            in.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                StringBuffer sb = new StringBuffer();
+                for (String str : temp) {
+                    sb.append("netcfg ").append(str).append(" down;");
+                }
+                Utils.exec(new String[]{"su", "-c",
+                        sb.toString() + "kill " + Jni.nativeKillPid()});
+            }
+        });
     }
 
     private void initEnvironment() {

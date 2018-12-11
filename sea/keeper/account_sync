@@ -20,7 +20,7 @@ account_sync_func()
 	$proot_cmd seaf-cli sync -c $conf_dir -l $iDATA -s $server_url -u $user -tk $token -d $seafile_sync/$user/$nDATA
 
 	[ -d $seafile_sync/$user/.$nUserConfig ] || mkdir -p $seafile_sync/$user/.$nUserConfig
-	$proot_cmd seaf-cli sync -c $conf_dir -l $iUserConfig -e $ucPsw -s $server_url -u $user -tk $token -d $seafile_sync/$user/.$nUserConfig
+	$proot_cmd seaf-cli sync -c $conf_dir -l $iUserConfig -e $ucPsw -s $server_url -u $user -tk $token -d $seafile_sync/$user/$nUserConfig
 
 }
 
