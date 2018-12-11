@@ -27,7 +27,7 @@ account_login_func()
 		return
 	fi
 
-	list_libs=`$proot_cmd seaf-cli list-remote -c $conf_dir -s $server_url -u $user -p $password`
+	list_libs=`$proot_cmd seaf-cli list-remote -a -c $conf_dir -s $server_url -u $user -p $password`
 	if [ $? -ne 0 ];then
 		echo "list remote failed"
 	fi
@@ -57,20 +57,6 @@ account_login_func()
 			iUserConfig=$l
 		fi
 	done
-
-	if [ ! $iDATA ];then
-		iDATA=`$proot_cmd seaf-cli create -n $nDATA -t $autoMsg -c $conf_dir -s $server_url -u $user -p $password`
-		if [ $? -ne 0 ];then
-			echo "DATA create failed"
-		fi
-	fi
-
-	if [ ! $iUserConfig ];then
-		iUserConfig=`$proot_cmd seaf-cli create -n $nUserConfig -t $autoMsg -e $ucPsw -c $conf_dir -s $server_url -u $user -p $password`
-		if [ $? -ne 0 ];then
-			echo "UserConfig create failed"
-		fi
-	fi
 
 	echo DATA:$iDATA, UserConfig:$iUserConfig
 

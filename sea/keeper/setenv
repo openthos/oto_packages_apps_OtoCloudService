@@ -11,7 +11,7 @@ seafile_sdcard="/sdcard/seafile"
 account_conf="tmp/account.conf"
 status_info_output="tmp/logs/Keeper.state"
 nDATA="DATA"
-nUserConfig="UserConfig"
+nUserConfig=".UserConfig"
 ucPsw="openthos.org"
 autoMsg="OPENTHOS"
 

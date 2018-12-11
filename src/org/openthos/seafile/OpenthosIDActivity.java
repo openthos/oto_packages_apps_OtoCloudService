@@ -52,6 +52,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class OpenthosIDActivity extends Activity {
     public static final int MSG_REGIST_SEAFILE_OK = 0x1004;
@@ -228,8 +230,18 @@ public class OpenthosIDActivity extends Activity {
                                 Toast.makeText(getActivity(),
                                                getText(R.string.toast_network_not_connect),
                                                Toast.LENGTH_SHORT).show();
+                                return;
                             }
-
+                            String regEx="[`~!@#$%^&*()+=|{}':;',\\[\\].<>/?~]"; 
+                            Pattern pattern = Pattern.compile(regEx);
+                            Matcher matcher = pattern.matcher(openthosIDRegister.getText().toString().trim());
+                            if (matcher.find()) {
+                                Toast.makeText(getActivity(),
+                                               getText(R.string.username_illegal),
+                                               Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+ 
                             mRegisterID = openthosIDRegister.getText().toString().trim();
                             mRegisterEmail = openthosEmailRegister.getText().toString().trim();
                             mRegisterPass = openthosPassRegister.getText().toString().trim();
