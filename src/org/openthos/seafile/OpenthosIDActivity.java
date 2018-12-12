@@ -171,19 +171,12 @@ public class OpenthosIDActivity extends Activity {
                         case MSG_LOGIN_SEAFILE_OK:
                             mAccount = null;
                             mAccount = new SeafileAccount(OpenthosIDActivity.this);
-                            Toast.makeText(getActivity(), msg.obj.toString(),
-                                    Toast.LENGTH_SHORT).show();
                             updateID(mAccount.mUserName);
                             mBindPref.setEnabled(false);
                             mUnbundPref.setEnabled(true);
                             break;
                         case MSG_CHANGE_URL:
                             updateOpenthosUrl(msg.obj.toString());
-                            break;
-                        default:
-                            Toast.makeText(getActivity(),
-                                    getText(R.string.toast_network_not_connect),
-                                    Toast.LENGTH_SHORT).show();
                             break;
                     }
                 }

@@ -71,7 +71,12 @@ public class RecoveryActivity extends Activity {
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        finish();
+                        dialog.cancel();
+                        new Handler().postDelayed(new Runnable() {
+                            public void run() {
+                                finish();
+                            }
+                        }, 1000);
                     }});
         mLoadingDailog = builder.create();
         mLoadingDailog.setCancelable(false);

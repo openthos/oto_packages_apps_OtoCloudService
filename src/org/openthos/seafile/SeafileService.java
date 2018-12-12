@@ -394,6 +394,8 @@ public class SeafileService extends Service {
                         mAccount.mPassword = bundle.getString("password");
                         startAccount(true);
                     }
+                    Toast.makeText(SeafileService.this, msg.obj.toString(),
+                            Toast.LENGTH_SHORT).show();
                     for (IBinder iBinder : mIBinders) {
                         Parcel _data = Parcel.obtain();
                         Parcel _reply = Parcel.obtain();
