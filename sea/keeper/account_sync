@@ -13,7 +13,7 @@ account_sync_func()
 	fi
 
 	### do desync
-	account_desync
+	#account_desync
 
 	### do sync
 	[ -d $seafile_sync/$user/$nDATA ] || mkdir -p $seafile_sync/$user/$nDATA

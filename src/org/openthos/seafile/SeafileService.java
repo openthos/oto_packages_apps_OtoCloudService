@@ -80,17 +80,19 @@ public class SeafileService extends Service {
         mHandler = new SeafileHandler(Looper.getMainLooper());
         mAccount = new SeafileAccount(this);
         if (mAccount.isExistsAccount()) {
-            startAccount();
+            startAccount(false);
         }
     }
 
     // sync bound account
-    private void startAccount() {
+    private void startAccount(boolean isNewAccount) {
         mUserPath = SeafileUtils.SEAFILE_DATA_ROOT_PATH + "/" + mAccount.mUserName;
         mLogObserver.startWatching();
         //notify
-        notifySeafileKeeper(mAccount.mOpenthosUrl,
-                mAccount.mUserName, mAccount.mToken, mAccount.mPassword);
+        if (isNewAccount) {
+            notifySeafileKeeper(mAccount.mOpenthosUrl,
+                    mAccount.mUserName, mAccount.mToken, mAccount.mPassword);
+        }
         startAutoBackup();
     }
 
@@ -390,7 +392,7 @@ public class SeafileService extends Service {
                         mAccount.mUserName = bundle.getString("user");
                         mAccount.mToken = bundle.getString("token");
                         mAccount.mPassword = bundle.getString("password");
-                        startAccount();
+                        startAccount(true);
                     }
                     for (IBinder iBinder : mIBinders) {
                         Parcel _data = Parcel.obtain();

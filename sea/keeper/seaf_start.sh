@@ -9,6 +9,16 @@ seaf_start()
 
 	$proot_cmd seaf-cli init -c $conf_dir -d $seafile_data
 
+	### if has account, must first mount the directorys
+	if [ -f $conf_dir/account.conf ];then
+		source $conf_dir/account.conf
+		grep "user=" $conf_dir/account.conf
+		if [ $? -eq 0 ];then
+			mountpoint -q $seaDir/data/seafile/$user/$nDATA/Documents || busybox mount --bind /sdcard/Documents /sdcard/seafile/$user/$nDATA/Documents
+			mountpoint -q $seaDir/data/seafile/$user/$nDATA/Pictures || busybox mount --bind /sdcard/Pictures /sdcard/seafile/$user/$nDATA/Pictures
+		fi
+	fi
+
 	$proot_cmd seaf-cli start -c $conf_dir &
 	pid_start=$!
 
