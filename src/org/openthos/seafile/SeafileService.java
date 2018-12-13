@@ -83,6 +83,10 @@ public class SeafileService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+        }
         initStateMonitor();
         mHandler = new SeafileHandler(Looper.getMainLooper());
         mAccount = new SeafileAccount(this);

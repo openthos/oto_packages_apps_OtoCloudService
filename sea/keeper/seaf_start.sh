@@ -33,21 +33,22 @@ seaf_stop()
 
 set_environment()
 {
-		mountpoint -q tmp && umount tmp
-		mount -t tmpfs tmpfs tmp
-		mkdir tmp/logs tmp/state
+	sleep 10
+	mountpoint -q tmp && umount tmp
+	mount -t tmpfs tmpfs tmp
+	mkdir tmp/logs tmp/state
 
-		seafile_uid=`awk '/org.openthos.seafile/{print $2}' /data/system/packages.list`
-		chown -R $seafile_uid:$seafile_uid tmp
+	seafile_uid=`awk '/org.openthos.seafile/{print $2}' /data/system/packages.list`
+	chown -R $seafile_uid:$seafile_uid tmp
 
-		#/data/data/seafile
-		#[ -d $seafile_ddata ] || mkdir -p $seafile_ddata
-		mountpoint -q $seaDir/data || busybox mount --bind /sdcard $seaDir/data
+	#/data/data/seafile
+	#[ -d $seafile_ddata ] || mkdir -p $seafile_ddata
+	mountpoint -q $seaDir/data || busybox mount --bind /sdcard $seaDir/data
 
-		[ -d $seafile_sdcard ] || mkdir -p $seafile_sdcard
-		[ -d $seafile_sync ] || mkdir -p $seafile_sync
-		[ -d /sdcard/Documents ] || mkdir -p /sdcard/Documents
-		#mountpoint -q $seafile_sync || busybox mount --bind $seafile_sdcard $seafile_sync
+	[ -d $seafile_sdcard ] || mkdir -p $seafile_sdcard
+	[ -d $seafile_sync ] || mkdir -p $seafile_sync
+	[ -d /sdcard/Documents ] || mkdir -p /sdcard/Documents
+	#mountpoint -q $seafile_sync || busybox mount --bind $seafile_sdcard $seafile_sync
 }
 
 do_exit()
