@@ -11,6 +11,9 @@
     <string name="seafile_status_title">CloudService Status:</string>
     <string name="seafile_uploading">Uploading</string>
     <string name="seafile_downloading">Downloading</string>
+    <string name="seafile_disabled">Auto Sync Pause</string>
+    <string name="seafile_status_warning">The storage space fo the repo owner has been used more than 80%</string>
+    <string name="seafile_status_disabled">The storage space fo the repo owner has been used up</string>
     <string name="toast_register_sendmail">send mail to your mailbox, please activate mail and bind your ID</string>
     <string name="toast_register_fail">register fail(Mailbox is occupied or mailbox format is wrong)</string>
     <string name="toast_openthos_password_wrong">passowrd is wrong</string>

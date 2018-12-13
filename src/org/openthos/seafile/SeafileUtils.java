@@ -28,6 +28,7 @@ public class SeafileUtils {
     public static final String SEAFILE_STATE_FILE = "DATA.state";
     public static final String SEAFILE_KEEPER_STATE_PATH = "/system/linux/sea/tmp/logs/";
     public static final String SEAFILE_KEEPER_STATE_FILE = "Keeper.state";
+    public static final String SEAFILE_QUOTA_STATE_FILE = "Quota.state";
     public static final String SEAFILE_DATA_ROOT_PATH = "/sdcard/seafile";
     public static final String SEAFILE_ACCOUNT_CONFIG = "/system/linux/sea/tmp/account.conf";
 
@@ -68,12 +69,12 @@ public class SeafileUtils {
         }
     }
 
-    public static String readLog(Context context) {
+    public static String readLog(Context context, String path) {
         StringBuffer buffer = new StringBuffer();
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new FileReader(
-                    new File(SEAFILE_KEEPER_STATE_PATH, SEAFILE_KEEPER_STATE_FILE)));
+                    new File(SEAFILE_KEEPER_STATE_PATH, path)));
 
             String s = null;
             while((s = reader.readLine()) != null) {

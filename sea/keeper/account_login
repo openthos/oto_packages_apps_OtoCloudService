@@ -27,25 +27,23 @@ account_login_func()
 		return
 	fi
 
-	list_libs=`$proot_cmd seaf-cli list-remote -a -c $conf_dir -s $server_url -u $user -p $password`
+	list_libs=(`$proot_cmd seaf-cli list-remote -a -c $conf_dir -s $server_url -u $user -p $password`)
 	if [ $? -ne 0 ];then
 		echo "list remote failed"
 	fi
 
 	unset remote_libraries
 	declare -A remote_libraries
-	mName=""
-	for l in $list_libs
+	mCount=4 #Retrieve first ID
+	for i in ${!list_libs[@]}
 	do
-		if [ $mName ];then
-			remote_libraries["$l"]="$mName"
-			mName=""
-		else
-			mName="$l"
+		if [ "$i" -eq "$mCount" ];then
+			mID="${list_libs[i]}"
+			remote_libraries["$mID"]="${list_libs[i-1]}"
+			let "mCount+=3"
 		fi
 	done
-	unset remote_libraries["ID"]
-	#echo ${!remote_libraries[@]},${remote_libraries[@]}
+    echo  ${!remote_libraries[@]},${remote_libraries[@]}
 
 	iDATA=""
 	iUserConfig=""

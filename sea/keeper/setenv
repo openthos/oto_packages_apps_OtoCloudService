@@ -10,6 +10,7 @@ seafile_sdcard="/sdcard/seafile"
 
 account_conf="tmp/account.conf"
 status_info_output="tmp/logs/Keeper.state"
+quota_info_output="tmp/logs/Quota.state"
 nDATA="DATA"
 nUserConfig=".UserConfig"
 ucPsw="openthos.org"

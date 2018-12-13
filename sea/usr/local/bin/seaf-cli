@@ -445,13 +445,13 @@ def seaf_list_remote(args):
 
     printed = {}
 
-    print "Name\tID"
+    print "Name\tID\tSIZE"
     for repo in repos:
         if repo['id'] in printed:
             continue
 
         printed[repo['id']] = repo['id']
-        print repo['name'].encode('utf-8'), repo['id']
+        print repo['name'].encode('utf-8'), repo['id'], repo['size']
 
 
 def get_base_url(url):

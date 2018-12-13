@@ -1,10 +1,12 @@
 package org.openthos.seafile;
 
+import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
@@ -19,6 +21,9 @@ import android.os.Parcel;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.widget.Toast;
+import android.view.Gravity;
+import android.view.Window;
+import android.view.WindowManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -60,6 +65,7 @@ public class SeafileService extends Service {
     private static final int CODE_UNBIND_ACCOUNT = 80000010;
     private static final String SEAFILE_STATUS_DOWNLOADING = "downloading";
     private static final String SEAFILE_STATUS_UPLOADING = "uploading";
+    private static final String SEAFILE_STATUS_DISABLED = "auto sync disabled";
     public static SeafileAccount mAccount;
     private String mUserPath;
     private ArrayList<IBinder> mIBinders = new ArrayList();
@@ -71,6 +77,7 @@ public class SeafileService extends Service {
     private NotificationManager mNotificationManager;
     private Notification.Builder mBuilder;
     private Notification.BigTextStyle mStyle;
+    private AlertDialog mDialog;
     private boolean mIsNotificationShown = false;
 
     @Override
@@ -145,6 +152,10 @@ public class SeafileService extends Service {
         mBuilder.setOngoing(true);
         mStyle = new Notification.BigTextStyle();
 
+        mDialog = new AlertDialog.Builder(this).create();
+        mDialog.setTitle(R.string.seafile_status_title);
+        mDialog.setIcon(R.mipmap.ic_cloud);
+
         mStateObserver = new StateObserver(SeafileUtils.SEAFILE_KEEPER_STATE_PATH);
         mLogObserver = new StateObserver(SeafileUtils.SEAFILE_STATE_PATH);
     }
@@ -165,7 +176,8 @@ public class SeafileService extends Service {
                     }
                     break;
                 case FileObserver.DELETE:
-                    if (SeafileUtils.SEAFILE_STATE_FILE.equals(path)) {
+                    if (SeafileUtils.SEAFILE_STATE_FILE.equals(path)
+                            && SeafileUtils.SEAFILE_QUOTA_STATE_FILE.equals(path)) {
                         mStateObserver.stopWatching();
                         if (mIsNotificationShown) {
                             showNotification(getString(R.string.sync_complete));
@@ -174,12 +186,40 @@ public class SeafileService extends Service {
                     break;
                 case FileObserver.MODIFY:
                     if (SeafileUtils.SEAFILE_KEEPER_STATE_FILE.equals(path)) {
-                        showNotification(SeafileUtils.readLog(SeafileService.this));
+                        showNotification(SeafileUtils.readLog(SeafileService.this, path));
                         mIsNotificationShown = true;
+                    }
+                    if (SeafileUtils.SEAFILE_QUOTA_STATE_FILE.equals(path)) {
+                        //showQuotaDialog(SeafileUtils.readLog(SeafileService.this, path));
+                        Toast.makeText(SeafileService.this, getString(R.string.seafile_status_disabled), Toast.LENGTH_LONG).show();
                     }
                     break;
             }
         }
+    }
+
+    private void showQuotaDialog(String notice) {
+        if (mDialog.isShowing()) {
+            mDialog.dismiss();
+        }
+        boolean warning = notice.contains("WARNING");
+        mDialog.setMessage(warning ? String.valueOf(R.string.seafile_status_warning)
+                    : String.valueOf(R.string.seafile_status_disabled));
+        mDialog.setButton(String.valueOf(R.string.confirm), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        mDialog.setCanceledOnTouchOutside(false);
+        Window dialogWindow = mDialog.getWindow();
+        WindowManager.LayoutParams lp = dialogWindow.getAttributes();
+        lp.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
+        lp.dimAmount = 0.0f;
+        dialogWindow.setGravity(Gravity.CENTER);
+        dialogWindow.setAttributes(lp);
+        mDialog.show();
+
     }
 
     private void showNotification(String notice) {
@@ -188,6 +228,8 @@ public class SeafileService extends Service {
                     getString(R.string.seafile_uploading));
             notice = notice.replace(SEAFILE_STATUS_DOWNLOADING,
                     getString(R.string.seafile_downloading));
+            notice = notice.replace(SEAFILE_STATUS_DISABLED,
+                    getString(R.string.seafile_disabled));
             notice = notice.replace(SeafileUtils.DATA_SEAFILE_NAME,
                     getString(R.string.data_seafile_name));
             notice = notice.replace(SeafileUtils.SETTING_SEAFILE_NAME,
