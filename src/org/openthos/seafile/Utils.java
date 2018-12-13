@@ -236,12 +236,10 @@ public class Utils {
         }
     }
 
-    public static boolean writeAccount(Context context, String url, String username,
-            String token, String password) {
+    public static boolean writeAccount(Context context, String url, String username, String token) {
         SeafileAccount account = new SeafileAccount(url);
         account.mUserName = username;
         account.mToken = token;
-        account.mPassword = password;
         return writeAccount(context, account);
     }
 
@@ -254,7 +252,6 @@ public class Utils {
             obj.put("url", account.mOpenthosUrl);
             obj.put("name", account.mUserName);
             obj.put("token", token);
-            obj.put("password", account.mPassword);
             writer = new BufferedWriter(new OutputStreamWriter(
                     context.openFileOutput(ACCOUNT_INFO_FILE, Context.MODE_PRIVATE)));
             writer.write(obj.toString());
@@ -288,13 +285,9 @@ public class Utils {
                 String token = Config.FLAG_PROGUARD ?
                         decodeToken(obj.getString("name"), obj.getString("token"))
                         : obj.getString("token");
-                if (TextUtils.isEmpty(token)) {
-                    return account;
-                }
                 account.mOpenthosUrl = obj.getString("url");
                 account.mUserName = obj.getString("name");
                 account.mToken = token;
-                account.mPassword = obj.getString("password");
             }
         } catch (JSONException | IOException e) {
             if (!(e instanceof FileNotFoundException) && context != null) {

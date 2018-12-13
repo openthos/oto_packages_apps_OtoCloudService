@@ -7,6 +7,7 @@ account_login_func()
 {
 	server_url=""
 	action=""
+	token=""
 	source $account_conf && rm $account_conf
 	if [ "$action"x = "logout"x ];then
 		echo "account logout"
@@ -18,16 +19,12 @@ account_login_func()
 		return
 	fi
 
-	mToken=`$proot_cmd seaf-cli get-token -c $conf_dir -s $server_url -u $user -p $password`
-	if [ $? -eq 0 ];then
-		echo "get token successfully"
-		#rm $account_conf
-	else
-		echo "get token failed"
+	if [ ! $token ];then
+		echo "retrieve token failed"
 		return
 	fi
 
-	list_libs=(`$proot_cmd seaf-cli list-remote -a -c $conf_dir -s $server_url -u $user -p $password`)
+	list_libs=(`$proot_cmd seaf-cli list-remote -a -c $conf_dir -s $server_url -tk $token`)
 	if [ $? -ne 0 ];then
 		echo "list remote failed"
 	fi
@@ -61,7 +58,7 @@ account_login_func()
 echo "
 server_url=$server_url
 user=$user
-token=$mToken
+token=$token
 iDATA=$iDATA
 iUserConfig=$iUserConfig
 " > $conf_dir/account.conf

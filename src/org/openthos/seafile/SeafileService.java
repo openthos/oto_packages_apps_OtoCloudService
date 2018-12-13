@@ -97,8 +97,7 @@ public class SeafileService extends Service {
         mLogObserver.startWatching();
         //notify
         if (isNewAccount) {
-            notifySeafileKeeper(mAccount.mOpenthosUrl,
-                    mAccount.mUserName, mAccount.mToken, mAccount.mPassword);
+            notifySeafileKeeper(mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mToken);
         }
         startAutoBackup();
     }
@@ -280,7 +279,7 @@ public class SeafileService extends Service {
                 mNotificationManager.cancel(0);
             }
             mAccount.clear();
-            Utils.writeAccount(SeafileService.this, mAccount.mOpenthosUrl, "", "", "");
+            Utils.writeAccount(SeafileService.this, mAccount.mOpenthosUrl, "", "");
             for (IBinder iBinder : mIBinders) {
                 Parcel _data = Parcel.obtain();
                 Parcel _reply = Parcel.obtain();
@@ -368,14 +367,14 @@ public class SeafileService extends Service {
 
         public boolean setOpenthosUrl(String url) {
             mTmpOpenthosUrl = mAccount.mOpenthosUrl;
-            if (!Utils.writeAccount(SeafileService.this, url, "", "", "")) {
+            if (!Utils.writeAccount(SeafileService.this, url, "", "")) {
                 mAccount.mOpenthosUrl = mTmpOpenthosUrl;
                 return false;
             }
+            mAccount.mOpenthosUrl = url;
             if (mAccount.isExistsAccount()) {
                 stopAccount();
             }
-            mAccount.mOpenthosUrl = url;
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -427,13 +426,11 @@ public class SeafileService extends Service {
                 case AccountLogin.MSG_LOGIN_SEAFILE_OK:
                     Bundle bundle = msg.getData();
                     Utils.writeAccount(SeafileService.this, mAccount.mOpenthosUrl,
-                            bundle.getString("user"), bundle.getString("token"),
-                            bundle.getString("password"));
+                            bundle.getString("user"), bundle.getString("token"));
                     if (!TextUtils.isEmpty(bundle.getString("user"))
                             && !TextUtils.isEmpty(bundle.getString("token"))) {
                         mAccount.mUserName = bundle.getString("user");
                         mAccount.mToken = bundle.getString("token");
-                        mAccount.mPassword = bundle.getString("password");
                         startAccount(true);
                     }
                     Toast.makeText(SeafileService.this, msg.obj.toString(),
@@ -476,17 +473,16 @@ public class SeafileService extends Service {
         super.onDestroy();
     }
 
-    private void notifySeafileKeeper(String url, String accout, String token, String pass) {
+    private void notifySeafileKeeper(String url, String accout, String token) {
         try {
             String serverUrl = "server_url=" + url;
             String user = "user=" + accout;
             String seafToken = "token=" + token;
-            String password = "password=" + pass;
             String action = "action=login";
             FileWriter writer = new FileWriter(new File(SeafileUtils.SEAFILE_ACCOUNT_CONFIG));
             BufferedWriter bufferedWriter = new BufferedWriter(writer);
             bufferedWriter.write(serverUrl + "\n" + user +
-                        "\n"+ password +"\n" + seafToken + "\n" + action);
+                        "\n" + seafToken + "\n" + action);
             bufferedWriter.flush();
             writer.close();
             bufferedWriter.close();

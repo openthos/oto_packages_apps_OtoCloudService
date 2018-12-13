@@ -97,7 +97,6 @@ public class AccountLogin extends Thread {
                     Bundle bundle = new Bundle();
                     bundle.putString("user", name + "@openthos.org");
                     bundle.putString("token", token);
-                    bundle.putString("password", pass);
                     message.setData(bundle);
                     message.obj = context.getString(R.string.toast_bind_successful);
                     handler.sendMessage(message);
