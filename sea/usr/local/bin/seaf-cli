@@ -408,7 +408,7 @@ def seaf_list(args):
     repos = seafile_rpc.get_repo_list(-1, -1)
     print "Name\tID\tPath"
     for repo in repos:
-        print repo.name, repo.id, repo.worktree
+        print repo.naee, repo.id, repo.worktree
 
 
 def seaf_list_remote(args):
@@ -589,19 +589,23 @@ def seaf_download_by_name(args):
     seaf_download(args)
 
 
-def seaf_enable_ayto_sync(args):
+def seaf_enable_auto_sync(args):
     ''' enable auto sync of all repos'''
     conf_dir = _conf_dir(args)
 
     seafile_rpc = get_rpc_client(conf_dir)
-    seafile_rpc.enable_auto_sync()
+    repos = seafile_rpc.get_repo_list(-1, -1)
+    for repo in repos:
+        seafile_rpc.set_repo_property(repo.id, 'auto-sync', 'true')
     
-def seaf_disable_ayto_sync(args):
+def seaf_disable_auto_sync(args):
     ''' disable auto sync of all repos'''
     conf_dir = _conf_dir(args)
 
     seafile_rpc = get_rpc_client(conf_dir)
-    seafile_rpc.disable_auto_sync()
+    repos = seafile_rpc.get_repo_list(-1, -1)
+    for repo in repos:
+        seafile_rpc.set_repo_property(repo.id, 'auto-sync', 'false')
     
 def seaf_sync(args):
     ''' synchronize a library from seafile server '''
@@ -708,6 +712,24 @@ def seaf_desync(args):
     else:
         print "%s is not a library" % args.folder
 
+def seaf_desync_all(args):
+    '''Show status'''
+
+    conf_dir = _conf_dir(args)
+
+    seafile_rpc = get_rpc_client(conf_dir)
+
+    tasks = seafile_rpc.get_clone_tasks()
+    for task in tasks:
+        seafile_rpc.cancel_clone_task(task.repo_id)
+
+    for task in tasks:
+        seafile_rpc.remove_clone_task(task.repo_id)
+
+    # show repo status
+    repos = seafile_rpc.get_repo_list(-1, -1)
+    for repo in repos:
+        seafile_rpc.remove_repo(repo.id)
 
 def seaf_config(args):
     '''Configure the seafile client'''
@@ -974,13 +996,13 @@ def main():
     # enable-auto-sync
     parser_enable_auto_sync = subparsers.add_parser('enable-auto-sync',
                                         help='enable auto sync for all repos')
-    parser_enable_auto_sync.set_defaults(func=seaf_enable_ayto_sync)
+    parser_enable_auto_sync.set_defaults(func=seaf_enable_auto_sync)
     parser_enable_auto_sync.add_argument('-c', '--confdir', help='the config directory', type=str, required=confdir_required)
 
     # disable-auto-sync
     parser_disable_auto_sync = subparsers.add_parser('disable-auto-sync',
                                         help='disable auto sync for all repos')
-    parser_disable_auto_sync.set_defaults(func=seaf_disable_ayto_sync)
+    parser_disable_auto_sync.set_defaults(func=seaf_disable_auto_sync)
     parser_disable_auto_sync.add_argument('-c', '--confdir', help='the config directory', type=str, required=confdir_required)
 
     # sync
@@ -996,6 +1018,12 @@ def main():
     parser_sync.add_argument('-d', '--folder', help='the existing local folder', type=str)
     parser_sync.add_argument('-e', '--libpasswd', help='library password', type=str)
     parser_sync.add_argument('-tk', '--token', help='token', type=str)
+
+    # desync all
+    parser_desync = subparsers.add_parser('desync-all',
+                                          help='Desync a library with seafile server')
+    parser_desync.set_defaults(func=seaf_desync_all)
+    parser_desync.add_argument('-c', '--confdir', help='the config directory', type=str, required=confdir_required)
 
     # desync
     parser_desync = subparsers.add_parser('desync',
