@@ -33,7 +33,7 @@ seaf_stop()
 
 set_environment()
 {
-	sleep 10
+	sleep 12
 	mountpoint -q tmp && umount tmp
 	mount -t tmpfs tmpfs tmp
 	mkdir tmp/logs tmp/state

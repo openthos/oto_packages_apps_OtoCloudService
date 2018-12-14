@@ -4,6 +4,7 @@
 tar -xvf $1 -C /data/data
 
 ## Fennec
+tar -xvf /system/opt/fennec_initdata.tar.bz2  -C /data/data/org.mozilla.fennec_openthos/
 tar -xvf /data/data/temp/org.mozilla.fennec_openthos.tar.gz  -C /data/data/
 chmod -R 777 /data/data/org.mozilla.fennec_openthos
 
