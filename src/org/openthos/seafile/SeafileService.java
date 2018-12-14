@@ -21,8 +21,6 @@ import android.os.Parcel;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.widget.Toast;
-import android.view.Gravity;
-import android.view.Window;
 import android.view.WindowManager;
 
 import org.json.JSONArray;
@@ -74,6 +72,7 @@ public class SeafileService extends Service {
     private String mTmpOpenthosUrl = SeafileUtils.SEAFILE_URL_LIBRARY;
     private StateObserver mLogObserver;
     private StateObserver mStateObserver;
+    private StateObserver mQuotaStateObserver;
     private NotificationManager mNotificationManager;
     private Notification.Builder mBuilder;
     private Notification.BigTextStyle mStyle;
@@ -99,6 +98,7 @@ public class SeafileService extends Service {
     private void startAccount(boolean isNewAccount) {
         mUserPath = SeafileUtils.SEAFILE_DATA_ROOT_PATH + "/" + mAccount.mUserName;
         mLogObserver.startWatching();
+        mQuotaStateObserver.startWatching();
         //notify
         if (isNewAccount) {
             notifySeafileKeeper(mAccount.mOpenthosUrl, mAccount.mUserName, mAccount.mToken);
@@ -155,11 +155,20 @@ public class SeafileService extends Service {
         mBuilder.setOngoing(true);
         mStyle = new Notification.BigTextStyle();
 
-        mDialog = new AlertDialog.Builder(this).create();
-        mDialog.setTitle(R.string.seafile_status_title);
-        mDialog.setIcon(R.mipmap.ic_cloud);
+        AlertDialog.Builder builder = new AlertDialog.Builder(SeafileService.this);
+        builder.setTitle(R.string.seafile_status_title)
+                .setIcon(R.mipmap.ic_cloud)
+                .setPositiveButton(R.string.confirm, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+        mDialog = builder.create();
+        mDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
 
         mStateObserver = new StateObserver(SeafileUtils.SEAFILE_KEEPER_STATE_PATH);
+        mQuotaStateObserver = new StateObserver(SeafileUtils.SEAFILE_QUOTA_STATE_PATH);
         mLogObserver = new StateObserver(SeafileUtils.SEAFILE_STATE_PATH);
     }
 
@@ -177,6 +186,9 @@ public class SeafileService extends Service {
                     if (SeafileUtils.SEAFILE_STATE_FILE.equals(path)) {
                         mStateObserver.startWatching();
                     }
+                    //if (SeafileUtils.SEAFILE_QUOTA_STATE_FILE.equals(path)) {
+                    //    mQuotaStateObserver.startWatching();
+                    //}
                     break;
                 case FileObserver.DELETE:
                     if (SeafileUtils.SEAFILE_STATE_FILE.equals(path)
@@ -189,12 +201,19 @@ public class SeafileService extends Service {
                     break;
                 case FileObserver.MODIFY:
                     if (SeafileUtils.SEAFILE_KEEPER_STATE_FILE.equals(path)) {
-                        showNotification(SeafileUtils.readLog(SeafileService.this, path));
+                        showNotification(SeafileUtils.readLog(SeafileService.this,
+                                SeafileUtils.SEAFILE_KEEPER_STATE_PATH, path));
                         mIsNotificationShown = true;
                     }
                     if (SeafileUtils.SEAFILE_QUOTA_STATE_FILE.equals(path)) {
-                        //showQuotaDialog(SeafileUtils.readLog(SeafileService.this, path));
-                        Toast.makeText(SeafileService.this, getString(R.string.seafile_status_disabled), Toast.LENGTH_LONG).show();
+                        final String notice = SeafileUtils.readLog(SeafileService.this,
+                                SeafileUtils.SEAFILE_QUOTA_STATE_PATH, path);
+                        mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                showQuotaDialog(notice);
+                            }
+                        });
                     }
                     break;
             }
@@ -202,27 +221,12 @@ public class SeafileService extends Service {
     }
 
     private void showQuotaDialog(String notice) {
-        if (mDialog.isShowing()) {
-            mDialog.dismiss();
+        String msg = getString(notice.contains("WARNING")
+                    ? R.string.seafile_status_warning : R.string.seafile_status_disabled);
+        mDialog.setMessage(msg);
+        if (!mDialog.isShowing()) {
+            mDialog.show();
         }
-        boolean warning = notice.contains("WARNING");
-        mDialog.setMessage(warning ? String.valueOf(R.string.seafile_status_warning)
-                    : String.valueOf(R.string.seafile_status_disabled));
-        mDialog.setButton(String.valueOf(R.string.confirm), new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
-        mDialog.setCanceledOnTouchOutside(false);
-        Window dialogWindow = mDialog.getWindow();
-        WindowManager.LayoutParams lp = dialogWindow.getAttributes();
-        lp.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
-        lp.dimAmount = 0.0f;
-        dialogWindow.setGravity(Gravity.CENTER);
-        dialogWindow.setAttributes(lp);
-        mDialog.show();
-
     }
 
     private void showNotification(String notice) {
@@ -277,6 +281,9 @@ public class SeafileService extends Service {
             }
             if (mStateObserver != null) {
                 mStateObserver.stopWatching();
+            }
+            if (mQuotaStateObserver != null) {
+                mQuotaStateObserver.stopWatching();
             }
             if (mIsNotificationShown) {
                 mIsNotificationShown = false;
@@ -470,6 +477,9 @@ public class SeafileService extends Service {
     public void onDestroy() {
         if (mStateObserver != null) {
             mStateObserver.stopWatching();
+        }
+        if (mQuotaStateObserver != null) {
+            mQuotaStateObserver.stopWatching();
         }
         if (mLogObserver != null) {
             mLogObserver.stopWatching();

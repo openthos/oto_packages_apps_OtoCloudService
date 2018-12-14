@@ -27,6 +27,7 @@ public class SeafileUtils {
     public static final String SEAFILE_STATE_PATH = "/system/linux/sea/tmp/state/";
     public static final String SEAFILE_STATE_FILE = "DATA.state";
     public static final String SEAFILE_KEEPER_STATE_PATH = "/system/linux/sea/tmp/logs/";
+    public static final String SEAFILE_QUOTA_STATE_PATH = "/system/linux/sea/tmp/quota/";
     public static final String SEAFILE_KEEPER_STATE_FILE = "Keeper.state";
     public static final String SEAFILE_QUOTA_STATE_FILE = "Quota.state";
     public static final String SEAFILE_DATA_ROOT_PATH = "/sdcard/seafile";
@@ -35,7 +36,7 @@ public class SeafileUtils {
     public static final String SEAFILE_BASE_COMMAND
             = "./system/linux/sea/proot.sh -b /data/seafile-config:/data/seafile-config seaf-cli ";
 
-    public static final String SETTING_SEAFILE_NAME = "UserConfig";
+    public static final String SETTING_SEAFILE_NAME = ".UserConfig";
     public static final String DATA_SEAFILE_NAME = "DATA";
     public static final String SEAFILE_URL_LIBRARY = "http://dev.openthos.org/";
 
@@ -69,12 +70,12 @@ public class SeafileUtils {
         }
     }
 
-    public static String readLog(Context context, String path) {
+    public static String readLog(Context context, String path, String file) {
         StringBuffer buffer = new StringBuffer();
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new FileReader(
-                    new File(SEAFILE_KEEPER_STATE_PATH, path)));
+                    new File(path, file)));
 
             String s = null;
             while((s = reader.readLine()) != null) {
