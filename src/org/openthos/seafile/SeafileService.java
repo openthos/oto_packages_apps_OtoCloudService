@@ -85,6 +85,7 @@ public class SeafileService extends Service {
         try {
             Thread.sleep(12306);
         } catch (InterruptedException e) {
+            e.printStackTrace();
         }
         initStateMonitor();
         mHandler = new SeafileHandler(Looper.getMainLooper());

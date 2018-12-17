@@ -107,6 +107,7 @@ public class AccountLogin extends Thread {
                 }
             }
         } catch (Exception e) {
+            e.printStackTrace();
             message = new Message();
             message.what = MSG_LOGIN_SEAFILE_FAILED;
             message.obj = e.toString();
@@ -118,8 +119,8 @@ public class AccountLogin extends Thread {
         URI uri = new URI(registeUri);
         HttpParams httpParams = new BasicHttpParams();
         httpParams.setParameter(redirect, true);
-        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 2000);
-        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 2000);
+        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000);
+        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 10000);
         HttpClient httpClient = new DefaultHttpClient(httpParams);
         HttpPost post = new HttpPost(uri);
 
@@ -177,8 +178,8 @@ public class AccountLogin extends Thread {
         URI uri = new URI(url);
         HttpParams httpParams = new BasicHttpParams();
         httpParams.setParameter(redirect, true);
-        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 2000);
-        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 2000);
+        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000);
+        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 10000);
         HttpClient httpClient = new DefaultHttpClient(httpParams);
         HttpUriRequest get = new HttpGet(uri);
         get.setParams(httpParams);
@@ -207,8 +208,8 @@ public class AccountLogin extends Thread {
         URI uri = new URI(loginGetUri);
         HttpParams httpParams = new BasicHttpParams();
         httpParams.setParameter(redirect, false);
-        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 2000);
-        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 2000);
+        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000);
+        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 10000);
         HttpClient httpClient = new DefaultHttpClient(httpParams);
         HttpUriRequest get = new HttpGet(uri);
         get.setHeader("Referer", referer);
@@ -237,8 +238,8 @@ public class AccountLogin extends Thread {
         URI uri = new URI(location);
         HttpParams httpParams = new BasicHttpParams();
         httpParams.setParameter(redirect, false);
-        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 2000);
-        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 2000);
+        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000);
+        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 10000);
         HttpClient httpClient = new DefaultHttpClient(httpParams);
         HttpUriRequest get = new HttpGet(uri);
         get.setHeader("Referer", referer);
@@ -272,8 +273,8 @@ public class AccountLogin extends Thread {
         URI uri = new URI(location);
         HttpParams httpParams = new BasicHttpParams();
         httpParams.setParameter(redirect, false);
-        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 2000);
-        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 2000);
+        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000);
+        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 10000);
         HttpClient httpClient = new DefaultHttpClient(httpParams);
         HttpUriRequest get = new HttpGet(uri);
         get.setHeader("Referer", referer);
@@ -316,8 +317,8 @@ public class AccountLogin extends Thread {
                                    String form_build_id) throws Exception {
         HttpParams httpParams = new BasicHttpParams();
         httpParams.setParameter(redirect, false);
-        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 2000);
-        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 2000);
+        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000);
+        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 10000);
         HttpResponse httpResponse = null;
         HttpClient httpClient = new DefaultHttpClient(httpParams);
         URI url = new URI(loginPostUri);
@@ -384,8 +385,8 @@ public class AccountLogin extends Thread {
         URI uri = new URI(location);
         HttpParams httpParams = new BasicHttpParams();
         httpParams.setParameter(redirect, false);
-        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 2000);
-        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 2000);
+        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000);
+        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 10000);
         HttpClient httpClient = new DefaultHttpClient(httpParams);
         HttpUriRequest get = new HttpGet(uri);
         get.setHeader("Referer",
@@ -415,8 +416,8 @@ public class AccountLogin extends Thread {
         URI uri = new URI(location);
         HttpParams httpParams = new BasicHttpParams();
         httpParams.setParameter(redirect, false);
-        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 2000);
-        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 2000);
+        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000);
+        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 10000);
         HttpClient httpClient = new DefaultHttpClient(httpParams);
         HttpUriRequest get = new HttpGet(uri);
         get.setHeader("Referer", url + "id/user/login?destination=oauth2/authorize");
@@ -449,8 +450,8 @@ public class AccountLogin extends Thread {
         URI uri = new URI(location);
         HttpParams httpParams = new BasicHttpParams();
         httpParams.setParameter(redirect, false);
-        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 2000);
-        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 2000);
+        httpParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000);
+        httpParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, 10000);
         HttpClient httpClient = new DefaultHttpClient(httpParams);
         HttpUriRequest get = new HttpGet(uri);
         get.setHeader("Referer", url + "id/user/login?destination=oauth2/authorize");
