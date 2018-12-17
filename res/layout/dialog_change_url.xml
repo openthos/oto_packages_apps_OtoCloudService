@@ -14,6 +14,18 @@
 
         <RadioButton
             android:paddingLeft="16dp"
+            android:id="@+id/url_cloud"
+            android:layout_width="300dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center_vertical"
+            android:gravity="center_vertical"
+            android:textSize="14sp"
+            android:text="@string/url_cloud"
+            android:textColor="@color/black" />
+
+
+        <RadioButton
+            android:paddingLeft="16dp"
             android:id="@+id/url_dev"
             android:layout_width="300dp"
             android:layout_height="32dp"
@@ -22,7 +34,6 @@
             android:textSize="14sp"
             android:text="@string/url_dev"
             android:textColor="@color/black" />
-
 
         <RadioButton
             android:paddingLeft="16dp"
@@ -33,17 +44,6 @@
             android:gravity="center_vertical"
             android:textSize="14sp"
             android:text="@string/url_lab"
-            android:textColor="@color/black" />
-
-        <RadioButton
-            android:paddingLeft="16dp"
-            android:id="@+id/url_devs"
-            android:layout_width="300dp"
-            android:layout_height="32dp"
-            android:layout_gravity="center_vertical"
-            android:gravity="center_vertical"
-            android:textSize="14sp"
-            android:text="@string/url_devs"
             android:textColor="@color/black" />
 
     </RadioGroup>

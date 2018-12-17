@@ -294,14 +294,14 @@ public class OpenthosIDActivity extends Activity {
                 RadioGroup group = (RadioGroup) changeUrlDialog.findViewById(R.id.url_group);
                 final RadioButton rbDev = (RadioButton) changeUrlDialog.findViewById(R.id.url_dev);
                 final RadioButton rbLab = (RadioButton) changeUrlDialog.findViewById(R.id.url_lab);
-                final RadioButton rbDevs = (RadioButton) changeUrlDialog.findViewById(R.id.url_devs);
+                final RadioButton rbCloud = (RadioButton) changeUrlDialog.findViewById(R.id.url_cloud);
 
                 if (mAccount.mOpenthosUrl.equals(rbDev.getText().toString())) {
                     rbDev.setChecked(true);
                 } else if (mAccount.mOpenthosUrl.equals(rbLab.getText().toString())) {
                     rbLab.setChecked(true);
-                } else if (mAccount.mOpenthosUrl.equals(rbDevs.getText().toString())) {
-                    rbDevs.setChecked(true);
+                } else if (mAccount.mOpenthosUrl.equals(rbCloud.getText().toString())) {
+                    rbCloud.setChecked(true);
                 }
                 group.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
                     @Override
@@ -310,8 +310,8 @@ public class OpenthosIDActivity extends Activity {
                             rbDev.setChecked(true);
                         } else if (checkedId == rbLab.getId()) {
                             rbLab.setChecked(true);
-                        } else if (checkedId == rbDevs.getId()) {
-                            rbDevs.setChecked(true);
+                        } else if (checkedId == rbCloud.getId()) {
+                            rbCloud.setChecked(true);
                         }
                     }
                 });
@@ -323,8 +323,8 @@ public class OpenthosIDActivity extends Activity {
                             tempUrl = rbDev.getText().toString();
                         } else if (rbLab.isChecked()) {
                             tempUrl = rbLab.getText().toString();
-                        } else if (rbDevs.isChecked()) {
-                            tempUrl = rbDevs.getText().toString();
+                        } else if (rbCloud.isChecked()) {
+                            tempUrl = rbCloud.getText().toString();
                         }
                         if (!tempUrl.equals(mAccount.mOpenthosUrl)) {
                             updateOpenthosUrl(tempUrl);

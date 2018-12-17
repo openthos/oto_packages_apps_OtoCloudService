@@ -38,7 +38,7 @@ public class SeafileUtils {
 
     public static final String SETTING_SEAFILE_NAME = ".UserConfig";
     public static final String DATA_SEAFILE_NAME = "DATA";
-    public static final String SEAFILE_URL_LIBRARY = "http://dev.openthos.org/";
+    public static final String SEAFILE_URL_LIBRARY = "https://cloud.openthos.org/";
 
     public static final int UNSYNC = 0;
     public static final int SYNC = 1;
