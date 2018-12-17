@@ -24,7 +24,7 @@
     <string name="toast_bind_successful">Bind successfully!</string>
     <string name="url_dev">http://dev.openthos.org/</string>
     <string name="url_lab">http://192.168.0.158/</string>
-    <string name="url_cloud">https:/cloud.openthos.org/</string>
+    <string name="url_cloud">https://cloud.openthos.org/</string>
     <string name="confirm">Confirm</string>
     <string name="cancel">Cancel</string>
     <string name="title_change_url">Change openthos url</string>
