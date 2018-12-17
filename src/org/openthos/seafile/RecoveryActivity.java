@@ -41,6 +41,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 
 import org.openthos.seafile.SeafileService.SeafileBinder;
@@ -191,41 +193,62 @@ public class RecoveryActivity extends Activity {
     }
 
     private void softRebootSystem() {
-        new Handler().post(new Runnable() {
-            public void run() {
-                Process pro = null;
-                BufferedReader in = null;
-                ArrayList<String> temp = new ArrayList();
-                try {
-                    pro = Runtime.getRuntime().exec(new String[]{"su", "-c", "netcfg"});
-                    in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
-                    String line;
-
-                    while ((line = in.readLine()) != null) {
-                        String tempStr = line.split("\\s+")[0];
-                        if (tempStr.startsWith("eth")) {
-                            temp.add(tempStr);
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } finally {
-                    if (in != null) {
-                        try {
-                            in.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-                StringBuffer sb = new StringBuffer();
-                for (String str : temp) {
-                    sb.append("netcfg ").append(str).append(" down;");
-                }
-                Utils.exec(new String[]{"su", "-c",
-                        sb.toString() + "kill " + Jni.nativeKillPid()});
-            }
-        });
+        try {
+            Class<?> ServiceManager = Class.forName("android.os.ServiceManager");
+            Method getService =
+                   ServiceManager.getMethod("getService", java.lang.String.class);
+            Object oRemoteService =
+                   getService.invoke(null,Context.POWER_SERVICE);
+            Class<?> cStub =
+                   Class.forName("android.os.IPowerManager$Stub");
+            Method asInterface =
+                   cStub.getMethod("asInterface", android.os.IBinder.class);
+            Object oIPowerManager =
+                   asInterface.invoke(null, oRemoteService);
+            Method shutdown =
+                   oIPowerManager.getClass().getMethod("shutdown",
+                                                       boolean.class, boolean.class);
+            shutdown.invoke(oIPowerManager,false,true);
+        } catch (ClassNotFoundException | NoSuchMethodException
+                | IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        //new Handler().post(new Runnable() {
+        //    public void run() {
+        //        Process pro = null;
+        //        BufferedReader in = null;
+        //        ArrayList<String> temp = new ArrayList();
+        //        try {
+        //            pro = Runtime.getRuntime().exec(new String[]{"su", "-c", "netcfg"});
+        //            in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
+        //            String line;
+        //            while ((line = in.readLine()) != null) {
+        //                String tempStr = line.split("\\s+")[0];
+        //                if (tempStr.startsWith("eth")) {
+        //                    temp.add(tempStr);
+        //                }
+        //            }
+        //        } catch (IOException e) {
+        //            e.printStackTrace();
+        //        } finally {
+        //            if (in != null) {
+        //                try {
+        //                    in.close();
+        //                } catch (IOException e) {
+        //                    e.printStackTrace();
+        //                }
+        //            }
+        //        }
+        //        StringBuffer sb = new StringBuffer();
+        //        for (String str : temp) {
+        //            sb.append("netcfg ").append(str).append(" down;");
+        //        }
+        //        Utils.exec(new String[]{"su", "-c",
+        //                sb.toString() + "kill " + Jni.nativeKillSeafilePid()});
+        //        Utils.exec(new String[]{"su", "-c",
+        //                sb.toString() + "kill " + Jni.nativeKillPid()});
+        //    }
+        //});
     }
 
     private void initEnvironment() {

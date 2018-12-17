@@ -33,6 +33,8 @@ account_desync_func()
 		#to umount
 	done
 
+	$proot_cmd seaf-cli desync-all -c $conf_dir
+
 }
 
 seaDir=/  

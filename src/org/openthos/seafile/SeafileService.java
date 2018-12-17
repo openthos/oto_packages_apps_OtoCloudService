@@ -83,7 +83,7 @@ public class SeafileService extends Service {
     public void onCreate() {
         super.onCreate();
         try {
-            Thread.sleep(12000);
+            Thread.sleep(12306);
         } catch (InterruptedException e) {
         }
         initStateMonitor();
