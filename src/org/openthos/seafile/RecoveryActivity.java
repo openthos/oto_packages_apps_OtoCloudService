@@ -124,6 +124,7 @@ public class RecoveryActivity extends Activity {
 
     private class ClickListener implements OnClickListener {
         private String path;
+        private String wallpaper;
 
         @Override
         public void onClick(View view) {
@@ -138,6 +139,7 @@ public class RecoveryActivity extends Activity {
                     mTvChooseFile.setText(getString(R.string.choose_one_day) + ":" +files[0]);
                     mStartRecsovery.setVisibility(View.VISIBLE);
                     Builder b = new Builder(RecoveryActivity.this);
+                    wallpaper = "/sdcard/seafile/" + mSeafileBinder.getUserName() + "/.UserConfig/wallpaper.tar.gz";
                     b.setSingleChoiceItems(files, 0, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -154,7 +156,7 @@ public class RecoveryActivity extends Activity {
                     builder.setPositiveButton(R.string.okay, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(final DialogInterface dialog, final int which) {
-                            startRecovery(path);
+                            startRecovery(path, wallpaper);
                         }
                     });
                     builder.setNegativeButton(R.string.cancel, null);
@@ -167,12 +169,12 @@ public class RecoveryActivity extends Activity {
         }
     }
 
-    private void startRecovery(String path) {
+    private void startRecovery(String path, String wallpaper) {
         initEnvironment();
         BufferedReader br = null;
         try {
             Process pro = Runtime.getRuntime().exec(
-                    new String[]{"su", "-c", "./data/data/org.openthos.seafile/rescovery " + path});
+                    new String[]{"su", "-c", "./data/data/org.openthos.seafile/rescovery " + path + " " + wallpaper});
             br = new BufferedReader(new InputStreamReader(pro.getInputStream()));
             String line = "";
             while ((line = br.readLine()) != null) {

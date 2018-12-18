@@ -18,19 +18,29 @@ tar -czvf /data/data/temp/com.android.settings.tar.gz -C /data/data/ com.android
 ## SystemUI
 tar -czvf /data/data/temp/com.android.systemui.tar.gz -C /data/data/ com.android.systemui
 
-## Wallpaper
-tar -czvf /data/data/temp/wallpaper.tar.gz /data/system/users/0/wallpaper
-
 ## Wifi
 tar -czvf /data/data/temp/wifi.tar.gz /data/misc/wifi
 
+## Security
+tar -czvf /data/data/temp/security.tar.gz /data/system/locksettings.db*
+
 ## Language
-echo "language=`getprop persist.sys.language`" >> /data/data/temp/language.conf
+echo "language=`getprop persist.sys.language`" > /data/data/temp/language.conf
 echo "country=`getprop persist.sys.country`" >> /data/data/temp/language.conf
 
 ## tar
 tar -cvf /data/data/temp/$1.tar -C /data/data/ temp
 chmod 755 /data/data/temp/$1.tar
+
+## move
 cp /data/data/temp/$1.tar $2
-rm /data/data/temp/*.gz
-rm /data/data/temp/$1.tar
+
+## Wallpaper  only one
+if [ -f /data/system/users/0/wallpaper ];then
+	tar -czvf /data/data/temp/wallpaper.tar.gz /data/system/users/0/wallpaper
+	chmod 755 /data/data/temp/wallpaper.tar.gz
+	cp /data/data/temp/wallpaper.tar.gz $2
+fi
+
+## clean
+rm /data/data/temp/*
