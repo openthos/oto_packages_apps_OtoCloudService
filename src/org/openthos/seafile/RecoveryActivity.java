@@ -53,7 +53,7 @@ public class RecoveryActivity extends Activity {
     private SeafileBinder mSeafileBinder;
     private AlertDialog mLoadingDailog;
     private TextView mTvChooseFile;
-    private Button mStartRecsovery, mChooseFile;
+    private Button mStartRecsovery, mChooseFile, mManualBackup;
     private Switch mSwitchAutoRecovery;
     private OnClickListener mOnClickListener;
 
@@ -95,6 +95,8 @@ public class RecoveryActivity extends Activity {
         mChooseFile.setOnClickListener(mOnClickListener);
         mStartRecsovery = (Button) findViewById(R.id.start_recovery);
         mStartRecsovery.setOnClickListener(mOnClickListener);
+        mManualBackup= (Button) findViewById(R.id.manual_backup);
+        mManualBackup.setOnClickListener(mOnClickListener);
     }
 
     private ServiceConnection mConnection = new ServiceConnection() {
@@ -164,6 +166,9 @@ public class RecoveryActivity extends Activity {
                     break;
                 case R.id.switch_auto_recovery:
                     mSeafileBinder.setFlagAutoRecovery(mSwitchAutoRecovery.isChecked());
+                    break;
+                case R.id.manual_backup:
+                    mSeafileBinder.manualBackup();
                     break;
             }
         }

@@ -121,35 +121,39 @@ public class SeafileService extends Service {
                 String date = sdf.format(now);
                 if (!new File("/sdcard/seafile/" 
                         + mAccount.mUserName + "/.UserConfig/" + date + ".tar").exists()) {
-                    initEnvironment();
-                    BufferedReader br = null;
-                    try {
-                        Process pro = Runtime.getRuntime().exec(
-                                new String[]{"su", "-c", "./data/data/org.openthos.seafile/backup " + date
-                                + " /sdcard/seafile/"+ mAccount.mUserName + "/.UserConfig/"});
-                        br = new BufferedReader(new InputStreamReader(pro.getInputStream()));
-                        String line = "";
-                        while ((line = br.readLine()) != null) {
-                        }
-                        br.close();
-                        br = null;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } finally {
-                        if (br != null) {
-                            try {
-                                br.close();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
+                    backup(date);
                 }
             }
         };
         Timer timer = new Timer();
         long time = 1000L * 60L * 60L;
         timer.schedule(task, 0, time);
+    }
+
+    private void backup(String date) {
+        initEnvironment();
+        BufferedReader br = null;
+        try {
+            Process pro = Runtime.getRuntime().exec(
+                    new String[]{"su", "-c", "./data/data/org.openthos.seafile/backup " + date
+                    + " /sdcard/seafile/"+ mAccount.mUserName + "/.UserConfig/"});
+            br = new BufferedReader(new InputStreamReader(pro.getInputStream()));
+            String line = "";
+            while ((line = br.readLine()) != null) {
+            }
+            br.close();
+            br = null;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     // monitor librarys state
@@ -452,6 +456,13 @@ public class SeafileService extends Service {
         public boolean getFlagAutoRecovery() {
             return getSharedPreferences("flag", Context.MODE_PRIVATE)
                     .getBoolean("AutoRecovery", false);
+        }
+
+        public void manualBackup() {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+            Date now = new Date();
+            String date = sdf.format(now);
+            backup(date);
         }
     }
 

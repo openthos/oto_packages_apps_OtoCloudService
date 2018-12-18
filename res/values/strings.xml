@@ -45,7 +45,7 @@
     <string name="okay">OK</string>
     <string name="warning_browser_import">Warning: Current browsers are imported list.</string>
     <string name="warning_browser_export">Warning: Current browsers are exported list.</string>
-    <string name="warn_restore_startupmenu">Warning: Restoring this will close all applications and soft restart, please save works before doing this.</string>
+    <string name="warn_restore_startupmenu">Warning: Restoring this will close all applications and restart, please save works before doing this.</string>
     <string name="cloud_service_dialog_confirm">Confirm</string>
     <string name="cloud_service_dialog_cancel">Cancel</string>
     <string name="cloudfolder_path">data/sea/data/sdcard/cloudFolder/</string>
@@ -632,4 +632,5 @@
     <string name="exit">Exit</string>
     <string name="username_illegal">User name must not contain illegal character such as "&apos;~!@#$%^&amp;*()+=|{}':;',[].&lt;&gt;/?~"</string>
     <string name="relogin_warning">Your account is invalid, please relogin</string>
+    <string name="manual_backup">Manual Backup</string>
 </resources>

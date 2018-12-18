@@ -23,6 +23,20 @@
         android:layout_margin="5dp"
         android:background="#D3D3D3"/>
 
+    <Button
+        android:id="@+id/manual_backup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="28dp"
+        android:layout_gravity="center_horizontal"
+        android:text="@string/manual_backup" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_margin="5dp"
+        android:background="#D3D3D3"/>
+
     <TextView
         android:id="@+id/tv_choose_one"
         android:layout_width="match_parent"
