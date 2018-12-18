@@ -593,4 +593,5 @@
     <string name="file_name_exists">文件名已存在, 你想继续吗?</string>
     <string name="dir_name_exists">文件夹名已存在, 你想继续吗?</string>
     <string name="upload_progress">总进度 %1$d / %2$d ,  正在上传%3$s</string>
+    <string name="relogin_warning">帐号失效，请重新登录</string>
 </resources>

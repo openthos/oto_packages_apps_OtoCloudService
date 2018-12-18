@@ -83,12 +83,16 @@ do
 	fi
 
 	unset libs_info
-	libs_info=(`$proot_cmd seaf-cli list-remote -a -c $conf_dir -s $server_url -tk $token`)
+	libs_info=(`$proot_cmd seaf-cli list-remote -a -c $conf_dir -s $server_url -tk $token 2>&1`)
 	if [ $? -ne 0 ];then
 		echo "retrieve libraries-info failed"
 		continue
 	fi
-
+	if [[ ${libs_info[@]} = *"HTTP Error 401"* ]];then
+		echo "token-invalid" > $data_info_output
+                account_desync
+		continue
+	fi
 	if [ "${libs_info[1]}"x != "ID"x ];then
 		#echo "libraries-info Null"
 		continue
@@ -127,6 +131,12 @@ do
 		echo 'Restarting ...'
 		seaf_stop
 		seaf_start
+	fi
+	grep "permission denied on server" $status_info_output
+	if [ $? -eq 0 ];then
+		echo "token-invalid" > $data_info_output
+                account_desync
+		continue
 	fi
 
 	#if [ status_info err ]

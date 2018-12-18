@@ -24,8 +24,12 @@ account_login_func()
 		return
 	fi
 
-	list_libs=(`$proot_cmd seaf-cli list-remote -a -c $conf_dir -s $server_url -tk $token`)
+	list_libs=(`$proot_cmd seaf-cli list-remote -a -c $conf_dir -s $server_url -tk $token 2>&1`)
 	if [ $? -ne 0 ];then
+		if [[ ${list_libs[@]} =~ "HTTP Error 401" ]];then
+			echo "token-invalid" > $data_info_output
+			return
+		fi
 		echo "list remote failed"
 	fi
 

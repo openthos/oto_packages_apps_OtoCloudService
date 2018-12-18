@@ -631,4 +631,5 @@
     <string name="no_openthos_id">Sorry! Not found Openthos ID!</string>
     <string name="exit">Exit</string>
     <string name="username_illegal">User name must not contain illegal character such as "&apos;~!@#$%^&amp;*()+=|{}':;',[].&lt;&gt;/?~"</string>
+    <string name="relogin_warning">Your account is invalid, please relogin</string>
 </resources>

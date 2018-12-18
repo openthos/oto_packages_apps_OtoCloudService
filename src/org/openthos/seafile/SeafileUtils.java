@@ -32,6 +32,7 @@ public class SeafileUtils {
     public static final String SEAFILE_QUOTA_STATE_FILE = "Quota.state";
     public static final String SEAFILE_DATA_ROOT_PATH = "/sdcard/seafile";
     public static final String SEAFILE_ACCOUNT_CONFIG = "/system/linux/sea/tmp/account.conf";
+    public static final String TOKEN_INVALID_TAG = "token-invalid";
 
     public static final String SEAFILE_BASE_COMMAND
             = "./system/linux/sea/proot.sh -b /data/seafile-config:/data/seafile-config seaf-cli ";

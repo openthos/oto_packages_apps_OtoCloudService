@@ -22,6 +22,11 @@ import android.os.RemoteException;
 import android.text.TextUtils;
 import android.widget.Toast;
 import android.view.WindowManager;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.EditText;
+import java.util.TimerTask;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -77,6 +82,7 @@ public class SeafileService extends Service {
     private Notification.Builder mBuilder;
     private Notification.BigTextStyle mStyle;
     private AlertDialog mDialog;
+    private AlertDialog mReloginDialog;
     private boolean mIsNotificationShown = false;
 
     @Override
@@ -168,6 +174,7 @@ public class SeafileService extends Service {
         mDialog = builder.create();
         mDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
 
+
         mStateObserver = new StateObserver(SeafileUtils.SEAFILE_KEEPER_STATE_PATH);
         mQuotaStateObserver = new StateObserver(SeafileUtils.SEAFILE_QUOTA_STATE_PATH);
         mLogObserver = new StateObserver(SeafileUtils.SEAFILE_STATE_PATH);
@@ -183,14 +190,6 @@ public class SeafileService extends Service {
         public void onEvent(int event, String path) {
             int action = event & FileObserver.ALL_EVENTS;
             switch (action) {
-                case FileObserver.CREATE:
-                    if (SeafileUtils.SEAFILE_STATE_FILE.equals(path)) {
-                        mStateObserver.startWatching();
-                    }
-                    //if (SeafileUtils.SEAFILE_QUOTA_STATE_FILE.equals(path)) {
-                    //    mQuotaStateObserver.startWatching();
-                    //}
-                    break;
                 case FileObserver.DELETE:
                     if (SeafileUtils.SEAFILE_STATE_FILE.equals(path)
                             && SeafileUtils.SEAFILE_QUOTA_STATE_FILE.equals(path)) {
@@ -216,9 +215,53 @@ public class SeafileService extends Service {
                             }
                         });
                     }
+                    if (SeafileUtils.SEAFILE_STATE_FILE.equals(path)) {
+                        String content = SeafileUtils.readLog(SeafileService.this,
+                                SeafileUtils.SEAFILE_STATE_PATH,
+                                        SeafileUtils.SEAFILE_STATE_FILE);
+                        if (content.contains(SeafileUtils.TOKEN_INVALID_TAG)) {
+                            mHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (mReloginDialog == null) {
+                                        initReloginDialog();
+                                    }
+                                    if (!mReloginDialog.isShowing()) {
+                                        mReloginDialog.show();
+                                    }
+                                }
+                            });
+                        } else {
+                            mStateObserver.startWatching();
+                        }
+                    }
                     break;
             }
         }
+    }
+
+    private void initReloginDialog() {
+        View viewBind = LayoutInflater.from(this).inflate(R.layout.dialog_relogin, null);
+        final EditText userID_bind = (EditText) viewBind.findViewById(R.id.dialog_name);
+        final EditText userPassword_bind = (EditText) viewBind.findViewById(R.id.dialog_name_bind);
+        userID_bind.setText(mAccount.mUserName);
+        userID_bind.setEnabled(false);
+        mReloginDialog  = new AlertDialog.Builder(this)
+            .setMessage(R.string.relogin_warning)
+            .setView(viewBind)
+            .setPositiveButton(R.string.confirm,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        AccountLogin libraryThread = new AccountLogin(mHandler,
+                                SeafileService.this, mAccount.mOpenthosUrl,
+                                mAccount.mUserName.replace("@openthos.org", ""),
+                                userPassword_bind.getText().toString().trim(), Mark.LOGIN);
+                        libraryThread.start();
+                    }
+                })
+            .setNegativeButton(android.R.string.cancel, null).create();
+        mReloginDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
     }
 
     private void showQuotaDialog(String notice) {
@@ -441,6 +484,11 @@ public class SeafileService extends Service {
                             bundle.getString("user"), bundle.getString("token"));
                     if (!TextUtils.isEmpty(bundle.getString("user"))
                             && !TextUtils.isEmpty(bundle.getString("token"))) {
+                        if (mReloginDialog != null && mReloginDialog.isShowing()) {
+                            mBinder.stopAccount();
+                            mReloginDialog.dismiss();
+                            mReloginDialog = null;
+                        }
                         mAccount.mUserName = bundle.getString("user");
                         mAccount.mToken = bundle.getString("token");
                         startAccount(true);
