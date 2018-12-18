@@ -28,6 +28,13 @@ chmod -R 777 /data/system/users/0/wallpaper
 tar -xvf /data/data/temp/wifi.tar.gz /data/misc/wifi
 chmod -R 777 /data/misc/wifi 
 
+## Language
+if [ -f /data/data/temp/language.conf ];then
+	source /data/data/temp/language.conf
+	setprop persist.sys.language $language
+	setprop persist.sys.country $country
+fi
+
 ## clean
 rm /data/data/temp/*.tar
 rm /data/data/temp/*.gz

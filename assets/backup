@@ -24,6 +24,10 @@ tar -czvf /data/data/temp/wallpaper.tar.gz /data/system/users/0/wallpaper
 ## Wifi
 tar -czvf /data/data/temp/wifi.tar.gz /data/misc/wifi
 
+## Language
+echo "language=`getprop persist.sys.language`" >> /data/data/temp/language.conf
+echo "country=`getprop persist.sys.country`" >> /data/data/temp/language.conf
+
 ## tar
 tar -cvf /data/data/temp/$1.tar -C /data/data/ temp
 chmod 755 /data/data/temp/$1.tar
