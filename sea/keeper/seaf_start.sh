@@ -82,14 +82,15 @@ do
 		continue
 	fi
 
+	unset libs_info
 	libs_info=(`$proot_cmd seaf-cli list-remote -a -c $conf_dir -s $server_url -tk $token`)
 	if [ $? -ne 0 ];then
 		echo "retrieve libraries-info failed"
 		continue
 	fi
 
-	if [ ! ${libs_info[@]} ];then
-		echo "libraries-info Null"
+	if [ "${libs_info[1]}"x != "ID"x ];then
+		#echo "libraries-info Null"
 		continue
 	fi
 
@@ -98,7 +99,7 @@ do
 	for i in ${!libs_info[@]}
 	do
 		if [ "$i" -eq "$mCount" ];then
-			if [ "${libs_info[i]}" -eq "$nDATA" ];then
+			if [ "${libs_info[i]}"x = "$nDATA"x ];then
 				lib_data=${libs_info[i+2]}
 				break
 			fi
@@ -107,8 +108,8 @@ do
 	done
 
 	libs_other=`expr ${user_info[5]} - $lib_data`
-	echo ${libs_info[@]}, ${user_info[9]}
-	echo $lib_data, $libs_other
+	#echo ${libs_info[@]}, ${user_info[9]}
+	#echo $lib_data, $libs_other
 
 	[ -f $conf_dir/quota.conf ] && rm $conf_dir/quota.conf
 	echo "libs_other_info=$libs_other" >> $conf_dir/quota.conf
@@ -169,21 +170,20 @@ do
 		fi
 
 		local_usage=`expr ${local_size[0]} \* 1024`
-
-		echo ${local_size[@]}, $local_usage
+		#echo ${local_size[@]}, $local_usage
 
 		data_usage=`expr $libs_other_info + $local_usage`
 		data_rate=`awk 'BEGIN{printf "%.10f\n",('$data_usage'/'$libs_total_info')}'`
-		echo $data_rate, $data_usage
+		#echo $data_rate, $data_usage
 
 		status_info=(`$proot_cmd seaf-cli status-info -c $conf_dir`)
-		echo ${status_info[@]}
+		#echo ${status_info[@]}
 
 		if [ $(expr $data_rate \> 0.9) -eq 1 ];then
 			if echo "${status_info[@]}" | grep -w "auto sync disabled" &>/dev/null; then
-				echo 'seafile alreay disabled'
+				echo 'seafile alreay disabled' &>/dev/null
 			else
-				echo 'seafile will disable'
+				#echo 'seafile will disable'
 				$proot_cmd seaf-cli disable-auto-sync -c $conf_dir
 				if [ -f $quota_info_output ];then
 					source $quota_info_output
@@ -196,7 +196,7 @@ do
 			fi
 		elif [ $(expr $data_rate \> 0.8) -eq 1 ];then
 			if echo "${status_info[@]}" | grep -w "auto sync disabled" &>/dev/null; then
-				echo 'seafile need auto sync enable'
+				#echo 'seafile need auto sync enable'
 				$proot_cmd seaf-cli enable-auto-sync -c $conf_dir
 			fi
 			if [ -f $quota_info_output ];then
@@ -211,7 +211,7 @@ do
 			[ -f $quota_info_output ] && rm $quota_info_output
 			if echo "${status_info[@]}" | grep -w "auto sync disabled" &>/dev/null; then
 				$proot_cmd seaf-cli enable-auto-sync -c $conf_dir
-				echo 'seafile need auto sync enable'
+				#echo 'seafile need auto sync enable'
 			fi
 		fi
 	fi
