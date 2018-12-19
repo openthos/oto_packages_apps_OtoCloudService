@@ -35,6 +35,9 @@ fi
 ## Security
 tar -xvf /data/data/temp/security.tar.gz
 
+## File Preference
+tar -xvf /data/data/temp/preference.tar.gz
+
 ## clean
 rm /data/data/temp/*
 

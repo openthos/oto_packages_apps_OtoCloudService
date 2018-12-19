@@ -22,7 +22,10 @@ tar -czvf /data/data/temp/com.android.systemui.tar.gz -C /data/data/ com.android
 tar -czvf /data/data/temp/wifi.tar.gz /data/misc/wifi
 
 ## Security
-tar -czvf /data/data/temp/security.tar.gz /data/system/locksettings.db*
+tar -czvf /data/data/temp/security.tar.gz /data/system/locksettings.db* /data/system/password.key
+
+## File Preference
+tar -czvf /data/data/temp/preference.tar.gz /data/system/users/0/package-restrictions.xml
 
 ## Language
 echo "language=`getprop persist.sys.language`" > /data/data/temp/language.conf
