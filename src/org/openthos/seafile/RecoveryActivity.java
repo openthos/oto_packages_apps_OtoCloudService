@@ -149,6 +149,7 @@ public class RecoveryActivity extends Activity {
                            path = "/sdcard/seafile/" + mSeafileBinder.getUserName() + "/.UserConfig/" + files[which];
                         }
                     });
+                    b.setPositiveButton(R.string.okay, null);
                     b.create().show();
                     break;
                 case R.id.start_recovery:

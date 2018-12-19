@@ -1,6 +1,7 @@
 package org.openthos.seafile;
 
 import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.Service;
@@ -21,6 +22,8 @@ import android.os.Parcel;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.widget.Toast;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.view.WindowManager;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -463,6 +466,62 @@ public class SeafileService extends Service {
             Date now = new Date();
             String date = sdf.format(now);
             backup(date);
+        }
+
+        @Override
+        public void changeUrl() {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    View changeUrlDialog = LayoutInflater.from(SeafileService.this).inflate(R.layout.dialog_change_url, null);
+                    Builder builder = new Builder(SeafileService.this);
+                    builder.setTitle(R.string.title_change_url);
+                    builder.setView(changeUrlDialog);
+                    builder.setCancelable(true);
+                    RadioGroup group = (RadioGroup) changeUrlDialog.findViewById(R.id.url_group);
+                    final RadioButton rbDev = (RadioButton) changeUrlDialog.findViewById(R.id.url_dev);
+                    final RadioButton rbLab = (RadioButton) changeUrlDialog.findViewById(R.id.url_lab);
+                    final RadioButton rbCloud = (RadioButton) changeUrlDialog.findViewById(R.id.url_cloud);
+
+                    if (mAccount.mOpenthosUrl.equals(rbDev.getText().toString())) {
+                        rbDev.setChecked(true);
+                    } else if (mAccount.mOpenthosUrl.equals(rbLab.getText().toString())) {
+                        rbLab.setChecked(true);
+                    } else if (mAccount.mOpenthosUrl.equals(rbCloud.getText().toString())) {
+                        rbCloud.setChecked(true);
+                    }
+                    group.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+                        @Override
+                        public void onCheckedChanged(RadioGroup group, int checkedId) {
+                            if (checkedId == rbDev.getId()) {
+                                rbDev.setChecked(true);
+                            } else if (checkedId == rbLab.getId()) {
+                                rbLab.setChecked(true);
+                            } else if (checkedId == rbCloud.getId()) {
+                                rbCloud.setChecked(true);
+                            }
+                        }
+                    });
+                    builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(final DialogInterface dialog, final int which) {
+                            String tempUrl = "";
+                            if (rbDev.isChecked()) {
+                                tempUrl = rbDev.getText().toString();
+                            } else if (rbLab.isChecked()) {
+                                tempUrl = rbLab.getText().toString();
+                            } else if (rbCloud.isChecked()) {
+                                tempUrl = rbCloud.getText().toString();
+                            }
+                            setOpenthosUrl(tempUrl);
+                        }
+                    });
+                    builder.setNegativeButton(android.R.string.cancel, null);
+                    AlertDialog dialog = builder.create();
+                    dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+                    dialog.show();
+                }
+            });
         }
     }
 

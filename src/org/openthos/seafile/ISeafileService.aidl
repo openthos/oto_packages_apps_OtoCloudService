@@ -26,4 +26,5 @@ interface ISeafileService {
 
     boolean setOpenthosUrl(String url);
     String getOpenthosUrl();
+    void changeUrl();
 }
