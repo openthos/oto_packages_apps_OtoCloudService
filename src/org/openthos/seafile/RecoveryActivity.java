@@ -42,9 +42,15 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 import org.openthos.seafile.SeafileService.SeafileBinder;
 
@@ -137,7 +143,15 @@ public class RecoveryActivity extends Activity {
                         Toast.makeText(RecoveryActivity.this, "no file", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    final String[] files = f.list();
+                    String[] temp = f.list();
+                    List<String> fileList = Arrays.asList(temp);
+                    Collections.sort(fileList, new Comparator<String>() {
+                        @Override
+                        public int compare(String o1, String o2) {
+                            return o1.compareTo(o2);
+                        }
+                    });
+                    final String[] files = fileList.toArray(new String[fileList.size()]);
                     mTvChooseFile.setText(getString(R.string.choose_one_day) + ":" +files[0]);
                     mStartRecsovery.setVisibility(View.VISIBLE);
                     Builder b = new Builder(RecoveryActivity.this);
@@ -170,6 +184,7 @@ public class RecoveryActivity extends Activity {
                     break;
                 case R.id.manual_backup:
                     mSeafileBinder.manualBackup();
+                    Toast.makeText(RecoveryActivity.this, "backup success", Toast.LENGTH_SHORT).show();
                     break;
             }
         }
