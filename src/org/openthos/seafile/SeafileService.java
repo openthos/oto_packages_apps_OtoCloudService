@@ -108,6 +108,7 @@ public class SeafileService extends Service {
     private void startAccount(boolean isNewAccount) {
         mUserPath = SeafileUtils.SEAFILE_DATA_ROOT_PATH + "/" + mAccount.mUserName;
         mLogObserver.startWatching();
+        mStateObserver.startWatching();
         mQuotaStateObserver.startWatching();
         //notify
         if (isNewAccount) {
@@ -198,20 +199,14 @@ public class SeafileService extends Service {
             int action = event & FileObserver.ALL_EVENTS;
             switch (action) {
                 case FileObserver.DELETE:
-                    if (SeafileUtils.SEAFILE_STATE_FILE.equals(path)
-                            && SeafileUtils.SEAFILE_QUOTA_STATE_FILE.equals(path)) {
-                        mStateObserver.stopWatching();
+                    if (SeafileUtils.SEAFILE_STATE_FILE.equals(path)) {
                         if (mIsNotificationShown) {
                             showNotification(getString(R.string.sync_complete));
+                            mIsNotificationShown = false;
                         }
                     }
                     break;
                 case FileObserver.MODIFY:
-                    if (SeafileUtils.SEAFILE_KEEPER_STATE_FILE.equals(path)) {
-                        showNotification(SeafileUtils.readLog(SeafileService.this,
-                                SeafileUtils.SEAFILE_KEEPER_STATE_PATH, path));
-                        mIsNotificationShown = true;
-                    }
                     if (SeafileUtils.SEAFILE_QUOTA_STATE_FILE.equals(path)) {
                         final String notice = SeafileUtils.readLog(SeafileService.this,
                                 SeafileUtils.SEAFILE_QUOTA_STATE_PATH, path);
@@ -239,8 +234,13 @@ public class SeafileService extends Service {
                                 }
                             });
                         } else {
-                            mStateObserver.startWatching();
+                            mIsNotificationShown = true;
                         }
+                    }
+                    if (mIsNotificationShown
+                                && SeafileUtils.SEAFILE_KEEPER_STATE_FILE.equals(path)) {
+                        showNotification(SeafileUtils.readLog(SeafileService.this,
+                                SeafileUtils.SEAFILE_KEEPER_STATE_PATH, path));
                     }
                     break;
             }
