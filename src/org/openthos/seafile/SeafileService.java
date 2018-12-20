@@ -96,6 +96,7 @@ public class SeafileService extends Service {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        Utils.exec("start seafile-keeper");
         initStateMonitor();
         mHandler = new SeafileHandler(Looper.getMainLooper());
         mAccount = new SeafileAccount(this);
@@ -104,7 +105,6 @@ public class SeafileService extends Service {
         }
     }
 
-    // sync bound account
     private void startAccount(boolean isNewAccount) {
         mUserPath = SeafileUtils.SEAFILE_DATA_ROOT_PATH + "/" + mAccount.mUserName;
         mLogObserver.startWatching();

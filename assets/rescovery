@@ -8,8 +8,11 @@ cp $2 /data/data/temp/
 tar -xvf /data/data/temp/accounts.tar.gz
 
 ## Fennec
-tar -xvf /system/opt/fennec_initdata.tar.bz2  -C /data/data/org.mozilla.fennec_openthos/
-tar -xvf /data/data/temp/org.mozilla.fennec_openthos.tar.gz  -C /data/data/
+if [ ! -e /data/data/org.mozilla.fennec_openthos//files/mozilla/openthos.default ];then
+	tar -xvf /system/opt/fennec_initdata.tar.bz2  -C /data/data/org.mozilla.fennec_openthos/
+fi
+tar -xvf /data/data/temp/org.mozilla.fennec_openthos.tar.gz  -C /data/data
+rm /data/data/org.mozilla.fennec_openthos//files/mozilla/openthos.default/lock
 chmod -R 777 /data/data/org.mozilla.fennec_openthos
 
 ## File Preference
