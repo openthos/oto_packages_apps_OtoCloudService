@@ -4,16 +4,30 @@
 tar -xvf $1 -C /data/data
 cp $2 /data/data/temp/
 
+## Accounts
+tar -xvf /data/data/temp/accounts.tar.gz
+
 ## Fennec
 tar -xvf /system/opt/fennec_initdata.tar.bz2  -C /data/data/org.mozilla.fennec_openthos/
 tar -xvf /data/data/temp/org.mozilla.fennec_openthos.tar.gz  -C /data/data/
 chmod -R 777 /data/data/org.mozilla.fennec_openthos
 
-## Settings Providers
-tar -xvf /data/data/temp/com.android.providers.settings.tar.gz	-C /data/data/
+## File Preference
+tar -xvf /data/data/temp/preference.tar.gz
+
+## Language
+source /data/data/temp/language.conf
+setprop persist.sys.language $language
+setprop persist.sys.country $country
+
+## Security
+tar -xvf /data/data/temp/security.tar.gz
 
 ## Settings
 tar -xvf /data/data/temp/com.android.settings.tar.gz -C /data/data/
+
+## Settings Providers
+tar -xvf /data/data/temp/com.android.providers.settings.tar.gz	-C /data/data/
 
 ## SystemUI
 tar -xvf /data/data/temp/com.android.systemui.tar.gz -C /data/data/
@@ -24,19 +38,6 @@ tar -xvf /data/data/temp/wallpaper.tar.gz
 
 ## Wifi
 tar -xvf /data/data/temp/wifi.tar.gz
-
-## Language
-if [ -f /data/data/temp/language.conf ];then
-	source /data/data/temp/language.conf
-	setprop persist.sys.language $language
-	setprop persist.sys.country $country
-fi
-
-## Security
-tar -xvf /data/data/temp/security.tar.gz
-
-## File Preference
-tar -xvf /data/data/temp/preference.tar.gz
 
 ## clean
 rm /data/data/temp/*

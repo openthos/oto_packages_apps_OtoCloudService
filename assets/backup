@@ -1,5 +1,8 @@
 #!/bin/sh
 
+## Accounts
+tar -czvf /data/data/temp/accounts.tar.gz /data/system/users/0/accounts.db*
+
 ## Fennec
 mkdir -p /data/data/temp/org.mozilla.fennec_openthos/files/mozilla/openthos.default
 cp -rv /data/data/org.mozilla.fennec_openthos/databases /data/data/temp/org.mozilla.fennec_openthos
@@ -9,27 +12,27 @@ cp -v /data/data/org.mozilla.fennec_openthos/files/mozilla/openthos.default/* /d
 tar -czvf /data/data/temp/org.mozilla.fennec_openthos.tar.gz -C /data/data/temp/ org.mozilla.fennec_openthos
 rm -r /data/data/temp/org.mozilla.fennec_openthos/
 
-## Settings Providers
-tar -czvf /data/data/temp/com.android.providers.settings.tar.gz -C /data/data/ com.android.providers.settings
-
-## Settings
-tar -czvf /data/data/temp/com.android.settings.tar.gz -C /data/data/ com.android.settings
-
-## SystemUI
-tar -czvf /data/data/temp/com.android.systemui.tar.gz -C /data/data/ com.android.systemui
-
-## Wifi
-tar -czvf /data/data/temp/wifi.tar.gz /data/misc/wifi
-
-## Security
-tar -czvf /data/data/temp/security.tar.gz /data/system/locksettings.db* /data/system/password.key
-
 ## File Preference
 tar -czvf /data/data/temp/preference.tar.gz /data/system/users/0/package-restrictions.xml
 
 ## Language
 echo "language=`getprop persist.sys.language`" > /data/data/temp/language.conf
 echo "country=`getprop persist.sys.country`" >> /data/data/temp/language.conf
+
+## Security
+tar -czvf /data/data/temp/security.tar.gz /data/system/locksettings.db* /data/system/password.key
+
+## Settings
+tar -czvf /data/data/temp/com.android.settings.tar.gz -C /data/data/ com.android.settings
+
+## Settings Providers
+tar -czvf /data/data/temp/com.android.providers.settings.tar.gz -C /data/data/ com.android.providers.settings
+
+## SystemUI
+tar -czvf /data/data/temp/com.android.systemui.tar.gz -C /data/data/ com.android.systemui
+
+## Wifi
+tar -czvf /data/data/temp/wifi.tar.gz /data/misc/wifi
 
 ## tar
 tar -cvf /data/data/temp/$1.tar -C /data/data/ temp
