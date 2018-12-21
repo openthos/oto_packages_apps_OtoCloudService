@@ -96,13 +96,13 @@ public class SeafileService extends Service {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        Utils.exec("start seafile-keeper");
         initStateMonitor();
         mHandler = new SeafileHandler(Looper.getMainLooper());
         mAccount = new SeafileAccount(this);
         if (mAccount.isExistsAccount()) {
             startAccount(false);
         }
+        Utils.exec("start seafile_keeper");
     }
 
     private void startAccount(boolean isNewAccount) {
