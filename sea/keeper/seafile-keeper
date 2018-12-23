@@ -36,9 +36,6 @@ set_environment()
 	mountpoint -q tmp && umount tmp
 	mount -t tmpfs tmpfs tmp
 	mkdir tmp/logs tmp/state tmp/quota
-        echo "" > tmp/logs/Keeper.state
-        echo "" > tmp/quota/Quota.state
-        echo "" > tmp/state/DATA.state
 
 	seafile_uid=`awk '/org.openthos.seafile/{print $2}' /data/system/packages.list`
 	chown -R $seafile_uid:$seafile_uid tmp

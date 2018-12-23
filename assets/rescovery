@@ -13,10 +13,7 @@ if [ ! -e /data/data/org.mozilla.fennec_openthos//files/mozilla/openthos.default
 fi
 tar -xvf /data/data/temp/org.mozilla.fennec_openthos.tar.gz  -C /data/data
 rm /data/data/org.mozilla.fennec_openthos//files/mozilla/openthos.default/lock
-chmod 777 /data/data/org.mozilla.fennec_openthos
-chmod -R 777 /data/data/org.mozilla.fennec_openthos/databases
-chmod -R 777 /data/data/org.mozilla.fennec_openthos/shared_prefs/
-chmod -R 777 /data/data/org.mozilla.fennec_openthos/files/
+chmod -R 777 /data/data/org.mozilla.fennec_openthos
 
 ## File Preference
 tar -xvf /data/data/temp/preference.tar.gz
