@@ -20,7 +20,7 @@ echo "language=`getprop persist.sys.language`" > /data/data/temp/language.conf
 echo "country=`getprop persist.sys.country`" >> /data/data/temp/language.conf
 
 ## Security
-tar -czvf /data/data/temp/security.tar.gz /data/system/locksettings.db* /data/system/password.key
+tar -czvf /data/data/temp/security.tar.gz /data/system/locksettings.db* /data/system/password.key /data/system/gesture.key
 
 ## Settings
 tar -czvf /data/data/temp/com.android.settings.tar.gz -C /data/data/ com.android.settings
