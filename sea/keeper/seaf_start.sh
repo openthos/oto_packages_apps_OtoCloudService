@@ -71,6 +71,8 @@ trap do_exit exit
 while true
 do
 {
+	sleep 315
+
 	[ -f $conf_dir/account.conf ] && source $conf_dir/account.conf
 	if [ ! $token ];then
 		echo "retrieve token failed"
@@ -91,7 +93,7 @@ do
 	fi
 	if [[ ${libs_info[@]} = *"HTTP Error 401"* ]];then
 		echo "token-invalid" > $data_info_output
-                account_desync
+		$proot_cmd account_desync
 		continue
 	fi
 	if [ "${libs_info[1]}"x != "ID"x ];then
@@ -119,8 +121,6 @@ do
 	[ -f $conf_dir/quota.conf ] && rm $conf_dir/quota.conf
 	echo "libs_other_info=$libs_other" >> $conf_dir/quota.conf
 	echo "libs_total_info=${user_info[9]}" >> $conf_dir/quota.conf
-
-	sleep 315
 }
 done&
 
@@ -136,7 +136,7 @@ do
 	grep "permission denied on server" $status_info_output
 	if [ $? -eq 0 ];then
 		echo "token-invalid" > $data_info_output
-                account_desync
+		$proot_cmd account_desync
 		continue
 	fi
 

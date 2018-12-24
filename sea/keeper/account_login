@@ -11,7 +11,7 @@ account_login_func()
 	source $account_conf && rm $account_conf
 	if [ "$action"x = "logout"x ];then
 		echo "account logout"
-		account_desync
+		$proot_cmd account_desync
 		return
 	fi
 	if [ ! $server_url ];then
@@ -44,7 +44,7 @@ account_login_func()
 			let "mCount+=3"
 		fi
 	done
-    echo  ${!remote_libraries[@]},${remote_libraries[@]}
+	echo  ${!remote_libraries[@]},${remote_libraries[@]}
 
 	iDATA=""
 	iUserConfig=""
@@ -68,7 +68,7 @@ iUserConfig=$iUserConfig
 " > $conf_dir/account.conf
 
 	### libraries sync
-	account_sync
+	$proot_cmd account_sync
 
 }
 

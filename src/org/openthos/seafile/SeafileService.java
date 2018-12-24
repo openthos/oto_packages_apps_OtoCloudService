@@ -86,6 +86,7 @@ public class SeafileService extends Service {
     private Notification.BigTextStyle mStyle;
     private AlertDialog mDialog;
     private AlertDialog mReloginDialog;
+    private EditText mUserID_bind;
     private boolean mIsNotificationShown = false;
 
     @Override
@@ -182,6 +183,26 @@ public class SeafileService extends Service {
         mDialog = builder.create();
         mDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
 
+        View viewBind = LayoutInflater.from(this).inflate(R.layout.dialog_relogin, null);
+        mUserID_bind = (EditText) viewBind.findViewById(R.id.dialog_name);
+        final EditText userPassword_bind = (EditText) viewBind.findViewById(R.id.dialog_name_bind);
+        mUserID_bind.setEnabled(false);
+        mReloginDialog  = new AlertDialog.Builder(this)
+            .setMessage(R.string.relogin_warning)
+            .setView(viewBind)
+            .setPositiveButton(R.string.confirm,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        AccountLogin libraryThread = new AccountLogin(mHandler,
+                                SeafileService.this, mAccount.mOpenthosUrl,
+                                mAccount.mUserName.replace("@openthos.org", ""),
+                                userPassword_bind.getText().toString().trim(), Mark.LOGIN);
+                        libraryThread.start();
+                    }
+                })
+            .setNegativeButton(android.R.string.cancel, null).create();
+        mReloginDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
 
         mStateObserver = new StateObserver(SeafileUtils.SEAFILE_KEEPER_STATE_PATH);
         mQuotaStateObserver = new StateObserver(SeafileUtils.SEAFILE_QUOTA_STATE_PATH);
@@ -225,12 +246,7 @@ public class SeafileService extends Service {
                             mHandler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    if (mReloginDialog == null) {
-                                        initReloginDialog();
-                                    }
-                                    if (!mReloginDialog.isShowing()) {
-                                        mReloginDialog.show();
-                                    }
+                                    initReloginDialog();
                                 }
                             });
                         } else {
@@ -248,27 +264,10 @@ public class SeafileService extends Service {
     }
 
     private void initReloginDialog() {
-        View viewBind = LayoutInflater.from(this).inflate(R.layout.dialog_relogin, null);
-        final EditText userID_bind = (EditText) viewBind.findViewById(R.id.dialog_name);
-        final EditText userPassword_bind = (EditText) viewBind.findViewById(R.id.dialog_name_bind);
-        userID_bind.setText(mAccount.mUserName);
-        userID_bind.setEnabled(false);
-        mReloginDialog  = new AlertDialog.Builder(this)
-            .setMessage(R.string.relogin_warning)
-            .setView(viewBind)
-            .setPositiveButton(R.string.confirm,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        AccountLogin libraryThread = new AccountLogin(mHandler,
-                                SeafileService.this, mAccount.mOpenthosUrl,
-                                mAccount.mUserName.replace("@openthos.org", ""),
-                                userPassword_bind.getText().toString().trim(), Mark.LOGIN);
-                        libraryThread.start();
-                    }
-                })
-            .setNegativeButton(android.R.string.cancel, null).create();
-        mReloginDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+        mUserID_bind.setText(mAccount.mUserName);
+        if (!mReloginDialog.isShowing()) {
+            mReloginDialog.show();
+        }
     }
 
     private void showQuotaDialog(String notice) {
