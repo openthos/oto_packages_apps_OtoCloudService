@@ -14,8 +14,8 @@ seaf_start()
 		source $conf_dir/account.conf
 		grep "user=" $conf_dir/account.conf
 		if [ $? -eq 0 ];then
-			mountpoint -q $seaDir/data/seafile/$user/$nDATA/Documents || busybox mount --bind /sdcard/Documents /sdcard/seafile/$user/$nDATA/Documents
-			mountpoint -q $seaDir/data/seafile/$user/$nDATA/Pictures || busybox mount --bind /sdcard/Pictures /sdcard/seafile/$user/$nDATA/Pictures
+			mountpoint -q /data/media/0/seafile/$user/$nDATA/Documents || busybox mount --bind /data/media/0/Documents /data/media/0/seafile/$user/$nDATA/Documents
+			mountpoint -q /data/media/0/seafile/$user/$nDATA/Pictures || busybox mount --bind /data/media/0/Pictures /data/media/0/seafile/$user/$nDATA/Pictures
 		fi
 	fi
 
@@ -48,6 +48,7 @@ set_environment()
 	[ -d $seafile_sdcard ] || mkdir -p $seafile_sdcard
 	[ -d $seafile_sync ] || mkdir -p $seafile_sync
 	[ -d /sdcard/Documents ] || mkdir -p /sdcard/Documents
+	[ -d /sdcard/Pictures ] || mkdir -p /sdcard/Pictures
 	#mountpoint -q $seafile_sync || busybox mount --bind $seafile_sdcard $seafile_sync
 }
 
@@ -56,8 +57,8 @@ do_exit()
 	seaf_stop
 	echo 'seafile daemon EXIT'
 
-	umount $seafile_sync/$user/$nDATA/Documents
-	umount $seafile_sync/$user/$nDATA/Pictures
+	umount /data/media/0/seafile/$user/$nDATA/Documents
+	umount /data/media/0/seafile/$user/$nDATA/Pictures
 	umount tmp
 }
 
@@ -148,13 +149,13 @@ do
 			previous_user=$user
 			source $account_conf
 			if [ "$user"x != "$previous_user"x ];then
-				mountpoint -q $seaDir/data/seafile/$previous_user/$nDATA/Documents && umount $seaDir/data/seafile/$previous_user/$nDATA/Documents
-				mountpoint -q $seaDir/data/seafile/$previous_user/$nDATA/Pictures && umount $seaDir/data/seafile/$previous_user/$nDATA/Pictures
+				mountpoint -q /data/media/0/seafile/$previous_user/$nDATA/Documents && umount /data/media/0/seafile/$previous_user/$nDATA/Documents
+				mountpoint -q /data/media/0/seafile/$previous_user/$nDATA/Pictures && umount /data/media/0/seafile/$previous_user/$nDATA/Pictures
 			fi
-			[ -d /sdcard/seafile/$user/$nDATA/Documents ] || mkdir -p /sdcard/seafile/$user/$nDATA/Documents
-			[ -d /sdcard/seafile/$user/$nDATA/Pictures ] || mkdir -p /sdcard/seafile/$user/$nDATA/Pictures
-			mountpoint -q $seaDir/data/seafile/$user/$nDATA/Documents || busybox mount --bind /sdcard/Documents /sdcard/seafile/$user/$nDATA/Documents
-			mountpoint -q $seaDir/data/seafile/$user/$nDATA/Pictures || busybox mount --bind /sdcard/Pictures /sdcard/seafile/$user/$nDATA/Pictures
+			[ -d /data/media/0/seafile/$user/$nDATA/Documents ] || mkdir -p /data/media/0/seafile/$user/$nDATA/Documents
+			[ -d /data/media/0/seafile/$user/$nDATA/Pictures ] || mkdir -p /data/media/0/seafile/$user/$nDATA/Pictures
+			mountpoint -q data/media/0/seafile/$user/$nDATA/Documents || busybox mount --bind /data/media/0/Documents /data/media/0/seafile/$user/$nDATA/Documents
+			mountpoint -q data/media/0/seafile/$user/$nDATA/Pictures || busybox mount --bind /data/media/0/Pictures /data/media/0/seafile/$user/$nDATA/Pictures
 		fi
 		###login check
 		$proot_cmd account_login
