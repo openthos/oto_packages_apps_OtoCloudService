@@ -365,6 +365,7 @@ public class OpenthosIDActivity extends Activity {
                 updateID(null);
                 mAccount = null;
                 mAccount = new SeafileAccount(OpenthosIDActivity.this);
+                notifySeafileKeeper();
             }
         }
 
