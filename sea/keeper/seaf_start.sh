@@ -39,7 +39,6 @@ seaf_stop()
 
 set_environment()
 {
-	sleep 12
 	mountpoint -q tmp && umount tmp
 	mount -t tmpfs tmpfs tmp
 	mkdir tmp/logs tmp/state tmp/quota
@@ -49,7 +48,7 @@ set_environment()
 
 	#/data/data/seafile
 	#[ -d $seafile_ddata ] || mkdir -p $seafile_ddata
-	mountpoint -q $seaDir/data || busybox mount --bind /sdcard $seaDir/data
+	mountpoint -q $seaDir/data || busybox mount --bind /data/media/0 $seaDir/data
 
 	[ -d $seafile_sdcard ] || mkdir -p $seafile_sdcard
 	[ -d $seafile_sync ] || mkdir -p $seafile_sync
@@ -136,12 +135,12 @@ do
 	sleep 2
 	state_info=(`$proot_cmd seaf-cli status-info -c $conf_dir 2>&1`)
 	echo ${state_info[@]}
-	if echo "${state_info[@]}" | grep -E "Invalid config directory|Errno 111";then
+	if echo "${state_info[@]}" | grep -E "Invalid config directory|Connection refused";then
 		echo 'Restarting ...'
 		seaf_stop
 		seaf_start
 	fi
-	if echo "${state_info[@]}" | grep -w "permission denied on server";then
+	if echo "${state_info[@]}" | grep -w "ermission";then
 		echo "token-invalid" > $data_info_output
 		$proot_cmd account_desync
 		continue
