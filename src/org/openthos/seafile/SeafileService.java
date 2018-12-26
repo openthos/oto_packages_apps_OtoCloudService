@@ -87,7 +87,6 @@ public class SeafileService extends Service {
     private AlertDialog mDialog;
     private AlertDialog mReloginDialog;
     private EditText mUserID_bind;
-    private boolean mIsNotificationShown = false;
 
     @Override
     public void onCreate() {
@@ -221,10 +220,7 @@ public class SeafileService extends Service {
             switch (action) {
                 case FileObserver.DELETE:
                     if (SeafileUtils.SEAFILE_STATE_FILE.equals(path)) {
-                        if (mIsNotificationShown) {
-                            showNotification(getString(R.string.sync_complete));
-                            mIsNotificationShown = false;
-                        }
+                        showNotification(getString(R.string.sync_complete));
                     }
                     break;
                 case FileObserver.MODIFY:
@@ -249,12 +245,9 @@ public class SeafileService extends Service {
                                     initReloginDialog();
                                 }
                             });
-                        } else {
-                            mIsNotificationShown = true;
                         }
                     }
-                    if (mIsNotificationShown
-                                && SeafileUtils.SEAFILE_KEEPER_STATE_FILE.equals(path)) {
+                    if (SeafileUtils.SEAFILE_KEEPER_STATE_FILE.equals(path)) {
                         showNotification(SeafileUtils.readLog(SeafileService.this,
                                 SeafileUtils.SEAFILE_KEEPER_STATE_PATH, path));
                     }
@@ -335,10 +328,7 @@ public class SeafileService extends Service {
             if (mQuotaStateObserver != null) {
                 mQuotaStateObserver.stopWatching();
             }
-            if (mIsNotificationShown) {
-                mIsNotificationShown = false;
-                mNotificationManager.cancel(0);
-            }
+            mNotificationManager.cancel(0);
             mAccount.clear();
             Utils.writeAccount(SeafileService.this, mAccount.mOpenthosUrl, "", "");
             for (IBinder iBinder : mIBinders) {

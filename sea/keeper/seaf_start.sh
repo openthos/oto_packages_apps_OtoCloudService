@@ -23,6 +23,12 @@ seaf_start()
 	pid_start=$!
 
 	sleep 4
+
+	state_info=(`$proot_cmd seaf-cli status-info -c $conf_dir`)
+	echo "${state_info[@]}" | grep -E 'downloading|uploading'
+	if [ $? -eq 0 ];then
+		echo "fetch" > $data_info_output
+	fi
 }
 
 seaf_stop()
@@ -124,22 +130,26 @@ do
 }
 done&
 
+old_state=""
 while true
 do
-	#status_info=(`$proot_cmd seaf-cli status -c $conf_dir`)
-	$proot_cmd seaf-cli status-info -c $conf_dir > $status_info_output
-	if [ $? -ne 0 ];then
+	sleep 2
+	state_info=(`$proot_cmd seaf-cli status-info -c $conf_dir 2>&1`)
+	echo ${state_info[@]}
+	if echo "${state_info[@]}" | grep -E "Invalid config directory|Errno 111";then
 		echo 'Restarting ...'
 		seaf_stop
 		seaf_start
 	fi
-	grep "permission denied on server" $status_info_output
-	if [ $? -eq 0 ];then
+	if echo "${state_info[@]}" | grep -w "permission denied on server";then
 		echo "token-invalid" > $data_info_output
 		$proot_cmd account_desync
 		continue
 	fi
-
+	if [ -f $data_info_output ]&&[[ "$old_state" != "${state_info[@]}" ]];then
+		echo ${state_info[@]} > $status_info_output
+		old_state=${state_info[@]}
+	fi
 	#if [ status_info err ]
 	#account_sync()
 
@@ -226,5 +236,4 @@ do
 			fi
 		fi
 	fi
-	sleep 2
 done
