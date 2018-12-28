@@ -120,6 +120,10 @@ public class SeafileService extends Service {
     private void startAutoBackup() {
         TimerTask task = new TimerTask() {
             public void run() {
+                if (!getSharedPreferences("flag", Context.MODE_PRIVATE)
+                        .getBoolean("AutoRecovery", true)) {
+                    return;
+                }
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
                 Date now = new Date();
                 String date = sdf.format(now);
@@ -131,7 +135,7 @@ public class SeafileService extends Service {
         };
         Timer timer = new Timer();
         long time = 1000L * 60L * 60L;
-        timer.schedule(task, 0, time);
+        timer.schedule(task, time, time);
     }
 
     private void backup(String date) {
@@ -447,7 +451,7 @@ public class SeafileService extends Service {
 
         public boolean getFlagAutoRecovery() {
             return getSharedPreferences("flag", Context.MODE_PRIVATE)
-                    .getBoolean("AutoRecovery", false);
+                    .getBoolean("AutoRecovery", true);
         }
 
         public void manualBackup() {
