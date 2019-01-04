@@ -13,10 +13,6 @@ seaf_start()
 	if [ -f $conf_dir/account.conf ];then
 		source $conf_dir/account.conf
 		grep "user=" $conf_dir/account.conf
-		if [ $? -eq 0 ];then
-			mountpoint -q /data/media/0/seafile/$user/$nDATA/Documents || busybox mount --bind /data/media/0/Documents /data/media/0/seafile/$user/$nDATA/Documents
-			mountpoint -q /data/media/0/seafile/$user/$nDATA/Pictures || busybox mount --bind /data/media/0/Pictures /data/media/0/seafile/$user/$nDATA/Pictures
-		fi
 	fi
 
 	$proot_cmd seaf-cli start -c $conf_dir &
@@ -73,7 +69,7 @@ set_environment
 #Catch the exit SIG, "kill PID" instead of "kill -9 PID"
 trap do_exit exit
 
-while true
+while false
 do
 {
 	sleep 315
@@ -154,20 +150,34 @@ do
 
 	if [ -f $account_conf ];then
 		grep "token=" $account_conf
-		if [ $? -eq 0 ];then
-			previous_user=$user
-			source $account_conf
-			if [ "$user"x != "$previous_user"x ];then
-				mountpoint -q /data/media/0/seafile/$previous_user/$nDATA/Documents && umount /data/media/0/seafile/$previous_user/$nDATA/Documents
-				mountpoint -q /data/media/0/seafile/$previous_user/$nDATA/Pictures && umount /data/media/0/seafile/$previous_user/$nDATA/Pictures
-			fi
-			[ -d /data/media/0/seafile/$user/$nDATA/Documents ] || mkdir -p /data/media/0/seafile/$user/$nDATA/Documents
-			[ -d /data/media/0/seafile/$user/$nDATA/Pictures ] || mkdir -p /data/media/0/seafile/$user/$nDATA/Pictures
-			mountpoint -q data/media/0/seafile/$user/$nDATA/Documents || busybox mount --bind /data/media/0/Documents /data/media/0/seafile/$user/$nDATA/Documents
-			mountpoint -q data/media/0/seafile/$user/$nDATA/Pictures || busybox mount --bind /data/media/0/Pictures /data/media/0/seafile/$user/$nDATA/Pictures
-		fi
 		###login check
+		source $account_conf
 		$proot_cmd account_login
+
+		[ -f $conf_dir/account.conf ] && source $conf_dir/account.conf
+		if [ ! $user ];then
+				continue
+		fi
+
+		if [ "$action"x = "logout"x ];then
+				continue
+		fi
+
+		if [ ! -d $seafile_sdcard/$user ];then
+				export TMPDIR=/data/local/tmp
+				data_blk=`awk '/ \/data /{print $1}' /proc/mounts `
+				datafiles=/dev/block/${data_blk:5}
+				[  -h $data_blk ] || ln -s $datafiles /dev/
+				mkdir -p $seafile_sdcard/$user
+				chattr +P -R -p 0 /data/media/0
+				chattr +P -p 666 /data/media/0/seafile/$user
+				user_info=(`$proot_cmd seaf-cli user-info -c $conf_dir -s $server_url -tk $token`)
+				hard_limit=`expr ${user_info[9]} \* 9 / 10000`
+				soft_limit=`expr ${user_info[9]} \* 8 / 10000`
+				setquota -P 666 $soft_limit'K' $hard_limit'K' 0 0 $datafiles
+
+		fi
+		$proot_cmd account_sync
 	fi
 
 	if [ -f $conf_dir/quota.conf ];then

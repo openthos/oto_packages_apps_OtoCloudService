@@ -268,8 +268,14 @@ public class SeafileService extends Service {
     }
 
     private void showQuotaDialog(String notice) {
-        String msg = getString(notice.contains("WARNING")
-                    ? R.string.seafile_status_warning : R.string.seafile_status_disabled);
+        String msg = "";
+        if (notice.contains("Info")) {
+            return;
+        } else if (notice.contains("Warning")) {
+            msg = getString(R.string.seafile_status_warning);
+        } else if (notice.contains("Error")) {
+            msg = getString(R.string.seafile_status_disabled);
+        }
         mDialog.setMessage(msg);
         if (!mDialog.isShowing()) {
             mDialog.show();

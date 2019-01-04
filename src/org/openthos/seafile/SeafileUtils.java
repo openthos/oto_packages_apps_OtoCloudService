@@ -29,7 +29,7 @@ public class SeafileUtils {
     public static final String SEAFILE_KEEPER_STATE_PATH = "/system/linux/sea/tmp/logs/";
     public static final String SEAFILE_QUOTA_STATE_PATH = "/system/linux/sea/tmp/quota/";
     public static final String SEAFILE_KEEPER_STATE_FILE = "Keeper.state";
-    public static final String SEAFILE_QUOTA_STATE_FILE = "Quota.state";
+    public static final String SEAFILE_QUOTA_STATE_FILE = "quota.state";
     public static final String SEAFILE_DATA_ROOT_PATH = "/sdcard/seafile";
     public static final String SEAFILE_ACCOUNT_CONFIG = "/system/linux/sea/tmp/account.conf";
     public static final String TOKEN_INVALID_TAG = "token-invalid";

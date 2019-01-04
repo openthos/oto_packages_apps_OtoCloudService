@@ -12,6 +12,7 @@ account_login_func()
 	if [ "$action"x = "logout"x ];then
 		echo "account logout"
 		$proot_cmd account_desync
+		[ -d $seafile_sync/$user ] && rm -rf $seafile_sync/$user
 		return
 	fi
 	if [ ! $server_url ];then
@@ -68,7 +69,7 @@ iUserConfig=$iUserConfig
 " > $conf_dir/account.conf
 
 	### libraries sync
-	$proot_cmd account_sync
+	#$proot_cmd account_sync
 
 }
 

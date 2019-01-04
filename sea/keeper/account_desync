@@ -34,13 +34,13 @@ account_desync_func()
 	done
 
 	$proot_cmd seaf-cli desync-all -c $conf_dir
-        rm $conf_dir/account.conf
+	[ -f $conf_dir/account.conf ] && rm $conf_dir/account.conf
 
 }
 
 seaDir=/  
 proot_cmd=""
-cd $seaDir                                                                                           
+cd $seaDir
 
 account_desync_func
 
