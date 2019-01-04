@@ -129,21 +129,20 @@ old_state=""
 while true
 do
 	sleep 2
-	state_info=(`$proot_cmd seaf-cli status-info -c $conf_dir 2>&1`)
-	echo ${state_info[@]}
-	if echo "${state_info[@]}" | grep -E "Invalid config directory|Connection refused";then
+	state_info=`$proot_cmd seaf-cli status-info -c $conf_dir 2>&1`
+	if echo "$state_info" | grep -E "Invalid config directory|Connection refused";then
 		echo 'Restarting ...'
 		seaf_stop
 		seaf_start
 	fi
-	if echo "${state_info[@]}" | grep -w "ermission";then
+	if echo "$state_info" | grep -w "ermission";then
 		echo "token-invalid" > $data_info_output
 		$proot_cmd account_desync
 		continue
 	fi
-	if [ -f $data_info_output ]&&[[ "$old_state" != "${state_info[@]}" ]];then
-		echo ${state_info[@]} > $status_info_output
-		old_state=${state_info[@]}
+	if [ -f $data_info_output ]&&[[ "$old_state" != "$state_info" ]];then
+		echo "$state_info" > $status_info_output
+		old_state="$state_info"
 	fi
 	#if [ status_info err ]
 	#account_sync()
