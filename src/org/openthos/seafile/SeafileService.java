@@ -268,15 +268,14 @@ public class SeafileService extends Service {
     }
 
     private void showQuotaDialog(String notice) {
-        String msg = "";
-        if (notice.contains("Info")) {
-            return;
-        } else if (notice.contains("Warning")) {
-            msg = getString(R.string.seafile_status_warning);
+        if (notice.contains("Warning")) {
+            notice = getString(R.string.seafile_status_warning);
         } else if (notice.contains("Error")) {
-            msg = getString(R.string.seafile_status_disabled);
+            notice = getString(R.string.seafile_status_disabled);
+        } else {
+            return;
         }
-        mDialog.setMessage(msg);
+        mDialog.setMessage(notice);
         if (!mDialog.isShowing()) {
             mDialog.show();
         }
@@ -284,16 +283,18 @@ public class SeafileService extends Service {
 
     private void showNotification(String notice) {
         if (!TextUtils.isEmpty(notice)) {
-            notice = notice.replace(SEAFILE_STATUS_UPLOADING,
-                    getString(R.string.seafile_uploading));
-            notice = notice.replace(SEAFILE_STATUS_DOWNLOADING,
-                    getString(R.string.seafile_downloading));
-            notice = notice.replace(SEAFILE_STATUS_DISABLED,
-                    getString(R.string.seafile_disabled));
-            notice = notice.replace(SeafileUtils.DATA_SEAFILE_NAME,
-                    getString(R.string.data_seafile_name));
-            notice = notice.replace(SeafileUtils.SETTING_SEAFILE_NAME,
-                    getString(R.string.userconfig_seafile_name));
+            if (notice.contains(SEAFILE_STATUS_DISABLED)) {
+                notice = getString(R.string.seafile_disabled);
+            } else {
+                notice = notice.replace(SEAFILE_STATUS_UPLOADING,
+                        getString(R.string.seafile_uploading));
+                notice = notice.replace(SEAFILE_STATUS_DOWNLOADING,
+                        getString(R.string.seafile_downloading));
+                notice = notice.replace(SeafileUtils.DATA_SEAFILE_NAME,
+                        getString(R.string.data_seafile_name));
+                notice = notice.replace(SeafileUtils.SETTING_SEAFILE_NAME,
+                        getString(R.string.userconfig_seafile_name));
+            }
             mStyle.bigText(notice);
             mBuilder.setStyle(mStyle);
             mBuilder.setWhen(System.currentTimeMillis());

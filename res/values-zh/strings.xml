@@ -10,7 +10,7 @@
     <string name="seafile_status_title">云服务状态：</string>
     <string name="seafile_uploading">上传中</string>
     <string name="seafile_downloading">下载中</string>
-    <string name="seafile_disabled">暂停同步</string>
+    <string name="seafile_disabled">已超出云服务容限，同步暂停，清理空间后重新上传</string>
     <string name="seafile_status_warning">云服务的DATA存储空间已使用超过80%！</string>
     <string name="seafile_status_disabled">云服务的数据存储空间不足，请清理空间以保证数据同步！</string>
     <string name="toast_register_sendmail">已发送邮件到你邮箱,请激活并绑定账号</string>

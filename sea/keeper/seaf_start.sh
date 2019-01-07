@@ -20,11 +20,7 @@ seaf_start()
 
 	sleep 4
 
-	state_info=(`$proot_cmd seaf-cli status-info -c $conf_dir`)
-	echo "${state_info[@]}" | grep -E 'downloading|uploading'
-	if [ $? -eq 0 ];then
-		echo "fetch" > $data_info_output
-	fi
+	old_state=(`$proot_cmd seaf-cli status-info -c $conf_dir`)
 }
 
 seaf_stop()
@@ -38,7 +34,7 @@ set_environment()
 	mountpoint -q tmp && umount tmp
 	mount -t tmpfs tmpfs tmp
 	mkdir tmp/logs tmp/state tmp/quota
-	touch tmp/quota/quota.state
+	echo "quota_init" > tmp/quota/quota.state
 
 	seafile_uid=`awk '/org.openthos.seafile/{print $2}' /data/system/packages.list`
 	chown -R $seafile_uid:$seafile_uid tmp
@@ -89,7 +85,7 @@ do
 		$proot_cmd account_desync
 		continue
 	fi
-	if [ -f $data_info_output ]&&[[ "$old_state" != "$state_info" ]];then
+	if [ "$old_state" != "$state_info" ];then
 		echo "$state_info" > $status_info_output
 		old_state="$state_info"
 	fi
@@ -124,5 +120,22 @@ do
 
 		fi
 		$proot_cmd account_sync
+	fi
+	if [ -f $quota_info_output ];then
+		grep "Error" $quota_info_output
+		if [ $? -eq 0 ];then
+			echo "$state_info" | grep -E "auto sync disabled"
+			if [ $? -ne 0 ];then
+				$proot_cmd seaf-cli disable-auto-sync -c $conf_dir
+			fi
+		else
+			grep "quota_init" $quota_info_output
+			if [ $? -ne 0 ];then
+				echo "$state_info" | grep -E "auto sync disabled"
+				if [ $? -eq 0 ];then
+					$proot_cmd seaf-cli enable-auto-sync -c $conf_dir
+				fi
+			fi
+		fi
 	fi
 done
