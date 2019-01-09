@@ -92,6 +92,8 @@ import getpass
 import random
 import urllib
 import urllib2
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 from urlparse import urlparse
 
 from os.path import abspath, dirname, exists, isdir, join
