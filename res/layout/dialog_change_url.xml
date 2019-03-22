@@ -43,7 +43,8 @@
             android:gravity="center_vertical"
             android:textSize="14sp"
             android:text="@string/url_lab"
-            android:textColor="@color/black" />
+            android:textColor="@color/black"
+            android:visibility="gone" />
 
     </RadioGroup>
 </LinearLayout>

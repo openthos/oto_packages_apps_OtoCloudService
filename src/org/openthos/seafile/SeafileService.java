@@ -199,7 +199,7 @@ public class SeafileService extends Service {
                     public void onClick(DialogInterface dialog, int which) {
                         AccountLogin libraryThread = new AccountLogin(mHandler,
                                 SeafileService.this, mAccount.mOpenthosUrl,
-                                mAccount.mUserName.replace("@openthos.org", ""),
+                                mAccount.mUserName.split("@")[0],
                                 userPassword_bind.getText().toString().trim(), Mark.LOGIN);
                         libraryThread.start();
                     }

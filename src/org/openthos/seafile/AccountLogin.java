@@ -52,6 +52,7 @@ public class AccountLogin extends Thread {
     private String redirect = "http.protocol.handle-redirects";
     private String location, csrftoken, sessionid, sess, form_build_id;
     private String url, name, pass, id, email, passwd, token;
+    private String suffix = "openthos.com";
     private Mark mark;
     private Context context;
     private Handler handler;
@@ -95,7 +96,7 @@ public class AccountLogin extends Thread {
                 if (success) {
                     message.what = MSG_LOGIN_SEAFILE_OK;
                     Bundle bundle = new Bundle();
-                    bundle.putString("user", name + "@openthos.org");
+                    bundle.putString("user", name + suffix);
                     bundle.putString("token", token);
                     message.setData(bundle);
                     message.obj = context.getString(R.string.toast_bind_successful);
@@ -469,8 +470,10 @@ public class AccountLogin extends Thread {
     }
 
     private boolean getToken(String location) throws Exception {
-        String accout = name + "@openthos.org";
-        String result = getToken(context, location, accout, pass);
+        suffix = "openthos.com";
+        suffix = "@" + url.substring(url.length() - suffix.length() - 1).replace("/", "");
+        String accout = name + suffix;
+        String result = getToken(context, url, accout, pass);
         if (result != null) {
             token = result;
             return true;

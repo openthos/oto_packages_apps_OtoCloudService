@@ -14,6 +14,5 @@ quota_info_output="tmp/quota/quota.state"
 data_info_output="tmp/state/DATA.state"
 nDATA="DATA"
 nUserConfig=".UserConfig"
-ucPsw="openthos.org"
 autoMsg="OPENTHOS"
 
