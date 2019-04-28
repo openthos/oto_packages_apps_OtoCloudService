@@ -14,6 +14,12 @@ ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 23 && echo need add library), nee
     LOCAL_STATIC_JAVA_LIBRARIES += org.apache.http.legacy
 endif
 
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -eq 22 && echo Lollipop), Lollipop)
+    LOCAL_SRC_FILES += $(call all-java-files-under, platform-22/src)
+else ifeq ($(shell test $(PLATFORM_SDK_VERSION) -eq 27 && echo Oreo), Oreo)
+    LOCAL_SRC_FILES += $(call all-java-files-under, platform-27/src)
+endif
+
 LOCAL_RESOURCE_DIR := $(LOCAL_PATH)/res
 LOCAL_AAPT_FLAGS := --auto-add-overlay
 

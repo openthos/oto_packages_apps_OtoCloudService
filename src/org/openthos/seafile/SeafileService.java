@@ -58,7 +58,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class SeafileService extends Service {
+public class SeafileService extends BaseService {
     private static final int ADD_BINDER = 40000002;
     private static final int REMOVE_BINDER = 40000003;
     private static final int CODE_SEND_INTO = 80000001;

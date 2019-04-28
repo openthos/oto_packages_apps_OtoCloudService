@@ -11,10 +11,7 @@ public class BootCompleteReceiver extends BroadcastReceiver {
         if (i.getAction().equals(Intent.ACTION_BOOT_COMPLETED)){
             Intent intent = new Intent();
             intent.setClassName("org.openthos.seafile", "org.openthos.seafile.SeafileService");
-            context.startService(intent);
-//            Intent intents = new Intent();
-//            intents.setClassName("org.openthos.seafile", "org.openthos.seafile.RecoveryService");
-//            context.startService(intents);
+	    BaseService.startService(context, intent);
         }
     }
 }
